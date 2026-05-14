@@ -1,0 +1,5 @@
+
+
+php artisan migrate --path=database/migrations/2026_03_11_140000_create_coordinador_operador_agencia_table.php
+php artisan migrate --path=database/migrations/2026_03_14_100000_add_estatus_to_agencias_table.php
+php artisan migrate --path=database/migrations/2026_03_23_180000_add_empresa_to_agencias_table.php

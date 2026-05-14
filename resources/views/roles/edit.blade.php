@@ -1,0 +1,87 @@
+@extends('app')
+
+@section('content')
+    <div class="main-content">
+        <div class="page-content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                            <h4 class="mb-sm-0">Editar Rol</h4>
+                            <div class="page-title-right">
+                                <ol class="breadcrumb m-0">
+                                    <li class="breadcrumb-item"><a href="{{ route('inicio.index') }}">Inicio</a></li>
+                                    <li class="breadcrumb-item"><a href="{{ route('mantenimiento.index') }}">Mantenimientos</a></li>
+                                    <li class="breadcrumb-item"><a href="{{ route('roles.index') }}">Roles</a></li>
+                                    <li class="breadcrumb-item active">Editar</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-8 mx-auto">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Datos del Rol</h5>
+                            </div>
+                            <div class="card-body">
+                                <form action="{{ route('roles.update', $role->id) }}" method="POST">
+                                    @csrf
+                                    @method('PUT')
+
+                                    <div class="mb-3">
+                                        <label for="name" class="form-label">Nombre <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control @error('name') is-invalid @enderror"
+                                               id="name" name="name" value="{{ old('name', $role->name) }}" required>
+                                        @error('name')
+                                            <div class="text-danger small mt-1">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Permisos</label>
+                                        <div class="border rounded p-2" style="max-height: 300px; overflow-y: auto;">
+                                            @foreach($permissions as $permission)
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="permissions[]"
+                                                           value="{{ $permission->name }}" id="perm-{{ $permission->id }}"
+                                                           @checked(in_array($permission->name, old('permissions', $rolePermissions ?? [])))>
+                                                    <label class="form-check-label" for="perm-{{ $permission->id }}">
+                                                        {{ $permission->name }}
+                                                    </label>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex flex-column flex-sm-row justify-content-end gap-2">
+                                        <a href="{{ route('roles.index') }}" class="btn btn-secondary">
+                                            <i class="ri-close-line align-bottom me-1"></i> Cancelar
+                                        </a>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="ri-save-line align-bottom me-1"></i> Actualizar
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <script>
+                            document.write(new Date().getFullYear())
+                        </script> © CRM.
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+@endsection

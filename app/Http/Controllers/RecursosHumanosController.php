@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Http\Controllers;
+
+class RecursosHumanosController extends Controller
+{
+    public function index()
+    {
+        $modulos = collect(config('recursos_humanos', []))
+            ->filter(fn ($modulo) => (bool) ($modulo['activo'] ?? true))
+            ->map(function ($modulo) {
+                $modulo['url'] = url($modulo['url']);
+                $modulo['tags'] = $modulo['tags'] ?? [];
+
+                return $modulo;
+            })
+            ->sortBy('nombre')
+            ->values();
+
+        $categorias = $modulos
+            ->pluck('categoria')
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
+
+        return view('recursos_humanos.index', compact('modulos', 'categorias'));
+    }
+}

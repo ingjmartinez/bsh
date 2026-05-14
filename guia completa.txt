@@ -1,0 +1,373 @@
+GUIA COMPACTA PARA CONSTRUIR CRM V2 POR FASES
+==============================================
+Ultima actualizacion: 2026-05-06
+
+Objetivo
+--------
+
+Usar esta guia para iniciar chats limpios y construir la V2 sin cargar contexto
+innecesario. La regla es trabajar una sola fase por chat o por lote.
+
+Archivos guia:
+
+- prompt-reconstruccion-crm-v2.txt
+- contexto-codigo-crm-v2.txt
+- contexto-db-crm-v2.txt
+
+Reglas fijas:
+
+1. Una sola fase activa.
+2. Leer antes de editar.
+3. No inventar reglas de negocio.
+4. No tocar datos productivos sin aprobacion.
+5. No mezclar DB, UI, seguridad, ETL y refactor en el mismo lote.
+6. No hacer Pint/formato masivo junto con cambios funcionales.
+7. Cerrar cada fase con pruebas, riesgos y archivos modificados.
+8. Esperar aprobacion antes de avanzar.
+
+
+PROMPT BASE PARA CHAT NUEVO
+===========================
+
+Estoy trabajando en D:\crm.
+
+Quiero continuar la reconstruccion CRM V2 por fases, sin cargar contexto viejo.
+
+Lee solo lo necesario de estos archivos:
+
+- guia completa.txt
+- prompt-reconstruccion-crm-v2.txt
+- contexto-codigo-crm-v2.txt
+- contexto-db-crm-v2.txt
+
+Fase activa:
+[ESCRIBIR FASE]
+
+Objetivo:
+[ESCRIBIR OBJETIVO CONCRETO]
+
+Alcance:
+[ARCHIVOS, MODULO O TABLAS PERMITIDAS]
+
+Fuera de alcance:
+[LO QUE NO DEBE TOCARSE]
+
+Restricciones:
+
+- No modifiques fuera del alcance.
+- No ejecutes migraciones destructivas.
+- No ejecutes ETL destructivo.
+- No cambies reglas de negocio sin confirmar.
+- Usa patrones existentes buenos del proyecto.
+- Reporta pruebas y riesgos al final.
+
+
+LAS 8 FASES RECOMENDADAS
+========================
+
+FASE 1 - Descubrimiento verificable
+-----------------------------------
+
+Objetivo:
+Entender el sistema actual antes de construir.
+
+Leer:
+- composer.json
+- package.json
+- routes/web.php
+- routes/api.php
+- app/Models
+- app/Http/Controllers principales
+- app/Services
+- app/Console/Commands
+- database/migrations
+- config/module_hubs.php
+- config/recursos_humanos.php
+
+Entregar:
+- mapa de modulos
+- entidades de dominio
+- tablas criticas
+- rutas GET riesgosas
+- integraciones externas
+- procesos/jobs/scheduler
+- riesgos de DB, seguridad y performance
+- modulo piloto recomendado
+
+No editar archivos.
+
+
+FASE 2 - Seguridad y rutas criticas
+-----------------------------------
+
+Objetivo:
+Reducir riesgos inmediatos del sistema actual.
+
+Incluye:
+- secretos fuera del codigo
+- rutas GET destructivas a POST/DELETE
+- CSRF en formularios/AJAX
+- permisos basicos por modulo
+- dumps sensibles detectados, sin borrarlos sin aprobacion
+
+No incluye:
+- redisenar DB
+- refactor masivo
+- tocar tablas historicas
+
+
+FASE 3 - Diseno DB V2
+---------------------
+
+Objetivo:
+Disenar migraciones desde cero antes de programar modulos.
+
+Entregar:
+- ERD propuesto
+- orden de migraciones
+- catalogos normalizados
+- FKs y politicas cascade/null/restrict
+- indices principales
+- estrategia tablas historicas
+- decision preliminar Bet/Net
+- vistas/SP/triggers a versionar
+
+No ejecutar migraciones todavia.
+
+
+FASE 4 - Modulo piloto
+----------------------
+
+Objetivo:
+Construir un modulo pequeno como patron de la V2.
+
+Candidatos:
+- Tareas
+- Tecnologia Solicitudes
+- Entrevista Online
+
+Debe incluir:
+- migraciones limpias del modulo
+- modelo con relaciones/casts/scopes
+- Form Requests
+- Policy
+- Service/Action
+- controlador delgado
+- vistas/componentes
+- tests minimos
+
+No empezar por:
+- ventas
+- vt_usuarios
+- premios
+- recargas
+- pagos
+- incentivos completos
+- BI pesado
+
+
+FASE 5 - Core V2
+----------------
+
+Objetivo:
+Construir la base comun del sistema.
+
+Incluye:
+- auth
+- users
+- roles/permisos
+- hubs/modulos
+- layout base
+- menus desde fuente declarativa
+- catalogos base
+- empleados
+- agencias
+- rutas
+- operadores/coordinadores
+
+
+FASE 6 - Modulos operativos
+---------------------------
+
+Objetivo:
+Construir dominios medianos ya con el patron validado.
+
+Incluye:
+- RRHH
+- tecnologia
+- procesos
+- asistencia
+- novedades
+- servicios generales
+- contabilidad operativa
+- reporte diario rutas
+
+
+FASE 7 - Incentivos y reportes
+------------------------------
+
+Objetivo:
+Reconstruir reglas de incentivos y reportes sin romper negocio.
+
+Incluye:
+- CalculoIncentivo actual o reemplazo documentado
+- incentivo_jobs
+- incentivo_resultados
+- plan agencias
+- distribuciones
+- efectividad
+- reportes PDF/XLSX
+- colas para procesos pesados
+
+Requiere:
+- reglas confirmadas
+- pruebas de calculo
+- validacion contra resultados legacy
+
+
+FASE 8 - Datos masivos, ETL y produccion
+----------------------------------------
+
+Objetivo:
+Migrar datos y preparar operacion real.
+
+Incluye:
+- ventas_producto
+- vt_usuarios
+- premios
+- recargas
+- pagos
+- faltantes
+- paquetico
+- ventas_flash
+- mar_ventas
+- tablas resumen BI
+- ETL por chunks
+- validacion count/sum
+- staging
+- rollback
+- backups
+- health checks
+- Horizon/colas
+- deploy/cutover
+
+No ejecutar sobre produccion sin aprobacion explicita.
+
+
+PROMPT PARA INICIAR FASE 1
+==========================
+
+Estoy trabajando en D:\crm.
+
+Quiero iniciar CRM V2 con FASE 1 - Descubrimiento verificable.
+
+Lee:
+
+- guia completa.txt
+- prompt-reconstruccion-crm-v2.txt
+- contexto-codigo-crm-v2.txt
+- contexto-db-crm-v2.txt
+
+Despues confirma el diagnostico leyendo solo lo necesario del proyecto actual.
+
+No modifiques archivos.
+No ejecutes migraciones.
+No generes codigo.
+
+Entregame:
+
+1. resumen ejecutivo
+2. mapa de modulos
+3. entidades principales
+4. tablas criticas
+5. rutas riesgosas
+6. integraciones externas
+7. procesos/jobs/scheduler
+8. riesgos principales
+9. modulo piloto recomendado
+10. plan de fases siguiente
+
+Al final dime claramente: "No he modificado archivos".
+
+
+PROMPT PARA INICIAR UNA FASE DE CONSTRUCCION
+============================================
+
+Apruebo iniciar:
+[FASE]
+
+Objetivo:
+[OBJETIVO CONCRETO]
+
+Alcance:
+[ARCHIVOS/MODULO/TABLAS PERMITIDAS]
+
+Fuera de alcance:
+[LO QUE NO DEBE TOCARSE]
+
+Criterio de exito:
+[COMANDOS O VALIDACION MANUAL]
+
+Antes de editar:
+1. lee el codigo relacionado
+2. resume el plan corto
+3. implementa solo el alcance aprobado
+4. verifica al final
+
+
+PROMPT PARA CERRAR CUALQUIER FASE
+=================================
+
+Cierra la fase actual y no avances a otra.
+
+Reporta:
+
+1. que se hizo
+2. archivos modificados
+3. decisiones tomadas
+4. comandos ejecutados
+5. resultado de pruebas
+6. riesgos pendientes
+7. que no se toco
+8. siguiente fase recomendada
+
+
+REGLA FINAL
+===========
+
+Si el chat se pone pesado, abrir chat nuevo con el PROMPT BASE y solo la fase
+actual. No pegar todo el historial. La guia y los tres archivos de contexto son
+la memoria estable.
+
+
+ESTADO DEL PROYECTO AL 2026-05-06
+===================================
+
+Commits cubiertos en los contextos: hasta c55851c (2026-05-06).
+
+Modulos nuevos desde la primera redaccion del contexto:
+- Servicios Generales (ServicioGeneralRequerimientoController, tabla, 4 notif)
+- Entrevista Online (EntrevistaOnlineController, tabla entrevistas_online)
+- Centro de Costo (CentroDeCosto, tablas centros_de_costo, sync ERP)
+- Recursos Humanos hub (RecursosHumanosController)
+- Module Hubs (ModuleHubController — 10 hubs declarados)
+
+Cambios transversales relevantes:
+- Gate::before para superadmin bypass (AppServiceProvider)
+- ExpireInactiveSession middleware (inactividad + remember-me bloqueado)
+- IncentivosController con 3 versiones de reporte (v1, v2, v3)
+- AuthController con guard defensivo para columnas login_at
+- 9 vistas Lotonet reestructuradas para corregir errores 500
+
+Conteos actuales:
+- Migraciones: 51
+- Rutas totales: 394
+- Lineas routes/web.php: 520
+- Modelos principales: 47 aprox
+- Controladores: ~30 aprox
+
+Pendientes de respuesta antes de avanzar V2:
+- Ver "PREGUNTAS ABIERTAS" en contexto-db-crm-v2.txt (8 preguntas)
+- usuarios.current_login_at / last_login_at: confirmar si van en users V2
+- servicios_generales.tipo: catalogo definitivo o pueden agregarse mas tipos?
+- entrevistas_online.manejo_excel: rango valido (0..3? 0..5?)

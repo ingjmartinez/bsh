@@ -1,0 +1,525 @@
+/* ============================================
+   OPTIMIZACIONES PARA MÓVIL
+   ============================================ */
+
+/* Viewport meta ya presente, mejoramos CSS */
+
+/* ============================================
+   GENERAL - MOBILE FIRST
+   ============================================ */
+
+:root {
+    --breakpoint-xs: 320px;
+    --breakpoint-sm: 576px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 992px;
+    --breakpoint-xl: 1200px;
+}
+
+/* Header/Navbar responsivo */
+@media (max-width: 575px) {
+    .layout-width {
+        padding: 0 10px;
+    }
+
+    .navbar-header {
+        padding: 0.5rem 0 !important;
+    }
+
+    .page-title-box {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+
+    .page-title-right {
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .breadcrumb {
+        margin: 0 !important;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .breadcrumb-item {
+        font-size: 0.8rem;
+    }
+}
+
+/* ============================================
+   TABLAS RESPONSIVAS
+   ============================================ */
+
+@media (max-width: 767px) {
+    .table-responsive {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    table.table {
+        font-size: 0.75rem;
+        margin-bottom: 0;
+    }
+
+    table.table thead tr {
+        display: none;
+    }
+
+    table.table tbody tr {
+        display: block;
+        border: 1px solid #dee2e6;
+        margin-bottom: 15px;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    table.table tbody td {
+        display: block;
+        text-align: right;
+        padding-left: 50%;
+        position: relative;
+        border: none;
+        border-bottom: 1px solid #f1f3f5;
+    }
+
+    table.table tbody td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        width: 50%;
+        padding-right: 10px;
+        padding-left: 10px;
+        font-weight: 600;
+        text-align: left;
+        color: #495057;
+    }
+
+    table.table tbody tr td:last-child {
+        border-bottom: 0;
+    }
+
+    /* Alineación especial para columnas importantes */
+    table.table tbody td.text-center::before {
+        text-align: left;
+    }
+
+    .dataTables_wrapper {
+        overflow-x: auto;
+    }
+
+    .dataTables_info,
+    .dataTables_paginate {
+        text-align: center;
+        font-size: 0.8rem;
+    }
+}
+
+/* ============================================
+   TARJETAS (CARDS)
+   ============================================ */
+
+@media (max-width: 767px) {
+    .card {
+        margin-bottom: 15px;
+        border-radius: 6px;
+    }
+
+    .card-header {
+        padding: 1rem 0.75rem;
+    }
+
+    .card-body {
+        padding: 1rem 0.75rem;
+    }
+
+    .card-title {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* ============================================
+   BOTONES
+   ============================================ */
+
+@media (max-width: 575px) {
+    .btn {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.875rem;
+        border-radius: 4px;
+    }
+
+    .btn-sm {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .gap-2 {
+        gap: 0.5rem !important;
+    }
+
+    /* Botones apilados en móvil */
+    .d-flex.flex-wrap > .btn {
+        flex: 1 1 auto;
+        min-width: 100px;
+    }
+
+    .btn-group {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    /* Acciones apiladas */
+    .row > [class*='col-'] .d-flex.gap-2 {
+        flex-direction: column;
+    }
+
+    .row > [class*='col-'] .d-flex.gap-2 > .btn {
+        width: 100%;
+    }
+
+    .row > [class*='col-'] .d-flex.gap-2 > a {
+        width: 100%;
+        display: block;
+    }
+}
+
+/* ============================================
+   FORMULARIOS
+   ============================================ */
+
+@media (max-width: 767px) {
+    .form-control,
+    .form-select,
+    .form-check-input {
+        font-size: 16px; /* Previene zoom en iOS */
+        padding: 0.5rem 0.75rem;
+    }
+
+    .form-label {
+        font-size: 0.9rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .form-text {
+        font-size: 0.75rem;
+    }
+
+    .input-group {
+        flex-wrap: wrap;
+    }
+
+    .input-group > .form-control,
+    .input-group > .form-select,
+    .input-group > .btn {
+        min-width: 100%;
+    }
+
+    .mb-3 {
+        margin-bottom: 1rem !important;
+    }
+
+    .row > [class*='col-'] {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+}
+
+/* ============================================
+   MODALES
+   ============================================ */
+
+@media (max-width: 575px) {
+    .modal-dialog {
+        margin: 10px auto;
+        max-width: calc(100% - 20px);
+    }
+
+    .modal-content {
+        border-radius: 6px;
+    }
+
+    .modal-header {
+        padding: 0.75rem;
+    }
+
+    .modal-body {
+        padding: 0.75rem;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .modal-footer {
+        padding: 0.75rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .modal-footer .btn {
+        flex: 1 1 auto;
+        min-width: 80px;
+    }
+}
+
+/* ============================================
+   GRID LAYOUT
+   ============================================ */
+
+@media (max-width: 767px) {
+    .row {
+        margin-left: -0.5rem;
+        margin-right: -0.5rem;
+    }
+
+    [class*='col-'] {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+
+    .col-lg-2,
+    .col-lg-3,
+    .col-lg-4,
+    .col-lg-5,
+    .col-lg-6,
+    .col-lg-7,
+    .col-lg-8 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    .col-md-6 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    .justify-content-md-end {
+        justify-content: flex-start !important;
+    }
+
+    .text-md-end {
+        text-align: left !important;
+    }
+}
+
+/* ============================================
+   NAVEGACIÓN E ICONOS
+   ============================================ */
+
+@media (max-width: 575px) {
+    .align-items-center {
+        align-items: flex-start !important;
+    }
+
+    .d-sm-flex {
+        display: flex !important;
+        flex-wrap: wrap;
+    }
+
+    .fs-16 {
+        font-size: 1.125rem;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ri-icon {
+        font-size: 1.125rem;
+    }
+}
+
+/* ============================================
+   UTIL - TIPOGRAFÍA
+   ============================================ */
+
+@media (max-width: 575px) {
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    h2 {
+        font-size: 1.25rem;
+    }
+
+    h3 {
+        font-size: 1.1rem;
+    }
+
+    h4 {
+        font-size: 1rem;
+    }
+
+    h5 {
+        font-size: 0.95rem;
+    }
+
+    h6 {
+        font-size: 0.9rem;
+    }
+
+    p {
+        font-size: 0.95rem;
+    }
+
+    .small,
+    .form-text {
+        font-size: 0.8rem;
+    }
+}
+
+/* ============================================
+   ESPACIO Y PADDING
+   ============================================ */
+
+@media (max-width: 575px) {
+    .container-fluid {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .p-3 {
+        padding: 0.75rem !important;
+    }
+
+    .p-2 {
+        padding: 0.5rem !important;
+    }
+
+    .pt-3 {
+        padding-top: 0.75rem !important;
+    }
+
+    .pb-3 {
+        padding-bottom: 0.75rem !important;
+    }
+
+    .m-3 {
+        margin: 0.75rem !important;
+    }
+
+    .me-2,
+    .me-3 {
+        margin-right: 0.5rem !important;
+    }
+
+    .ms-1,
+    .ms-2 {
+        margin-left: 0.25rem !important;
+    }
+}
+
+/* ============================================
+   ELEMENTOS ESPECÍFICOS
+   ============================================ */
+
+@media (max-width: 575px) {
+    /* Page title */
+    .page-title-box {
+        flex-direction: column;
+    }
+
+    .page-title-box h4 {
+        margin-bottom: 10px;
+    }
+
+    /* Footer */
+    .footer {
+        padding: 1rem 0.5rem;
+    }
+
+    .footer .row {
+        text-align: center;
+    }
+
+    /* Alert */
+    .alert {
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .alert ul {
+        padding-left: 1.5rem;
+        margin-bottom: 0;
+    }
+
+    .alert li {
+        font-size: 0.85rem;
+        line-height: 1.4;
+    }
+
+    /* Badge */
+    .badge {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.7rem;
+    }
+}
+
+/* ============================================
+   ACCESIBILIDAD Y USABILIDAD
+   ============================================ */
+
+@media (max-width: 575px) {
+    /* Touch targets (mínimo 44x44px Apple, 48x48px Google) */
+    .btn,
+    .form-control,
+    .form-select,
+    a[href],
+    button[type] {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Input con font-size de 16px previene zoom en iOS */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="date"],
+    input[type="time"],
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
+
+    /* Evitar hover en touch */
+    @media (hover: none) {
+        .btn:hover,
+        a:hover {
+            background-color: inherit;
+        }
+    }
+}
+
+/* ============================================
+   ANIMACIONES SUAVES
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ============================================
+   LANDSCAPE (iPhone en horizontal)
+   ============================================ */
+
+@media (max-height: 500px) and (orientation: landscape) {
+    .page-title-box {
+        margin-bottom: 0.5rem;
+    }
+
+    .card {
+        margin-bottom: 0.5rem;
+    }
+
+    .modal-body {
+        max-height: calc(100vh - 150px);
+    }
+}

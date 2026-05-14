@@ -1,0 +1,108 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: https://crm.helppro.com.do
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: crm_v3
+      DB_USERNAME: crm_user
+      DB_PASSWORD: wSyEP6ZZEUxBUiwj5ZeR
+      QUEUE_CONNECTION: redis
+      CACHE_DRIVER: redis
+      REDIS_HOST: redis
+    volumes:
+      - ./:/var/www
+      - storage_data:/var/www/storage
+    depends_on:
+      - db
+      - redis
+
+  web:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+    volumes:
+      - ./:/var/www:ro
+      - storage_data:/var/www/storage
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: crm_v3
+      MYSQL_USER: crm_user
+      MYSQL_PASSWORD: wSyEP6ZZEUxBUiwj5ZeR
+      MYSQL_ROOT_PASSWORD: wSyEP6ZZEUxBUiwj5ZeR
+    volumes:
+      - db_data:/var/lib/mysql
+
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+
+  worker:
+    build: .
+    restart: unless-stopped
+    command: php artisan queue:work --sleep=3 --tries=3
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: crm_v3
+      DB_USERNAME: crm_user
+      DB_PASSWORD: wSyEP6ZZEUxBUiwj5ZeR
+      QUEUE_CONNECTION: redis
+      REDIS_HOST: redis
+    volumes:
+      - ./:/var/www
+      - storage_data:/var/www/storage
+    depends_on:
+      - db
+      - redis
+
+  scheduler:
+    build: .
+    restart: unless-stopped
+    command: sh -c "while true; do php artisan schedule:run --no-interaction; sleep 60; done"
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: crm_v3
+      DB_USERNAME: crm_user
+      DB_PASSWORD: wSyEP6ZZEUxBUiwj5ZeR
+      REDIS_HOST: redis
+    volumes:
+      - ./:/var/www
+      - storage_data:/var/www/storage
+    depends_on:
+      - db
+      - redis
+
+volumes:
+  db_data:
+  storage_data:

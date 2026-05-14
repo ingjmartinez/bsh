@@ -1,0 +1,855 @@
+EVALUACION DEL PROYECTO CRM - VERSION 5.5
+Fecha de revision original: 2026-04-20
+Fecha de actualizacion del documento: 2026-04-27
+Ruta evaluada: D:\crm
+Archivo solicitado: evualuacion-proyecto-5.3.txt
+Contexto de actualizacion: documento reforzado para trabajar con Codex/GPT-5.5 en tareas largas,
+verificables y asistidas por herramientas.
+
+============================================================
+1. RESUMEN EJECUTIVO
+============================================================
+
+El proyecto es un CRM desarrollado en Laravel, con bastante funcionalidad real de negocio:
+ventas, agencias, asistencia, rutas, contabilidad, incentivos, reportes, tecnologia, usuarios,
+roles y permisos. No es un proyecto pequeno: tiene muchas pantallas, integraciones externas,
+procesos programados y tablas de millones de registros.
+
+Lo mejor del proyecto:
+- Ya esta sobre una base moderna: Laravel 12.34.0, PHP 8.3.14, Composer 2.8.12, Livewire 3,
+  Spatie Permission 6, Vite 7 y Tailwind 4 declarados.
+- Tiene autenticacion, rutas protegidas por auth, modelos Eloquent, migraciones, comandos
+  programados, exports Excel/PDF y separacion basica por controladores/modelos/vistas.
+- La base usa modo SQL estricto con ONLY_FULL_GROUP_BY, lo cual ayuda a detectar consultas mal
+  agregadas en vez de esconder errores.
+- Hay indices agregados para dashboards y consultas pesadas recientes.
+
+Lo mas urgente a corregir:
+- Hay secretos y credenciales hardcodeados en codigo y docker-compose.yml. Deben rotarse y moverse
+  a .env/config/services.php inmediatamente.
+- Hay llamadas cURL con verificacion SSL desactivada y algunas integraciones usan HTTP o cookies
+  hardcodeadas.
+- Existen rutas GET que modifican o eliminan datos, por ejemplo delete-*, save-* y generar-token.
+  Esto es peligroso porque un GET debe consultar, no ejecutar procesos destructivos.
+- Muchas tablas productivas estan en MyISAM. MyISAM no da transacciones ni aplica llaves foraneas,
+  y eso deja la integridad de datos demasiado dependiente del codigo.
+- Hay una vista SQL rota/incompatible con ONLY_FULL_GROUP_BY: vw_ventas_por_producto.
+- Hay migraciones pendientes.
+- La suite de pruebas es practicamente de plantilla y actualmente falla.
+- Frontend no es reproducible: package.json existe, pero no hay package-lock/yarn.lock/pnpm-lock y
+  npm ls muestra dependencias no instaladas.
+- Hay dumps SQL con datos sensibles versionados en Git.
+
+Mi recomendacion general:
+Antes de actualizar framework o versiones mayores, primero hay que asegurar secretos, rutas,
+base de datos y pruebas. El proyecto tiene buena base, pero no conviene subir a Laravel 13 o PHP
+8.5 sin pruebas y sin limpiar integraciones externas.
+
+Actualizacion para trabajo con Codex/GPT-5.5:
+Este documento ya no debe usarse solo como una lista de problemas. Debe funcionar como mapa de
+ejecucion. GPT-5.5 es mas util cuando se le entregan tareas con frontera clara, criterio de exito,
+archivos objetivo y comandos de verificacion. Por eso, las mejoras recomendadas deben ejecutarse en
+lotes pequenos:
+- Un lote de seguridad no debe mezclarse con formato Pint ni refactors grandes.
+- Un lote de rutas debe cambiar metodos HTTP, vistas/formularios relacionados, permisos y tests del
+  mismo flujo.
+- Un lote de base de datos debe incluir backup, SQL exacto, validacion en staging, EXPLAIN y plan de
+  rollback.
+- Un lote de arquitectura debe extraer servicios sin cambiar comportamiento visible.
+- Un lote de frontend debe dejar build reproducible y una prueba visual/manual clara.
+
+Regla practica:
+Cada cambio importante debe terminar con evidencia: comando ejecutado, resultado esperado, archivos
+tocados y riesgo residual. Si no se puede verificar, el cambio debe quedar marcado como pendiente de
+staging o pendiente de credenciales.
+
+============================================================
+2. STACK DETECTADO
+============================================================
+
+Resultado de php artisan about:
+- Laravel: 12.34.0
+- PHP: 8.3.14
+- Composer: 2.8.12
+- APP_ENV: local
+- APP_DEBUG: ENABLED
+- Timezone: America/Santo_Domingo
+- Database: mysql
+- Cache: database
+- Queue: database
+- Session: database
+- Mail: smtp
+- Livewire: 3.6.4
+- Spatie Permission: 6.24.1
+- Storage public link: LINKED
+- Config cache: NOT CACHED
+- Routes cache: NOT CACHED
+- Views cache: CACHED
+
+composer.json:
+- php: ^8.2
+- laravel/framework: ^12.0
+- barryvdh/laravel-dompdf: ^3.1
+- livewire/livewire: ^3.6
+- maatwebsite/excel: ^3.1
+- spatie/laravel-permission: ^6.8
+- phpunit/phpunit: ^11.5.3
+- laravel/pint: ^1.24
+- laravel/sail: ^1.41
+
+package.json:
+- vite: ^7.0.7
+- tailwindcss: ^4.0.0
+- @tailwindcss/vite: ^4.0.0
+- axios: ^1.11.0
+- concurrently: ^9.0.1
+- laravel-vite-plugin: ^2.0.0
+
+Observacion:
+El backend esta bastante actualizado. El frontend esta declarado, pero no instalado/reproducible
+en esta copia porque no existe lockfile de npm/pnpm/yarn y npm.cmd ls reporta dependencias faltantes.
+
+============================================================
+3. ESTRUCTURA Y TAMANO DEL CODIGO
+============================================================
+
+Archivos revisados en areas principales app/config/database/resources/routes/tests:
+- 313 archivos .php
+- 6 archivos .sql
+- 4 archivos .js
+- 2 archivos .css
+- 1 archivo .new
+- archivos auxiliares .xlsx, .csv, .sqlite y otros
+
+Controladores mas grandes:
+- app\Http\Controllers\AgenciaController.php: 1504 lineas
+- app\Http\Controllers\IncentivosController.php: 1244 lineas
+- app\Http\Controllers\ReporteController.php: 743 lineas
+- app\Http\Controllers\TareaController.php: 555 lineas
+- app\Http\Controllers\InicioController.php: 521 lineas
+- app\Http\Controllers\ComercialController.php: 478 lineas
+- app\Http\Controllers\TecnologiaSolicitudController.php: 464 lineas
+- app\Http\Controllers\AsistenciaComparativaController.php: 435 lineas
+- app\Http\Controllers\Gerencia\VentaGerencialController.php: 425 lineas
+- app\Http\Controllers\Api.php: 424 lineas
+
+Vistas Blade mas grandes:
+- resources\views\app.blade.php: 2193 lineas
+- resources\views\agencias\index.blade.php: 1525 lineas
+- resources\views\operaciones\reportes\diario.blade.php: 1487 lineas
+- resources\views\gerencia\gerencial.blade.php: 1364 lineas
+- resources\views\incentivos\index.blade.php: 1363 lineas
+- resources\views\comercial\ventas-producto.blade.php: 1232 lineas
+- resources\views\tareas\index.blade.php: 932 lineas
+
+Observacion buena:
+Hay una separacion Laravel reconocible: controladores, modelos, vistas, comandos, servicios,
+exports, imports, mails y notifications.
+
+Observacion mala:
+Muchos controladores y vistas ya son demasiado grandes. Eso aumenta el costo de corregir errores,
+probar cambios y actualizar Laravel. En especial, AgenciaController, IncentivosController,
+app.blade.php y varias vistas tienen demasiadas responsabilidades en un solo archivo.
+
+Que mejorar:
+- Extraer logica de negocio a Services/Actions.
+- Extraer consultas grandes a Query Objects o clases de repositorio.
+- Usar Form Requests para validaciones grandes.
+- Usar Policies/Gates para autorizacion por modulo.
+- Extraer JavaScript grande de Blade hacia resources/js y compilar con Vite.
+- Convertir pantallas grandes en componentes Blade/Livewire por secciones.
+
+============================================================
+4. RUTAS, AUTENTICACION Y AUTORIZACION
+============================================================
+
+Resultado:
+- Laravel reporta 353 rutas.
+- La mayor parte del sistema esta dentro de Route::middleware('auth').
+- Usuarios, roles y permisos usan middleware de Spatie Permission.
+- Existe middleware role:superadmin para superadmin/sesiones.
+
+Lo que esta bien:
+- El grupo auth protege el sistema principal.
+- Se usa Spatie Permission, que es una buena herramienta para RBAC.
+- Los CRUD principales usan metodos HTTP correctos en varias zonas: POST, PUT/PATCH, DELETE.
+
+Lo que esta mal:
+- Hay rutas GET que ejecutan acciones de escritura o eliminacion:
+  - delete-asistencias-lotobet
+  - delete-faltantes-lotobet
+  - delete-premios-lotobet
+  - delete-recargas-lotobet
+  - delete-ventas-usuarios-lotobet
+  - delete-ventas-producto-lotobet
+  - save-asistencias-lotobet
+  - save-faltantes-lotobet
+  - save-premios-lotobet
+  - save-recargas-lotobet
+  - save-ventas-usuarios-lotobet
+  - save-ventas-producto-lotobet
+  - equivalentes Lotonet y otros procesos.
+- generar-token, iniciar-session y login-flash estan como GET.
+- Muchas rutas de negocio solo tienen auth, pero no permisos por modulo.
+- routes/api.php existe pero no se esta usando realmente; las rutas tipo api-cuentas viven en web.php
+  y usan sesion web.
+
+Por que esta mal:
+- Un navegador, bot, prefetch, link compartido o imagen embebida podria disparar un GET.
+- GET no tiene la misma intencion semantica de seguridad que POST/DELETE.
+- Con solo auth, cualquier usuario autenticado podria tener acceso a modulos que quizas no le
+  corresponden, salvo donde el controlador filtre manualmente.
+
+Que mejorar:
+- Cambiar delete-* a DELETE.
+- Cambiar save-* y generar-token a POST.
+- Nombrar todas las rutas criticas.
+- Aplicar middleware permission por modulo: ventas.sync, ventas.delete, agencias.manage,
+  contabilidad.manage, incentivos.manage, tokens.generate, etc.
+- Agregar confirmaciones de UI, logs de auditoria y rate limiting.
+- Separar rutas API reales en routes/api.php con auth:sanctum o token interno si se exponen fuera.
+
+============================================================
+5. SEGURIDAD
+============================================================
+
+Hallazgos criticos:
+- docker-compose.yml contiene credenciales de base de datos hardcodeadas.
+- app\Http\Controllers\TokenController.php contiene endpoints, headers, usuario/password/cookie
+  hardcodeados.
+- app\Http\Controllers\Api.php contiene tokens de API externa hardcodeados.
+- app\Http\Controllers\AsistenciaController.php y otros controladores tienen tokens/cookies/credenciales
+  externas hardcodeadas.
+- Varias llamadas cURL usan:
+  - CURLOPT_SSL_VERIFYHOST => 0
+  - CURLOPT_SSL_VERIFYPEER => 0
+- Hay dumps SQL versionados con datos personales y tokens.
+
+Por que esta mal:
+- Si el repositorio se comparte o se sube a un remoto, las credenciales quedan expuestas.
+- Desactivar verificacion SSL permite ataques man-in-the-middle.
+- Los dumps SQL contienen informacion sensible de empleados/clientes/agencias y no deben vivir en Git
+  sin sanitizar.
+
+Que esta bien:
+- .env esta en .gitignore.
+- AuthController usa Hash para password y Auth::attempt.
+- Hay rate limit manual para reset de contrasena por correo.
+- Hay CSRF en formularios POST por el middleware web.
+
+Que mejorar de inmediato:
+1. Rotar todas las credenciales que aparecen en codigo, dumps o docker-compose.yml.
+2. Mover secretos a .env y config/services.php.
+3. Usar Laravel HTTP Client en vez de cURL crudo donde sea posible.
+4. Activar verificacion SSL.
+5. Eliminar cookies hardcodeadas y manejar login/token con expiracion real.
+6. Sacar dumps sensibles del repositorio y reescribir historia si ya fueron compartidos.
+7. Agregar .gitignore para database/*.sql, database/*.xlsx, database/*.csv si son datos reales.
+8. Usar variables de entorno en Docker con env_file o secretos del orquestador.
+
+============================================================
+6. BASE DE DATOS
+============================================================
+
+Base detectada: crm
+SQL_MODE:
+ONLY_FULL_GROUP_BY, STRICT_TRANS_TABLES, NO_ZERO_IN_DATE, NO_ZERO_DATE,
+ERROR_FOR_DIVISION_BY_ZERO, NO_ENGINE_SUBSTITUTION
+
+Tablas grandes detectadas por information_schema:
+- ventas_producto_net: aprox. 63,289,635 filas, 4217.00 MB
+- vt_usuarios_net: aprox. 50,877,573 filas, 3988.02 MB
+- ventas_producto_bet: aprox. 16,935,834 filas, 1546.98 MB
+- vt_usuarios_bet: aprox. 13,236,094 filas, 1306.00 MB
+- premios_bet: aprox. 11,230,924 filas, 802.00 MB
+- premios_net: aprox. 9,725,064 filas, 604.00 MB
+- pagos_misma_empresa_net: aprox. 5,232,846 filas, 371.33 MB
+- recargas_net: aprox. 3,541,808 filas, 301.81 MB
+- paquetico_net: aprox. 2,753,689 filas, 280.80 MB
+- asistencias_net: aprox. 1,420,433 filas, 219.73 MB
+
+Tablas MyISAM detectadas:
+- bancos_operaciones
+- contabilidad_electricidad
+- contabilidad_electricidad_averia_dia
+- contabilidad_electricidad_seguimiento_dia
+- coordinador
+- coordinador_operador
+- coordinador_operador_agencia
+- cuentas_contables
+- departamentos
+- departamentos_crm
+- detalle_cuentas
+- distribucion_incentivos
+- distribucion_porcentajes
+- empleados
+- estacionalidad
+- incentivo_jobs
+- incentivo_resultados
+- incentivo_temporal
+- incentivo_temporal_c
+- model_has_permissions
+- model_has_roles
+- niveles
+- notifications
+- operador_ruta
+- operador_ruta_agencia
+- pagos_aotra_empresa_net
+- pagos_misma_empresa_net
+- pagos_porotra_empresa_net
+- permissions
+- plan_agencia
+- porcentaje_administrativo
+- procesos_departamento
+- reporte_diario_rutas
+- role_has_permissions
+- roles
+- ruta_agencia
+- rutas
+- tarea_comentarios
+- tareas
+- tecnologia_solicitudes
+- ventas_flash_bet
+
+Tablas sin PRIMARY KEY detectadas:
+- departamentos
+- distribucion_incentivos
+- incentivo_temporal
+- tokens
+- ventas_producto_net
+
+Llaves foraneas reales detectadas en information_schema:
+- solicitud_educacion: 1
+- solicitud_empleos: 1
+- solicitud_familiares: 1
+- solicitud_referencias_laborales: 1
+- solicitud_referencias_personales: 1
+
+Observacion importante:
+Aunque las migraciones declaran varias llaves foraneas, muchas tablas terminaron en MyISAM. MyISAM no
+aplica llaves foraneas y no soporta transacciones como InnoDB. Por eso information_schema solo muestra
+5 tablas con FKs reales. Esto es uno de los mayores riesgos del sistema.
+
+Vista rota:
+- vw_ventas_por_producto falla con ONLY_FULL_GROUP_BY.
+- El error ocurre porque selecciona v.monto como total_ventas sin agregarlo ni incluirlo en GROUP BY.
+- Tambien aparece sum(c.tipo), que conceptualmente parece incorrecto porque tipo normalmente es texto
+  o categoria, no un campo numerico para sumar.
+
+Por que esto importa:
+- php artisan db:show --counts --views falla al intentar contar esa vista.
+- Los dashboards o reportes que dependan de esa vista pueden fallar en servidores con SQL estricto.
+- Si se apaga ONLY_FULL_GROUP_BY para "arreglarlo", se esconderia el problema y se obtendrian resultados
+  ambiguos.
+
+Que mejorar en DB:
+1. Antes de tocar estructura: backup completo y prueba en staging.
+2. Convertir tablas MyISAM a InnoDB gradualmente:
+   ALTER TABLE nombre_tabla ENGINE=InnoDB;
+3. Agregar primary keys a tablas sin PK, empezando por ventas_producto_net y tokens.
+4. Revisar tipos de columnas de relacion: agencia_id, terminal, producto_id, fecha, cedula.
+5. Normalizar criterios de terminal/agencia para no depender tanto de TRIM/CAST en joins.
+6. Agregar indices compuestos segun reportes reales:
+   - fecha, agencia_id
+   - fecha, producto_id
+   - agencia_id, fecha
+   - producto_id, fecha
+   - cedula, fecha
+7. Corregir vw_ventas_por_producto:
+   - usar SUM(v.monto) AS total_ventas
+   - agrupar por producto_id, descripcion, tipo
+   - eliminar sum(c.tipo)
+8. Evaluar particionamiento o tablas resumen mensuales para ventas/premios/recargas.
+9. Crear jobs de agregacion diaria para dashboards en vez de recalcular sobre 50M+ filas.
+10. Mantener ONLY_FULL_GROUP_BY activado.
+
+============================================================
+7. MIGRACIONES
+============================================================
+
+Migraciones pendientes:
+- 2026_04_17_120000_add_indexes_for_venta_gerencial_queries
+- 2026_04_20_000001_make_agencia_nullable_on_agencias_table
+
+Lo que esta bien:
+- Existen migraciones recientes y varias incluyen indices.
+- Se ve intencion de evolucionar la base mediante migraciones, no solo SQL manual.
+
+Lo que esta mal:
+- El estado real de la base no esta completamente alineado con migraciones.
+- Hay dumps SQL versionados, lo cual sugiere que parte del esquema/datos todavia se maneja manualmente.
+- Hay mezcla de motores MyISAM e InnoDB.
+
+Que mejorar:
+- Aplicar migraciones pendientes en staging primero.
+- Documentar cada migracion con rollback seguro.
+- Evitar migraciones que hagan cambios pesados sin estrategia online en tablas grandes.
+- Para tablas gigantes, usar pt-online-schema-change, gh-ost o ventanas de mantenimiento.
+- No depender de dumps SQL para versionar estructura; usar migraciones.
+
+============================================================
+8. TESTS Y CALIDAD
+============================================================
+
+Resultado php artisan test:
+- PASS: Tests\Unit\ExampleTest
+- FAIL: Tests\Feature\ExampleTest
+- Falla porque GET / devuelve 302 y el test espera 200.
+- Esto es coherente con auth: la raiz redirige al login cuando no hay usuario autenticado.
+
+Resultado vendor\bin\pint --test:
+- 205 archivos revisados.
+- 174 archivos con problemas de estilo.
+- Ejemplos: line_ending, single_quote, concat_space, ordered_imports, method_chaining_indentation,
+  class_attributes_separation, etc.
+
+Resultado composer validate --strict:
+- composer.json es valido.
+
+Observacion:
+La suite de pruebas no protege el negocio. Es casi una plantilla inicial. Pint muestra deuda de estilo,
+pero eso no es tan grave como la falta de pruebas para procesos criticos.
+
+Que mejorar:
+1. Corregir ExampleTest:
+   - opcion A: esperar redirect a login para usuario no autenticado.
+   - opcion B: crear usuario con actingAs y esperar 200.
+2. Agregar pruebas Feature por modulos criticos:
+   - login/logout
+   - permisos usuarios/roles
+   - agencias CRUD/import/export
+   - reportes principales
+   - endpoints save/delete despues de cambiar metodos HTTP
+   - auto-proceso programado
+3. Agregar pruebas de DB para consultas clave usando una base de testing.
+4. Falsificar APIs externas con Http::fake cuando se migre de cURL a Laravel HTTP Client.
+5. Ejecutar Pint en una rama separada para no mezclar formato con cambios funcionales.
+6. Agregar CI: composer validate, pint --test, php artisan test, npm build.
+
+============================================================
+9. FRONTEND
+============================================================
+
+Estado detectado:
+- Hay muchos assets copiados en public/libs.
+- Hay template Velzon dentro del proyecto.
+- resources/js/app.js es minimo.
+- Varias vistas Blade contienen JavaScript grande.
+- No hay package-lock.json, yarn.lock ni pnpm-lock.yaml.
+- npm.cmd ls --depth=0 reporta dependencias faltantes.
+
+Lo que esta bien:
+- El proyecto declara Vite y Tailwind modernos.
+- Ya hay assets estaticos que explican por que la UI puede funcionar aunque node_modules no este instalado.
+- Hay uso de DataTables, SweetAlert, ApexCharts y librerias utiles para dashboards.
+
+Lo que esta mal:
+- Sin lockfile no hay build reproducible.
+- Copiar muchas librerias en public/libs aumenta tamano y deuda de mantenimiento.
+- JS grande dentro de Blade dificulta pruebas y reutilizacion.
+- Hay console.log en vistas y JS de ejemplo.
+- Hay salidas HTML sin escapar con {!! ... !!} en mensajes de error:
+  - resources\views\usuarios\index.blade.php
+  - resources\views\agencias\index.blade.php
+
+Que mejorar:
+1. Instalar dependencias y crear lockfile:
+   npm install
+2. Versionar package-lock.json.
+3. Definir Node LTS en .nvmrc o .node-version.
+4. Mover JS grande de Blade a resources/js/modules.
+5. Importar solo librerias usadas por Vite cuando sea viable.
+6. Eliminar mobile-optimization-examples.js si es solo ejemplo.
+7. Revisar `{!! ... !!}` y reemplazarlo por render seguro o sanitizado cuando sea posible.
+
+============================================================
+10. DOCKER Y DESPLIEGUE
+============================================================
+
+docker-compose.yml:
+- app, web, db, redis, phpmyadmin, worker, scheduler.
+- Usa mysql:8.0 y redis:alpine.
+- phpmyadmin expone puerto 8080.
+- variables APP_ENV=production y APP_DEBUG=false en compose.
+- credenciales hardcodeadas en varios servicios.
+
+dockerfile:
+- php:8.3-fpm
+- instala extensiones necesarias.
+- composer install --no-dev --optimize-autoloader.
+- no ejecuta npm build.
+- no ejecuta config:cache/routes:cache/views:cache.
+
+docker/nginx/default.conf:
+- root /var/www/public.
+- fastcgi_pass pruebacrm-crm-5dx2tv:9000.
+
+Lo que esta bien:
+- Existe base para contenedores.
+- Hay worker y scheduler separados, que es buena practica.
+- Se usa Redis en docker para queue/cache en produccion.
+
+Lo que esta mal:
+- fastcgi_pass apunta a un nombre de contenedor especifico, no al servicio app:9000.
+- Las credenciales viven en docker-compose.yml.
+- phpmyadmin expuesto sin restricciones es riesgo.
+- El bind mount ./:/var/www en produccion puede sobreescribir lo que se construyo en la imagen.
+- No hay healthchecks.
+- No hay npm build ni copia clara de public/build.
+- No se cachea config/rutas/vistas en la imagen.
+
+Que mejorar:
+- Cambiar fastcgi_pass a app:9000.
+- Usar env_file: .env.production o secretos del servidor.
+- Proteger o quitar phpmyadmin en produccion.
+- Separar docker-compose.dev.yml y docker-compose.prod.yml.
+- En build de produccion:
+  - composer install --no-dev --optimize-autoloader
+  - npm ci
+  - npm run build
+  - php artisan config:cache
+  - php artisan route:cache si no hay closures en rutas
+  - php artisan view:cache
+- Agregar healthchecks para app/db/redis.
+
+Nota:
+Actualmente hay closures en routes/web.php. Para usar route:cache hay que reemplazar Route::get(..., fn()
+=> view(...)) por Route::view(...).
+
+============================================================
+11. PROCESOS PROGRAMADOS Y JOBS
+============================================================
+
+Scheduler:
+- php artisan schedule:list muestra:
+  * * * * * php artisan auto-proceso:run-due
+
+Comandos detectados:
+- auto-proceso:run-due
+- incentivo:process-jobs
+- incentivo:run
+
+Lo que esta bien:
+- Existe un scheduler para automatizar procesos.
+- AutoProcesoService centraliza varios pasos por Lotobet/Lotonet.
+- Hay envio de correo resumen y registro en logs.
+
+Lo que esta mal:
+- AutoProcesoService llama metodos de controladores directamente por reflection.
+- Los controladores estan haciendo de servicios, clientes HTTP, validadores y persistencia al mismo tiempo.
+- Si un proceso externo se cae, el acoplamiento hace mas dificil reintentar por modulo.
+
+Que mejorar:
+- Convertir cada integracion externa en Service dedicado:
+  - LotobetClient
+  - LotonetClient
+  - ContabilidadClient
+- Convertir cada importacion en Job:
+  - SyncAsistenciasJob
+  - SyncFaltantesJob
+  - SyncPremiosJob
+  - SyncRecargasJob
+  - SyncVentasProductoJob
+- Usar colas y reintentos con backoff.
+- Registrar cada ejecucion en tabla de auditoria de procesos.
+- Permitir reejecucion por fecha/modulo/sistema con permisos.
+
+============================================================
+12. DATOS SENSIBLES EN REPOSITORIO
+============================================================
+
+Archivos SQL versionados detectados:
+- database/crm_limpia.sql
+- database/crm (1).sql
+- database/crm.sql
+- database/vt_usuario2.sql
+- database/registro_empleados.sql
+- database/CalculoIncentivo.sql
+
+Tambien hay archivos de template/datos:
+- database/Datatables Velzon - Admin Dashboard Template.xlsx
+- database/Datatables Velzon - Admin Dashboard Template.csv
+
+Por que esta mal:
+- Los dumps contienen datos personales y posiblemente tokens.
+- Versionar dumps grandes aumenta el peso del repo.
+- Si se suben a GitHub/GitLab, aunque sea privado, se multiplica el riesgo.
+
+Que mejorar:
+- Mover dumps fuera del repo.
+- Mantener solo migrations y seeders anonimizados.
+- Si se necesita dataset de prueba, crear factories y seeders con datos falsos.
+- Agregar reglas .gitignore para dumps y archivos de datos reales.
+- Si el repositorio fue compartido, rotar secretos y limpiar historial con una herramienta como
+  git filter-repo o BFG Repo-Cleaner.
+
+============================================================
+13. OBSERVACIONES ESPECIFICAS DE ARCHIVOS
+============================================================
+
+resources/views/agencias/index.blade.php:
+- Es la pestana activa del IDE.
+- Tiene 1525 lineas.
+- Incluye logica JavaScript y render de errores con HTML sin escapar.
+- Recomendacion: dividir en componentes, mover JS a resources/js/modules/agencias.js y revisar render
+  seguro de mensajes.
+
+routes/web.php:
+- Tiene todo el sistema principal en un solo archivo.
+- Mezcla rutas de modulos, API internas, vistas por closure, procesos externos y CRUD.
+- Recomendacion: dividir por archivos:
+  - routes/modules/agencias.php
+  - routes/modules/ventas.php
+  - routes/modules/contabilidad.php
+  - routes/modules/operaciones.php
+  - routes/modules/incentivos.php
+  y cargarlos desde bootstrap/app.php o un RouteServiceProvider propio.
+
+app/Http/Controllers/TokenController.php:
+- Contiene credenciales, URLs y headers hardcodeados.
+- Desactiva verificacion SSL en varias llamadas.
+- Recomendacion: extraer a clients/services, usar config/services.php, variables de entorno y Laravel
+  HTTP Client.
+
+app/Http/Controllers/Api.php:
+- Contiene tokens de API externa en URL.
+- Recomendacion: mover token y base URL a config/services.php.
+
+database/migrations:
+- Hay esfuerzo de normalizacion e indices recientes.
+- Recomendacion: revisar que lo declarado por migraciones exista en la base real y que las tablas usen
+  InnoDB para aplicar constraints.
+
+docker-compose.yml:
+- Tiene credenciales hardcodeadas.
+- Recomendacion: env_file y secretos; no exponer phpmyadmin en produccion.
+
+docker/nginx/default.conf:
+- fastcgi_pass usa nombre especifico de contenedor.
+- Recomendacion: app:9000.
+
+============================================================
+14. PLAN DE MEJORA RECOMENDADO
+============================================================
+
+Objetivo del plan:
+Actualizar el CRM sin romper operacion, usando GPT-5.5/Codex para ejecutar cambios por paquetes
+pequenos, revisar impacto, correr comandos y dejar evidencia. La prioridad no es "subir versiones"
+primero; la prioridad es convertir el proyecto en una base actualizable.
+
+Fase 0 - Congelar riesgos criticos:
+1. Inventariar todos los secretos detectados en codigo, docker-compose.yml, dumps y URLs.
+2. Rotar credenciales de DB, APIs externas, cookies/tokens y passwords detectados.
+3. Mover secretos a .env, config/services.php y variables de Docker.
+4. Quitar credenciales de docker-compose.yml.
+5. Activar verificacion SSL en integraciones.
+6. Sacar dumps sensibles del repo y bloquear nuevos dumps por .gitignore.
+7. Entregable: PR o commit solo de seguridad, sin refactors de estilo.
+8. Verificacion: busquedas rg de patrones sensibles, php artisan config:clear/about y prueba manual
+   de integraciones con credenciales por entorno.
+
+Fase 1 - Rutas y permisos:
+1. Listar rutas GET que escriben, eliminan o disparan procesos.
+2. Convertir delete-* a DELETE.
+3. Convertir save-*, generar-token e iniciar procesos a POST.
+4. Ajustar formularios, botones, fetch/AJAX y CSRF.
+5. Agregar permisos Spatie por modulo y accion:
+   ventas.sync, ventas.delete, agencias.manage, contabilidad.manage, incentivos.manage,
+   tecnologia.manage, tokens.generate, procesos.run.
+6. Agregar logs de auditoria para acciones destructivas o sincronizaciones externas.
+7. Entregable: rutas semanticas, permisos aplicados y pruebas Feature minimas.
+8. Verificacion: php artisan route:list, php artisan test --filter de rutas/permisos y prueba manual
+   de un usuario sin permiso.
+
+Fase 2 - Base de datos operable:
+1. Hacer backup completo y restaurarlo en staging.
+2. Corregir vw_ventas_por_producto manteniendo ONLY_FULL_GROUP_BY activado.
+3. Aplicar migraciones pendientes en staging.
+4. Medir impacto de cada cambio con EXPLAIN y tiempos reales.
+5. Convertir MyISAM a InnoDB por grupos pequenos, empezando por tablas menos criticas.
+6. Agregar PKs faltantes, empezando por tokens y tablas operativas; ventas_producto_net requiere
+   estrategia especial por volumen.
+7. Crear tablas resumen para dashboards sobre ventas, premios, recargas y usuarios.
+8. Entregable: script SQL/migraciones revisadas, plan de rollback y reporte de performance.
+9. Verificacion: php artisan migrate:status, php artisan db:show --views, consultas EXPLAIN y
+   comparacion de totales antes/despues.
+
+Fase 3 - Pruebas automaticas minimas:
+1. Corregir ExampleTest para que refleje el redirect real al login o autentique un usuario.
+2. Crear pruebas de login/logout.
+3. Crear pruebas de permisos para al menos un modulo critico.
+4. Crear pruebas de rutas POST/DELETE corregidas.
+5. Fakear integraciones externas cuando se migren a Laravel HTTP Client.
+6. Agregar CI con composer validate, pint --test, php artisan test y npm build.
+7. Entregable: suite pequena, estable y enfocada en riesgo.
+8. Verificacion: salida limpia de los comandos de CI.
+
+Fase 4 - Arquitectura sin cambio funcional:
+1. Extraer Services para clientes externos:
+   LotobetClient, LotonetClient, ContabilidadClient.
+2. Extraer Jobs para sincronizaciones:
+   SyncAsistenciasJob, SyncFaltantesJob, SyncPremiosJob, SyncRecargasJob, SyncVentasProductoJob.
+3. Extraer Form Requests en controladores grandes.
+4. Extraer Policies/Gates donde hoy hay validacion manual o solo auth.
+5. Reducir controladores grandes por modulo, un flujo a la vez.
+6. Entregable: mismo comportamiento visible con dependencias mas claras.
+7. Verificacion: pruebas existentes, prueba manual del flujo migrado y logs de proceso.
+
+Fase 5 - Frontend reproducible:
+1. Instalar dependencias y generar package-lock.json.
+2. Definir Node LTS en .nvmrc o .node-version.
+3. Mover JavaScript grande de Blade a resources/js/modules por pantalla.
+4. Reemplazar console.log y codigo de ejemplo por manejo formal de estados/errores.
+5. Revisar render HTML sin escapar con `{!! ... !!}`.
+6. Compilar con Vite en Docker/CI.
+7. Entregable: npm install/npm ci reproducible y npm run build funcionando.
+8. Verificacion: npm ls --depth=0, npm run build y revision visual de pantallas tocadas.
+
+Fase 6 - Docker y despliegue:
+1. Separar docker-compose.dev.yml y docker-compose.prod.yml.
+2. Cambiar fastcgi_pass a app:9000.
+3. Quitar bind mount del codigo en produccion.
+4. Agregar healthchecks para app, db y redis.
+5. Ejecutar composer install, npm ci, npm run build y cacheos artisan durante build.
+6. Proteger o eliminar phpmyadmin en produccion.
+7. Entregable: imagen de aplicacion reproducible.
+8. Verificacion: docker compose config, arranque limpio, healthchecks y prueba de login.
+
+Fase 7 - Actualizacion de stack:
+1. Mantener Laravel 12 mientras se corrigen seguridad, rutas y pruebas.
+2. Subir PHP de 8.3 a 8.4 primero, si pruebas y extensiones pasan.
+3. Evaluar PHP 8.5 despues de validar paquetes, extensiones y ambiente de produccion.
+4. Evaluar Laravel 13 cuando:
+   - no haya tests fallando
+   - las rutas destructivas esten corregidas
+   - secretos esten fuera del codigo
+   - DB no dependa de vistas rotas
+   - los procesos automaticos tengan logs y reintentos
+5. Usar Node 24 LTS para build frontend cuando el lockfile exista.
+6. Migrar MySQL 8.0 a MySQL 8.4 LTS cuando la base este respaldada y probada.
+
+Como pedirle trabajo a Codex/GPT-5.5 en este proyecto:
+- "Corrige solo las rutas GET destructivas del modulo X, actualiza la vista que las llama y agrega
+  pruebas Feature."
+- "Extrae solo la integracion Lotobet de TokenController a un Service usando config/services.php,
+  sin cambiar la respuesta publica."
+- "Crea una migracion segura para corregir la vista vw_ventas_por_producto y agrega una consulta de
+  verificacion de totales."
+- "Mueve solo el JavaScript de resources/views/agencias/index.blade.php a resources/js/modules,
+  manteniendo comportamiento y ejecutando npm run build."
+
+Esa forma de trabajo aprovecha mejor el modelo: menos ambiguedad, menos mezcla de cambios y mas
+evidencia al final de cada lote.
+
+============================================================
+15. STACK RECOMENDADO 2026
+============================================================
+
+Recomendacion conservadora para tu proyecto:
+- PHP: 8.4 en produccion a corto plazo; 8.5 despues de pruebas.
+- Laravel: mantener 12 por ahora; planificar 13 despues de limpiar seguridad y tests.
+- MySQL: 8.4 LTS para produccion estable.
+- Redis: usarlo para cache, queue y locks en produccion.
+- Node: 24 LTS para build.
+- Frontend: Vite + Tailwind 4, pero con package-lock.json versionado.
+- Testing: PHPUnit 11 mientras estes en Laravel 12; PHPUnit 12 al subir a Laravel 13.
+- Calidad: Laravel Pint obligatorio en CI.
+- Analisis estatico opcional recomendado: Larastan/PHPStan.
+- Deploy: Docker con imagen inmutable, sin bind mount del codigo en produccion.
+
+Por que no recomiendo saltar directo a Laravel 13 hoy:
+- La app tiene rutas GET destructivas.
+- Hay secretos hardcodeados.
+- Hay tests fallando y casi sin cobertura.
+- Hay vista SQL rota con ONLY_FULL_GROUP_BY.
+- Hay tablas MyISAM y sin PK.
+- Hay controladores/vistas muy grandes.
+
+Actualizar framework sin resolver eso puede convertir problemas existentes en fallas mas dificiles
+de depurar.
+
+============================================================
+16. FUENTES OFICIALES CONSULTADAS PARA STACK
+============================================================
+
+- Laravel Release Notes y politica de soporte:
+  https://laravel.com/docs/releases
+
+- Laravel 13 Upgrade Guide:
+  https://laravel.com/docs/13.x/upgrade
+
+- Laravel configuracion y config:cache:
+  https://laravel.com/docs/12.x/configuration
+
+- PHP Supported Versions:
+  https://www.php.net/supported-versions.php
+
+- Node.js Releases:
+  https://nodejs.org/en/about/releases/
+
+- MySQL Releases, Innovation y LTS:
+  https://dev.mysql.com/doc/mysql/en/mysql-releases.html
+
+- OpenAI GPT-5.5, capacidades y disponibilidad:
+  https://openai.com/index/introducing-gpt-5-5/
+
+- OpenAI GPT-5.5 System Card:
+  https://openai.com/index/gpt-5-5-system-card/
+
+Nota sobre GPT-5.5:
+El modelo mejora especialmente en tareas largas con herramientas: lectura de repos, depuracion,
+refactors, navegacion de contexto, uso de terminal, validacion de cambios y trabajo por etapas.
+Por eso este documento fue ajustado para que cada recomendacion pueda convertirse en una tarea de
+Codex con frontera, entregable y verificacion.
+
+============================================================
+17. COMANDOS EJECUTADOS
+============================================================
+
+- git status --short
+- rg --files
+- php artisan about
+- php artisan route:list --except-vendor
+- php artisan migrate:status
+- composer show --direct
+- php artisan test
+- php artisan db:show --counts --views
+- php artisan db:show --views
+- Consultas a information_schema via bootstrap Laravel/PHP
+- vendor\bin\pint --test
+- composer validate --strict
+- php artisan schedule:list
+- npm.cmd ls --depth=0
+- busquedas rg para DB::, rutas, secretos, console.log, {!! !!}
+- inspeccion de docker-compose.yml, dockerfile, nginx, controllers y routes
+
+============================================================
+18. DIAGNOSTICO FINAL
+============================================================
+
+El proyecto esta vivo y tiene una base tecnica moderna, pero crecio rapido y ahora necesita una ronda
+seria de endurecimiento. No lo veo como un proyecto malo; lo veo como un sistema de negocio que ya
+resuelve problemas reales, pero que arrastra deuda normal de crecimiento: integraciones directas,
+controladores grandes, SQL pesado, datos sensibles en repo y poca cobertura.
+
+Prioridad real:
+1. Seguridad de secretos y rutas.
+2. Base de datos: InnoDB, PK, FKs, vista rota, indices y tablas resumen.
+3. Pruebas automaticas.
+4. Separacion de servicios/jobs.
+5. Frontend reproducible.
+6. Luego si: actualizar Laravel/PHP/MySQL con confianza.
+
+Conclusion actualizada:
+El proyecto no necesita una reconstruccion total antes de avanzar; necesita una actualizacion
+ordenada. La mejor ruta es endurecer primero lo que puede exponer datos o romper operacion, despues
+crear pruebas minimas, y luego modernizar arquitectura por modulo. Con GPT-5.5/Codex conviene trabajar
+en cambios pequenos y verificables, no en refactors masivos. Si se sigue ese orden, actualizar el
+stack deja de ser una apuesta y se convierte en un proceso controlado.
+
+Primeros 5 trabajos recomendados para el siguiente ciclo:
+1. Sacar secretos de TokenController, Api.php, AsistenciaController y docker-compose.yml.
+2. Convertir las rutas GET destructivas de un solo modulo a POST/DELETE con permisos y pruebas.
+3. Corregir vw_ventas_por_producto y validar totales en staging.
+4. Arreglar ExampleTest y agregar una prueba real de login/permisos.
+5. Generar package-lock.json y confirmar que npm run build funciona.

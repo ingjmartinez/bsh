@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan *)",
+      "Bash(php -l resources/views/servicios-generales/requerimientos.blade.php)",
+      "Bash(php -l app/Http/Controllers/ServicioGeneralRequerimientoController.php)",
+      "Bash(php -l app/Models/ServicioGeneralRequerimiento.php)"
+    ]
+  }
+}
