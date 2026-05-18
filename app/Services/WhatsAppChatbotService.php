@@ -15,18 +15,23 @@ class WhatsAppChatbotService
 
     private const MENU_MESSAGE = "Hola como estas soy el chat bot y estoy para servirte.\n\nPor favor responde solo numericamente:\n\n1- consultar el horario de servicio\n2- consultar los servicios\n3- Pagar ticket\n4- Anular ticket";
 
-    public function handleIncoming(string $phone, string $message): array
+    public function handleIncoming(string $phone, string $message, ?string $account = null): array
     {
         $normalizedPhone = $this->normalizePhone($phone);
+        $normalizedAccount = $this->normalizeAccount($account);
         $message = trim($message);
 
         Log::debug('WhatsApp chatbot inicio', [
             'phone' => $normalizedPhone,
+            'account' => $normalizedAccount,
             'message' => $message,
         ]);
 
         $session = ChatbotSession::firstOrCreate(
-            ['phone' => $normalizedPhone],
+            [
+                'account' => $normalizedAccount,
+                'phone' => $normalizedPhone,
+            ],
             [
                 'step' => self::STEP_INICIO,
                 'context' => [],
@@ -37,6 +42,7 @@ class WhatsAppChatbotService
         if ($this->isExpired($session)) {
             Log::debug('WhatsApp chatbot sesion expirada', [
                 'phone' => $normalizedPhone,
+                'account' => $normalizedAccount,
                 'last_interaction_at' => $session->last_interaction_at,
             ]);
 
@@ -54,6 +60,7 @@ class WhatsAppChatbotService
 
         Log::debug('WhatsApp chatbot respuesta', [
             'phone' => $normalizedPhone,
+            'account' => $normalizedAccount,
             'from_step' => $currentStep,
             'to_step' => $session->step,
             'message_count' => $session->message_count,
@@ -161,6 +168,13 @@ class WhatsAppChatbotService
     private function normalizePhone(string $phone): string
     {
         return preg_replace('/\D+/', '', $phone) ?? '';
+    }
+
+    private function normalizeAccount(?string $account): string
+    {
+        $account = trim((string) $account);
+
+        return $account !== '' ? $account : 'default';
     }
 
     private function isExpired(ChatbotSession $session): bool
