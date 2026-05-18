@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (!Schema::hasTable('auto_proceso_configs')) {
+            return;
+        }
+
         Schema::table('auto_proceso_configs', function (Blueprint $table) {
             if (!Schema::hasColumn('auto_proceso_configs', 'max_seconds')) {
                 $table->unsignedSmallInteger('max_seconds')
@@ -20,6 +24,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (!Schema::hasTable('auto_proceso_configs')) {
+            return;
+        }
+
         Schema::table('auto_proceso_configs', function (Blueprint $table) {
             if (Schema::hasColumn('auto_proceso_configs', 'max_seconds')) {
                 $table->dropColumn('max_seconds');

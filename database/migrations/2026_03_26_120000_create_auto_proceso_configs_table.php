@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('auto_proceso_configs')) {
+            return;
+        }
+
         Schema::create('auto_proceso_configs', function (Blueprint $table) {
             $table->id();
             $table->string('sistema', 20)->unique();
