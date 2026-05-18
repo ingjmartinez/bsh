@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (!Schema::hasTable('ventas_producto_bet')) {
+            return;
+        }
+
         Schema::table('ventas_producto_bet', function (Blueprint $table) {
             if (!Schema::hasColumn('ventas_producto_bet', 'consorcio_id')) {
                 $table->unsignedBigInteger('consorcio_id')->nullable()->after('id');
@@ -33,6 +37,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (!Schema::hasTable('ventas_producto_bet')) {
+            return;
+        }
+
         Schema::table('ventas_producto_bet', function (Blueprint $table) {
             foreach (['comision_supervisor', 'comision', 'fecha_sorteo', 'descripcion', 'consorcio_id'] as $column) {
                 if (Schema::hasColumn('ventas_producto_bet', $column)) {

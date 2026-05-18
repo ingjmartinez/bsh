@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (!Schema::hasTable('ventas_producto_bet')) {
+            return;
+        }
+
         Schema::table('ventas_producto_bet', function (Blueprint $table) {
             if (!Schema::hasColumn('ventas_producto_bet', 'source_hash')) {
                 $table->char('source_hash', 64)->nullable()->after('sorteo_id');
@@ -18,6 +22,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (!Schema::hasTable('ventas_producto_bet')) {
+            return;
+        }
+
         Schema::table('ventas_producto_bet', function (Blueprint $table) {
             if (Schema::hasColumn('ventas_producto_bet', 'source_hash')) {
                 $table->dropUnique('ventas_producto_bet_source_hash_unique');
