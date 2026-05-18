@@ -13,7 +13,7 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                            <h4 class="mb-sm-0">Grupo Joselito</h4>
+                            <h4 class="mb-sm-0">Business Support Hub</h4>
                             <div class="page-title-right d-flex flex-wrap align-items-center justify-content-end gap-2">
                                 <ol class="breadcrumb m-0">
                                     <li class="breadcrumb-item"><a href="{{ route('inicio.index') }}">Inicio</a></li>
@@ -35,7 +35,12 @@
                             <div class="card-header">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <h5 class="card-title mb-0">Cuentas</h5>
-                                    <div>
+                                    <div class="d-flex flex-wrap align-items-center gap-2">
+                                        <select id="filtroEmpresa" class="form-select form-select-sm" style="width: 180px;">
+                                            <option value="126">Empresa 126</option>
+                                            <option value="100">Empresa 100</option>
+                                            <option value="todos">Todas las empresas</option>
+                                        </select>
                                         <button type="button" class="btn btn-info me-2" id="btnSincronizarCuentas">
                                             Sincronizar
                                         </button>
@@ -52,6 +57,7 @@
                                     <thead>
                                         <tr>
                                             <th>Cuenta</th>
+                                            <th>Empresa</th>
                                             <th>Descripción</th>
                                             <th>Cuenta Control</th>
                                             <th>Tipo</th>
@@ -76,6 +82,7 @@
                                     <thead>
                                         <tr>
                                             <th>Nro. Asiento</th>
+                                            <th>Empresa</th>
                                             <th>Fecha</th>
                                             <th>Referencia</th>
                                             <th>Referencia No.</th>
@@ -142,6 +149,14 @@
                         <input type="text" class="form-control" id="cuenta" placeholder="Cuenta" readonly>
                     </div>
                     <div class="mb-3">
+                        <label for="empresaEntrada" class="form-label">Empresa</label>
+                        <select id="empresaEntrada" class="form-select">
+                            <option value="126">Empresa 126</option>
+                            <option value="100">Empresa 100</option>
+                            <option value="todos">Todas las empresas</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label for="fechaInicio" class="form-label">Fecha inicio</label>
                         <input type="date" class="form-control" id="fechaInicio" value="<?php echo date('Y-m-d'); ?>">
                     </div>
@@ -169,6 +184,13 @@
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="cuentaId">
+                    <div class="mb-3">
+                        <label for="formEmpresa" class="form-label">Empresa</label>
+                        <select id="formEmpresa" class="form-select">
+                            <option value="126">Empresa 126</option>
+                            <option value="100">Empresa 100</option>
+                        </select>
+                    </div>
                     <div class="mb-3">
                         <label for="formCuenta" class="form-label">Cuenta</label>
                         <input type="text" class="form-control" id="formCuenta" placeholder="Cuenta">
@@ -204,11 +226,16 @@
         document.getElementById('btnNuevaCuenta').addEventListener('click', abrirModalNuevaCuenta);
         document.getElementById('btnGuardarCuenta').addEventListener('click', guardarCuenta);
         document.getElementById('btnSincronizarCuentas').addEventListener('click', sincronizarCuentas);
+        document.getElementById('filtroEmpresa').addEventListener('change', cargarCuentas);
 
         cargarCuentas();
 
+        function empresaSeleccionada() {
+            return document.getElementById('filtroEmpresa').value || '126';
+        }
+
         function cargarCuentas() {
-            fetch('/api-cuentas')
+            fetch('/api-cuentas?empresa=' + encodeURIComponent(empresaSeleccionada()))
                 .then(response => response.json())
                 .then(data => {
                     const tableBody = document.querySelector('#tableCuentas tbody');
@@ -218,12 +245,13 @@
                         const row = document.createElement('tr');
                         row.innerHTML = `
                             <td>${item.CUENTA ?? ''}</td>
+                            <td>${item.CompanyID ?? ''}</td>
                             <td>${item.DESCRIPCION ?? ''}</td>
                             <td>${item.CTACONTROL ?? ''}</td>
                             <td>${item.TIPO ?? ''}</td>
                             <td>
-                                <button class="btn btn-primary btn-sm me-1" onclick="verEntradasCuenta('${item.CUENTA}')">Ver Entradas</button>
-                                <button class="btn btn-warning btn-sm me-1" onclick="editarCuenta(${item.id}, '${escapeJs(item.CUENTA)}', '${escapeJs(item.DESCRIPCION)}', '${escapeJs(item.CTACONTROL)}', '${escapeJs(item.TIPO)}')">Editar</button>
+                                <button class="btn btn-primary btn-sm me-1" onclick="verEntradasCuenta('${escapeJs(item.CUENTA)}', '${escapeJs(item.CompanyID)}')">Ver Entradas</button>
+                                <button class="btn btn-warning btn-sm me-1" onclick="editarCuenta(${item.id}, '${escapeJs(item.CompanyID)}', '${escapeJs(item.CUENTA)}', '${escapeJs(item.DESCRIPCION)}', '${escapeJs(item.CTACONTROL)}', '${escapeJs(item.TIPO)}')">Editar</button>
                                 <button class="btn btn-danger btn-sm" onclick="eliminarCuenta(${item.id})">Eliminar</button>
                             </td>
                         `;
@@ -238,7 +266,7 @@
                         responsive: true,
                         scrollX: true,
                         columnDefs: [
-                            { targets: [2, 3], visible: $(window).width() > 768 }
+                            { targets: [3, 4], visible: $(window).width() > 768 }
                         ],
                         dom: 'Bfrtip',
                         buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
@@ -253,6 +281,7 @@
         function abrirModalNuevaCuenta() {
             document.getElementById('cuentaModalLabel').innerText = 'Nueva cuenta';
             document.getElementById('cuentaId').value = '';
+            document.getElementById('formEmpresa').value = empresaSeleccionada() === 'todos' ? '126' : empresaSeleccionada();
             document.getElementById('formCuenta').value = '';
             document.getElementById('formDescripcion').value = '';
             document.getElementById('formCtaControl').value = '';
@@ -260,9 +289,10 @@
             cuentaModal.show();
         }
 
-        function editarCuenta(id, cuenta, descripcion, ctacontrol, tipo) {
+        function editarCuenta(id, empresa, cuenta, descripcion, ctacontrol, tipo) {
             document.getElementById('cuentaModalLabel').innerText = 'Editar cuenta';
             document.getElementById('cuentaId').value = id;
+            document.getElementById('formEmpresa').value = empresa || '126';
             document.getElementById('formCuenta').value = cuenta || '';
             document.getElementById('formDescripcion').value = descripcion || '';
             document.getElementById('formCtaControl').value = ctacontrol || '';
@@ -273,6 +303,7 @@
         function guardarCuenta() {
             const id = document.getElementById('cuentaId').value;
             const payload = {
+                company_id: document.getElementById('formEmpresa').value,
                 cuenta: document.getElementById('formCuenta').value.trim(),
                 descripcion: document.getElementById('formDescripcion').value.trim(),
                 ctacontrol: document.getElementById('formCtaControl').value.trim(),
@@ -313,8 +344,22 @@
                 });
         }
 
-        function sincronizarCuentas() {
-            if (!confirm('¿Deseas sincronizar las cuentas desde el API externo?')) {
+        async function sincronizarCuentas() {
+            const empresa = empresaSeleccionada();
+            const empresaTexto = empresa === 'todos' ? 'todas las empresas' : `la empresa ${empresa}`;
+            const confirmado = typeof Swal !== 'undefined'
+                ? await Swal.fire({
+                    title: '¿Sincronizar cuentas?',
+                    text: `Se consultará el API externo para ${empresaTexto}.`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, sincronizar',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#0ab39c'
+                })
+                : { isConfirmed: confirm(`¿Deseas sincronizar las cuentas desde el API externo para ${empresaTexto}?`) };
+
+            if (!confirmado.isConfirmed) {
                 return;
             }
 
@@ -330,6 +375,9 @@
                         'X-CSRF-TOKEN': csrfToken,
                         'Accept': 'application/json',
                     },
+                    body: JSON.stringify({
+                        empresa: empresa
+                    }),
                 })
                 .then(async response => {
                     const data = await response.json().catch(() => ({}));
@@ -338,14 +386,21 @@
                         throw new Error(data.message || 'No se pudo sincronizar.');
                     }
 
-                    alert(
-                        `Sincronización completada.\nRecibidas: ${data.total_recibidas ?? 0}\nCreadas: ${data.creadas ?? 0}\nActualizadas: ${data.actualizadas ?? 0}\nOmitidas: ${data.omitidas ?? 0}`
-                    );
+                    const resumen = `Empresas: ${(data.empresas || []).join(', ')}\nRecibidas: ${data.total_recibidas ?? 0}\nCreadas: ${data.creadas ?? 0}\nActualizadas: ${data.actualizadas ?? 0}\nOmitidas: ${data.omitidas ?? 0}`;
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Sincronización completada', resumen, 'success');
+                    } else {
+                        alert(`Sincronización completada.\n${resumen}`);
+                    }
 
                     cargarCuentas();
                 })
                 .catch(error => {
-                    alert(error.message || 'Error sincronizando cuentas.');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Error', error.message || 'Error sincronizando cuentas.', 'error');
+                    } else {
+                        alert(error.message || 'Error sincronizando cuentas.');
+                    }
                 })
                 .finally(() => {
                     boton.disabled = false;
@@ -388,20 +443,22 @@
                 .replace(/\"/g, '&quot;');
         }
 
-        function verEntradasCuenta(cuenta) {
-            setCuenta(cuenta);
+        function verEntradasCuenta(cuenta, empresa) {
+            setCuenta(cuenta, empresa);
             const modal = new bootstrap.Modal(document.getElementById('myModal'));
             modal.show();
         }
 
-        function setCuenta(cuenta) {
+        function setCuenta(cuenta, empresa) {
             document.getElementById('cuenta').value = cuenta;
+            document.getElementById('empresaEntrada').value = empresa || empresaSeleccionada();
         }
 
         document.getElementById('btnEntradas').addEventListener('click', verDetalle);
 
         function verDetalle() {
             let cuenta = document.getElementById('cuenta').value;
+            let empresa = document.getElementById('empresaEntrada').value;
             let fechaInicio = document.getElementById('fechaInicio').value;
             let fechaFin = document.getElementById('fechaFin').value;
 
@@ -420,7 +477,7 @@
                 return;
             }
 
-            fetch("/api-entradas?fecha_inicio=" + encodeURIComponent(fechaInicio) + "&fecha_fin=" + encodeURIComponent(fechaFin) + "&cuenta=" + encodeURIComponent(cuenta))
+            fetch("/api-entradas?fecha_inicio=" + encodeURIComponent(fechaInicio) + "&fecha_fin=" + encodeURIComponent(fechaFin) + "&empresa=" + encodeURIComponent(empresa) + "&cuenta=" + encodeURIComponent(cuenta))
                 .then(async response => {
                     let data;
 
@@ -454,6 +511,7 @@
                         const row = document.createElement('tr');
                         row.innerHTML = `
                             <td>${item.NoAsiento}</td>
+                            <td>${item.CompanyID ?? ''}</td>
                             <td>${item.Fecha}</td>
                             <td>${item.Ref}</td>
                             <td>${item.NoRef}</td>
@@ -483,7 +541,7 @@
                         responsive: true,
                         scrollX: true,
                         columnDefs: [
-                            { targets: [3, 4, 5, 6, 7, 8, 9, 10, 11], visible: $(window).width() > 992 }
+                            { targets: [4, 5, 6, 7, 8, 9, 10, 11, 12], visible: $(window).width() > 992 }
                         ],
                         dom: 'Bfrtip',
                         buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
@@ -557,8 +615,8 @@
             `;
         }
 
-        async function consultarEntradasDia(cuenta, fecha) {
-            const response = await fetch("/api-entradas?fecha_inicio=" + encodeURIComponent(fecha) + "&fecha_fin=" + encodeURIComponent(fecha) + "&cuenta=" + encodeURIComponent(cuenta));
+        async function consultarEntradasDia(cuenta, fecha, empresa) {
+            const response = await fetch("/api-entradas?fecha_inicio=" + encodeURIComponent(fecha) + "&fecha_fin=" + encodeURIComponent(fecha) + "&empresa=" + encodeURIComponent(empresa) + "&cuenta=" + encodeURIComponent(cuenta));
             const contentType = response.headers.get("content-type");
             let data;
 
@@ -582,6 +640,7 @@
 
         async function verDetalle() {
             let cuenta = document.getElementById('cuenta').value;
+            let empresa = document.getElementById('empresaEntrada').value;
             let fechaInicio = document.getElementById('fechaInicio').value;
             let fechaFin = document.getElementById('fechaFin').value;
 
@@ -620,7 +679,7 @@
                 for (let index = 0; index < fechas.length; index += 1) {
                     const fecha = fechas[index];
                     actualizarSwalProgresoEntradas(cuenta, fecha, index, fechas.length);
-                    const items = await consultarEntradasDia(cuenta, fecha);
+                    const items = await consultarEntradasDia(cuenta, fecha, empresa);
                     items.forEach(function (item) {
                         detalles.push(item);
                     });
@@ -643,6 +702,7 @@
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td>${item.NoAsiento}</td>
+                        <td>${item.CompanyID ?? ''}</td>
                         <td>${item.Fecha}</td>
                         <td>${item.Ref}</td>
                         <td>${item.NoRef}</td>
@@ -672,7 +732,7 @@
                     responsive: true,
                     scrollX: true,
                     columnDefs: [
-                        { targets: [3, 4, 5, 6, 7, 8, 9, 10, 11], visible: $(window).width() > 992 }
+                        { targets: [4, 5, 6, 7, 8, 9, 10, 11, 12], visible: $(window).width() > 992 }
                     ],
                     dom: 'Bfrtip',
                     buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
@@ -686,3 +746,4 @@
         }
     </script>
 @endsection
+

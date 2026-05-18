@@ -25,8 +25,13 @@
                         <div class="card">
                             <div class="card-header">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <h5 class="card-title mb-0">Centros de Costo (Empresa 168)</h5>
+                                    <h5 class="card-title mb-0">Centros de Costo</h5>
                                     <div class="d-flex gap-2">
+                                        <select id="empresaSyncCentroCosto" class="form-select form-select-sm" style="width: 150px;">
+                                            <option value="">Empresa</option>
+                                            <option value="126">Empresa 126</option>
+                                            <option value="100">Empresa 100</option>
+                                        </select>
                                         <button type="button" class="btn btn-primary" id="btnConsultarCentros">
                                             Consultar data
                                         </button>
@@ -47,6 +52,14 @@
                                             <option value="">Todos</option>
                                             <option value="activo">Activo</option>
                                             <option value="inactivo">Inactivo</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-4 col-lg-3">
+                                        <label class="form-label">Empresa en tabla</label>
+                                        <select id="filtroEmpresaCentroCosto" class="form-select form-select-sm">
+                                            <option value="">Todas</option>
+                                            <option value="126">Empresa 126</option>
+                                            <option value="100">Empresa 100</option>
                                         </select>
                                     </div>
                                 </div>
@@ -188,7 +201,8 @@
         document.getElementById('buscarConfigIdViejo').addEventListener('input', renderConfigCentros);
         document.getElementById('btnVerOcultosCentros').addEventListener('click', alternarOcultosConfig);
         document.getElementById('btnSincronizarCentros').addEventListener('click', sincronizarCentros);
-        document.getElementById('filtroEstadoCentroCosto').addEventListener('change', aplicarFiltroEstadoCentroCosto);
+        document.getElementById('filtroEstadoCentroCosto').addEventListener('change', aplicarFiltrosCentrosCosto);
+        document.getElementById('filtroEmpresaCentroCosto').addEventListener('change', aplicarFiltrosCentrosCosto);
         document.getElementById('tablaConfigCentrosCosto').addEventListener('change', manejarCambioOcultarCentro);
 
         function esOculto(valor) {
@@ -271,7 +285,7 @@
 
                     enlazarEventosTablaCentrosCosto();
                     ajustarLayoutTablaCentrosCosto();
-                    aplicarFiltroEstadoCentroCosto();
+                    aplicarFiltrosCentrosCosto();
 
                     if (mostrarAlerta) {
                         mostrarAlertaExito('Consulta completada', 'Registros cargados: ' + dataFiltrada.length.toLocaleString('es-DO'));
@@ -287,13 +301,24 @@
                 });
         }
 
-        function aplicarFiltroEstadoCentroCosto() {
+        function aplicarFiltrosCentrosCosto() {
             if (!centrosCostoTable) return;
 
             const estado = document.getElementById('filtroEstadoCentroCosto').value;
-            const busqueda = estado === 'activo' ? '^Activo$' : (estado === 'inactivo' ? '^Inactivo$' : '');
-            centrosCostoTable.column(4).search(busqueda, true, false).draw();
+            const empresa = document.getElementById('filtroEmpresaCentroCosto').value;
+            const busquedaEstado = estado === 'activo' ? '^Activo$' : (estado === 'inactivo' ? '^Inactivo$' : '');
+            const busquedaEmpresa = empresa ? '^' + empresa + '$' : '';
+
+            centrosCostoTable
+                .column(0).search(busquedaEmpresa, true, false)
+                .column(4).search(busquedaEstado, true, false)
+                .draw();
+
             ajustarLayoutTablaCentrosCosto();
+        }
+
+        function aplicarFiltroEstadoCentroCosto() {
+            aplicarFiltrosCentrosCosto();
         }
 
         function ajustarLayoutTablaCentrosCosto() {
@@ -437,7 +462,13 @@
         }
 
         async function sincronizarCentros() {
-            const confirmado = await confirmarSincronizacion();
+            const empresa = document.getElementById('empresaSyncCentroCosto').value;
+            if (!['126', '100'].includes(empresa)) {
+                mostrarAlertaError('Selecciona Empresa 126 o Empresa 100 antes de sincronizar.');
+                return;
+            }
+
+            const confirmado = await confirmarSincronizacion(empresa);
             if (!confirmado) return;
 
             const boton = document.getElementById('btnSincronizarCentros');
@@ -453,12 +484,14 @@
                     'X-CSRF-TOKEN': csrfToken,
                     'Accept': 'application/json',
                 },
+                body: JSON.stringify({ empresa })
             })
                 .then(response => parsearRespuestaJson(response, 'Error durante la sincronizacion de centros de costo'))
                 .then(data => {
                     finalizarProgresoSincronizacion();
                     mostrarAlertaExito(
                         'Sincronizacion completada',
+                        `Empresa: ${data.empresa ?? empresa}<br>` +
                         `Recibidos: ${data.total_recibidos ?? 0}<br>` +
                         `Creados: ${data.creados ?? 0}<br>` +
                         `Actualizados: ${data.actualizados ?? 0}<br>` +
@@ -516,15 +549,15 @@
             alert(mensaje);
         }
 
-        async function confirmarSincronizacion() {
+        async function confirmarSincronizacion(empresa) {
             if (typeof Swal === 'undefined') {
-                return confirm('Sincronizar centros de costo desde el API externo?');
+                return confirm('Sincronizar centros de costo de Empresa ' + empresa + ' desde el API externo?');
             }
 
             const result = await Swal.fire({
                 icon: 'question',
                 title: 'Sincronizar centros de costo',
-                text: 'Esto consultara el API externo y guardara datos nuevos o actualizados.',
+                text: 'Esto consultara el API externo para Empresa ' + empresa + ' y guardara datos nuevos o actualizados.',
                 showCancelButton: true,
                 confirmButtonText: 'Sincronizar',
                 cancelButtonText: 'Cancelar'
@@ -584,3 +617,4 @@
         }
     </script>
 @endsection
+

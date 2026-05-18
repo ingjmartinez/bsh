@@ -287,7 +287,7 @@ return [
             ],
             [
                 'nombre' => 'Usuarios',
-                'descripcion' => 'Gestiona usuarios de acceso al CRM.',
+                'descripcion' => 'Gestiona usuarios de acceso al ERP.',
                 'url' => '/usuarios',
                 'icono' => 'ri-user-settings-line',
                 'categoria' => 'Seguridad',
@@ -570,3 +570,4 @@ return [
         ],
     ],
 ];
+

@@ -98,7 +98,7 @@
                     <div class="col-sm-6">
                         <script>
                             document.write(new Date().getFullYear())
-                        </script> © CRM.
+                        </script> Â© ERP.
                     </div>
                 </div>
             </div>
@@ -127,3 +127,4 @@
     @endif
 </script>
 @endsection
+

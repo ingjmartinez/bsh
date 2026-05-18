@@ -284,7 +284,7 @@
                             title: 'En Proceso',
                             cards: [
                                 { id: uid(), title: 'Operaciones', checklist: [{ id: uid(), text: 'Task 1', done: true }, { id: uid(), text: 'Task 2', done: true }, { id: uid(), text: 'Task 3', done: true }, { id: uid(), text: 'Task 4', done: false }, { id: uid(), text: 'Task 5', done: false }, { id: uid(), text: 'Task 6', done: false }] },
-                                { id: uid(), title: 'Desarrollo de CRM', checklist: Array.from({ length: 21 }).map(function (_, index) { return { id: uid(), text: 'Item ' + (index + 1), done: index < 14 }; }) },
+                                { id: uid(), title: 'Desarrollo de ERP', checklist: Array.from({ length: 21 }).map(function (_, index) { return { id: uid(), text: 'Item ' + (index + 1), done: index < 14 }; }) },
                             ],
                         },
                         {
@@ -772,3 +772,4 @@
         });
     </script>
 @endsection
+

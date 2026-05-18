@@ -13,7 +13,7 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                            <h4 class="mb-sm-0">Grupo Joselito</h4>
+                            <h4 class="mb-sm-0">Business Support Hub</h4>
                         </div>
                     </div>
                 </div>
@@ -42,7 +42,7 @@
                                     <thead>
                                         <tr>
                                             <th>Cuenta</th>
-                                            <th>Descripción</th>
+                                            <th>DescripciÃ³n</th>
                                             <th>Cuenta Control</th>
                                             <th>Tipo</th>
                                             <th>Acciones</th>
@@ -69,20 +69,20 @@
                                             <th>Fecha</th>
                                             <th>Referencia</th>
                                             <th>Referencia No.</th>
-                                            <th>Débito</th>
-                                            <th>Crédito</th>
-                                            <th>Descripción</th>
+                                            <th>DÃ©bito</th>
+                                            <th>CrÃ©dito</th>
+                                            <th>DescripciÃ³n</th>
                                             <th>Grupo</th>
                                             <th>Subgrupo</th>
-                                            <th>División</th>
+                                            <th>DivisiÃ³n</th>
                                             <th>Centro de Costo</th>
                                             <th>Conciliado</th>
-                                            <th>Módulo</th>
+                                            <th>MÃ³dulo</th>
                                             <th>Fecha Grabado</th>
                                             <th>Fecha Modificado</th>
                                             <th>Creado Por</th>
                                             <th>Modificado Por</th>
-                                            <th>Referencia Descripción</th>
+                                            <th>Referencia DescripciÃ³n</th>
                                             <th>Sociedad</th>
                                         </tr>
                                     </thead>
@@ -103,7 +103,7 @@
                     <div class="col-sm-6">
                         <script>
                             document.write(new Date().getFullYear())
-                        </script> © Velzon.
+                        </script> Â© Velzon.
                     </div>
                     <div class="col-sm-6">
                         <div class="text-sm-end d-none d-sm-block">
@@ -164,8 +164,8 @@
                         <input type="text" class="form-control" id="formCuenta" placeholder="Cuenta">
                     </div>
                     <div class="mb-3">
-                        <label for="formDescripcion" class="form-label">Descripción</label>
-                        <input type="text" class="form-control" id="formDescripcion" placeholder="Descripción">
+                        <label for="formDescripcion" class="form-label">DescripciÃ³n</label>
+                        <input type="text" class="form-control" id="formDescripcion" placeholder="DescripciÃ³n">
                     </div>
                     <div class="mb-3">
                         <label for="formCtaControl" class="form-label">Cuenta Control</label>
@@ -270,7 +270,7 @@
             };
 
             if (!payload.cuenta || !payload.descripcion) {
-                alert('Cuenta y descripción son obligatorias.');
+                alert('Cuenta y descripciÃ³n son obligatorias.');
                 return;
             }
 
@@ -304,7 +304,7 @@
         }
 
         function sincronizarCuentas() {
-            if (!confirm('¿Deseas sincronizar las cuentas desde el API externo?')) {
+            if (!confirm('Â¿Deseas sincronizar las cuentas desde el API externo?')) {
                 return;
             }
 
@@ -329,7 +329,7 @@
                     }
 
                     alert(
-                        `Sincronización completada.\nRecibidas: ${data.total_recibidas ?? 0}\nCreadas: ${data.creadas ?? 0}\nActualizadas: ${data.actualizadas ?? 0}\nOmitidas: ${data.omitidas ?? 0}`
+                        `SincronizaciÃ³n completada.\nRecibidas: ${data.total_recibidas ?? 0}\nCreadas: ${data.creadas ?? 0}\nActualizadas: ${data.actualizadas ?? 0}\nOmitidas: ${data.omitidas ?? 0}`
                     );
 
                     cargarCuentas();
@@ -344,7 +344,7 @@
         }
 
         function eliminarCuenta(id) {
-            if (!confirm('¿Seguro que desea eliminar esta cuenta?')) {
+            if (!confirm('Â¿Seguro que desea eliminar esta cuenta?')) {
                 return;
             }
 
@@ -421,17 +421,17 @@
                         data = await response.json();
                     } else {
                         const text = await response.text();
-                        // Intentamos parsear por si el servidor no envía el header correcto
+                        // Intentamos parsear por si el servidor no envÃ­a el header correcto
                         try {
                             data = JSON.parse(text);
                         } catch {
                             // No es JSON, es texto plano
                             alert(text || "No hay nada encontrado");
-                            return; // detenemos aquí
+                            return; // detenemos aquÃ­
                         }
                     }
 
-                    // Si llega aquí, es un JSON válido
+                    // Si llega aquÃ­, es un JSON vÃ¡lido
                     if (!data.result || !data.result.Det) {
                         alert("No hay datos encontrados en la respuesta");
                         return;
@@ -480,9 +480,10 @@
                     });
                 })
                 .catch(error => {
-                    alert("Error en la petición: " + error);
+                    alert("Error en la peticiÃ³n: " + error);
                 });
 
         }
     </script>
 @endsection
+

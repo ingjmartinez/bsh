@@ -50,7 +50,7 @@
                                         </div>
 
                                         <div class="col-12 col-md-6 mb-3">
-                                            <label for="email" class="form-label">Correo Electrónico <span class="text-danger">*</span></label>
+                                            <label for="email" class="form-label">Correo ElectrÃ³nico <span class="text-danger">*</span></label>
                                             <div class="input-group">
                                                 <span class="input-group-text"><i class="ri-mail-line"></i></span>
                                                 <input type="email" class="form-control @error('email') is-invalid @enderror"
@@ -65,17 +65,17 @@
                                         <div class="col-12 mb-3">
                                             <div class="alert alert-info py-2 mb-0">
                                                 <i class="ri-information-line me-1"></i>
-                                                Deja los campos de contraseña vacíos si no deseas cambiarla.
+                                                Deja los campos de contraseÃ±a vacÃ­os si no deseas cambiarla.
                                             </div>
                                         </div>
 
                                         <div class="col-12 col-md-6 mb-3">
-                                            <label for="password" class="form-label">Nueva Contraseña</label>
+                                            <label for="password" class="form-label">Nueva ContraseÃ±a</label>
                                             <div class="input-group">
                                                 <span class="input-group-text"><i class="ri-lock-2-line"></i></span>
                                                 <input type="password" class="form-control @error('password') is-invalid @enderror"
                                                        id="password" name="password"
-                                                       placeholder="Mínimo 8 caracteres">
+                                                       placeholder="MÃ­nimo 8 caracteres">
                                                 <button class="btn btn-light" type="button" onclick="togglePassword('password', 'passIcon1')">
                                                     <i class="ri-eye-off-line" id="passIcon1"></i>
                                                 </button>
@@ -86,12 +86,12 @@
                                         </div>
 
                                         <div class="col-12 col-md-6 mb-3">
-                                            <label for="password_confirmation" class="form-label">Confirmar Contraseña</label>
+                                            <label for="password_confirmation" class="form-label">Confirmar ContraseÃ±a</label>
                                             <div class="input-group">
                                                 <span class="input-group-text"><i class="ri-lock-check-line"></i></span>
                                                 <input type="password" class="form-control"
                                                        id="password_confirmation" name="password_confirmation"
-                                                       placeholder="Repite la contraseña">
+                                                       placeholder="Repite la contraseÃ±a">
                                                 <button class="btn btn-light" type="button" onclick="togglePassword('password_confirmation', 'passIcon2')">
                                                     <i class="ri-eye-off-line" id="passIcon2"></i>
                                                 </button>
@@ -135,7 +135,7 @@
                     <div class="col-sm-6">
                         <script>
                             document.write(new Date().getFullYear())
-                        </script> © CRM.
+                        </script> Â© ERP.
                     </div>
                 </div>
             </div>
@@ -160,3 +160,4 @@
     }
 </script>
 @endsection
+

@@ -13,6 +13,7 @@ class DetalleCuenta extends Model
 
     protected $fillable = [
         'external_key',
+        'company_id',
         'cuenta',
         'no_asiento',
         'fecha',

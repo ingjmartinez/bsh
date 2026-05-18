@@ -30,7 +30,7 @@ return [
     ],
     [
         'nombre' => 'Entrevista Online',
-        'descripcion' => 'Registra entrevistas telefonicas u online realizadas a candidatos.',
+        'descripcion' => 'Registra entrevistas telefónicas u online realizadas a candidatos.',
         'url' => '/entrevistas-online',
         'icono' => 'ri-video-chat-line',
         'categoria' => 'Reclutamiento',
@@ -39,7 +39,7 @@ return [
     ],
     [
         'nombre' => 'Empleados No Regularizados',
-        'descripcion' => 'Da seguimiento a empleados pendientes de regularizacion.',
+        'descripcion' => 'Da seguimiento a empleados pendientes de regularización.',
         'url' => '/empleados-no-regularizados',
         'icono' => 'ri-user-warning-line',
         'categoria' => 'Control',
@@ -48,11 +48,11 @@ return [
     ],
     [
         'nombre' => 'Ventas Sin Empleado',
-        'descripcion' => 'Identifica ventas que necesitan asociacion o validacion de empleado.',
+        'descripcion' => 'Identifica ventas que necesitan asociación o validación de empleado.',
         'url' => '/ventas-sin-empleado',
         'icono' => 'ri-user-search-line',
         'categoria' => 'Control',
-        'tags' => ['ventas', 'sin empleado', 'cedula', 'validacion'],
+        'tags' => ['ventas', 'sin empleado', 'cédula', 'validación'],
         'activo' => false,
     ],
 ];

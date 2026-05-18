@@ -35,7 +35,7 @@
                                     </div>
                                     <div class="col-md-3">
                                         <label class="form-label">Agencia</label>
-                                        <input type="text" class="form-control" placeholder="Nombre o código">
+                                        <input type="text" class="form-control" placeholder="Nombre o cÃ³digo">
                                     </div>
                                     <div class="col-md-3 d-flex align-items-end">
                                         <button type="button" class="btn btn-primary w-100">Consultar</button>
@@ -61,8 +61,8 @@
                                                 <th>Agencia</th>
                                                 <th>Operador</th>
                                                 <th>Ventas</th>
-                                                <th>% Comisión</th>
-                                                <th>Comisión</th>
+                                                <th>% ComisiÃ³n</th>
+                                                <th>ComisiÃ³n</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -80,3 +80,4 @@
         </div>
     </div>
 @endsection
+

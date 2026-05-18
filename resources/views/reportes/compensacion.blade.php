@@ -311,3 +311,4 @@
         document.getElementById('btnBuscar').addEventListener('click', cargarCompensacion);
     </script>
 @endsection
+

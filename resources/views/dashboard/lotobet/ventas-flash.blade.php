@@ -4,7 +4,7 @@
 
 @section('content')
     <style>
-        /* Mejorar tablas en móvil */
+        /* Mejorar tablas en mÃ³vil */
         @media (max-width: 767px) {
             .table {
                 font-size: 0.85rem;
@@ -20,7 +20,7 @@
                 word-break: break-word;
             }
             
-            /* Ocultar columnas menos importantes en móvil */
+            /* Ocultar columnas menos importantes en mÃ³vil */
             .table th:nth-child(3),
             .table td:nth-child(3),
             .table th:nth-child(4),
@@ -174,7 +174,7 @@
                     <div class="col-md-12">
                         <div class="card shadow-sm">
                             <div class="card-header">
-                                <h5>Ventas por Día (Línea)</h5>
+                                <h5>Ventas por DÃ­a (LÃ­nea)</h5>
                             </div>
                             <div class="card-body">
                                 <canvas id="chart-diario" style="height: 250px; max-height: 250px;"></canvas>
@@ -184,7 +184,7 @@
                     <div class="col-md-12">
                         <div class="card shadow-sm">
                             <div class="card-header">
-                                <h5>Ventas por Día (Barras)</h5>
+                                <h5>Ventas por DÃ­a (Barras)</h5>
                             </div>
                             <div class="card-body">
                                 <canvas id="chart-diario-bar" style="height: 250px; max-height: 250px;"></canvas>
@@ -238,7 +238,7 @@
                                 <th>ID Agencia</th>
                                 <th>Banca</th>
                                 <th>Total Ventas</th>
-                                <th>Acción</th>
+                                <th>AcciÃ³n</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -284,7 +284,7 @@
             { title: 'ID Agencia' },
             { title: 'Banca' },
             { title: 'Total Ventas' },
-            { title: 'Acción', orderable: false, searchable: false }
+            { title: 'AcciÃ³n', orderable: false, searchable: false }
         ];
 
         tableInstance = $('#tabla-ventas').DataTable({
@@ -331,7 +331,7 @@
 
             Swal.fire({
                 title: agencia_id ? `Cargando agencia ${agencia_id}...` : 'Cargando ventas flash...',
-                text: 'Consultando información, por favor espere.',
+                text: 'Consultando informaciÃ³n, por favor espere.',
                 allowOutsideClick: false,
                 showConfirmButton: false,
                 didOpen: () => Swal.showLoading()
@@ -573,3 +573,4 @@
         loadData(fecha_inicio, fecha_fin);
     </script>
 @endsection
+

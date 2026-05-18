@@ -41,3 +41,4 @@ database_inventario.txt
 
 # Herramientas externas locales
 phpmyadmin/
+public/js/pages/leaflet-map.init.js

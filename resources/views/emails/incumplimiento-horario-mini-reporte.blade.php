@@ -29,7 +29,7 @@
                                     <td style="padding: 12px 14px; color: #212529; font-size: 13px;">{{ $data['fecha'] ?? '-' }}</td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 12px 14px; background-color: #f8f9fb; color: #878a99; font-size: 13px;">Código Agencia</td>
+                                    <td style="padding: 12px 14px; background-color: #f8f9fb; color: #878a99; font-size: 13px;">CÃ³digo Agencia</td>
                                     <td style="padding: 12px 14px; color: #212529; font-size: 13px;">{{ $data['agencia'] ?? '-' }}</td>
                                 </tr>
                                 <tr>
@@ -105,7 +105,7 @@
                     <tr>
                         <td style="background-color: #f3f6f9; border-top: 1px solid #e9ebec; padding: 18px 34px; text-align: center;">
                             <p style="margin: 0; color: #878a99; font-size: 12px; line-height: 1.6;">
-                                Mensaje automático generado por el CRM de Grupo Joselito.
+                                Mensaje automÃ¡tico generado por el ERP de BSH Support.
                             </p>
                         </td>
                     </tr>
@@ -115,3 +115,4 @@
     </table>
 </body>
 </html>
+

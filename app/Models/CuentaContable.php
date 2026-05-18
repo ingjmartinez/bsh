@@ -12,6 +12,7 @@ class CuentaContable extends Model
     protected $table = 'cuentas_contables';
 
     protected $fillable = [
+        'company_id',
         'cuenta',
         'descripcion',
         'ctacontrol',

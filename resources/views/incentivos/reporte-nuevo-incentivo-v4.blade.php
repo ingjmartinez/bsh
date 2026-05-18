@@ -600,14 +600,14 @@
     function normalizeAdministrativeEmpresaKey(value) {
         const text = String(value ?? '').trim().toLowerCase();
         if (text === '') return 'sin empresa';
-        if (text.includes('joselito') || text.includes('cjoselito')) return 'consorcio joselito';
+        if (text.includes('bsh support') || text.includes('business support hub') || text.includes('joselito') || text.includes('cjoselito')) return 'bsh_support';
         if (text.includes('negosur')) return 'negosur';
         return text;
     }
 
     function normalizeAdministrativeEmpresaLabel(value) {
         const key = normalizeAdministrativeEmpresaKey(value);
-        if (key === 'consorcio joselito') return 'Consorcio Joselito';
+        if (key === 'bsh_support') return 'BSH Support';
         if (key === 'negosur') return 'Negosur';
         if (key === 'sin empresa') return 'Sin empresa';
         return String(value ?? '').trim();
@@ -616,7 +616,7 @@
     function getAdministrativeEmpresaFilterKey() {
         const selected = document.getElementById('ni_filtro_empresa')?.value || 'todos';
         if (selected === 'todos') return 'todos';
-        if (selected.includes('joselito')) return 'consorcio joselito';
+        if (selected.includes('bsh') || selected.includes('business support') || selected.includes('joselito')) return 'bsh_support';
         if (selected.includes('negosur')) return 'negosur';
         if (selected === 'sin empresa') return 'sin empresa';
         return selected;
@@ -1609,6 +1609,7 @@
     });
 </script>
 @endsection
+
 
 
 

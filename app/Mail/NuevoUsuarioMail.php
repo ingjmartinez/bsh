@@ -27,7 +27,7 @@ class NuevoUsuarioMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Bienvenido a Grupo Joselito - Datos de acceso',
+            subject: 'Bienvenido a Business Support Hub - Datos de acceso',
         );
     }
 
@@ -41,3 +41,4 @@ class NuevoUsuarioMail extends Mailable
         );
     }
 }
+

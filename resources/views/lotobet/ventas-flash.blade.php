@@ -222,7 +222,7 @@
             }
 
             Swal.fire({
-                title: "Guardando información ...",
+                title: "Guardando informaciÃ³n ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -260,7 +260,7 @@
             }
 
             Swal.fire({
-                title: "Guardando información ...",
+                title: "Guardando informaciÃ³n ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -312,14 +312,14 @@
 
             while (currentDate <= endDate) {
                 dates.push(currentDate.toISOString().split('T')[0]); // Formato YYYY-MM-DD
-                currentDate.setDate(currentDate.getDate() + 1); // Incrementar un día
+                currentDate.setDate(currentDate.getDate() + 1); // Incrementar un dÃ­a
             }
 
             // Ejecutar las peticiones una a una (secuencialmente)
             btnGuardarDataFecha.disabled = true;
             try {
                 Swal.fire({
-                    title: "Guardando información ...",
+                    title: "Guardando informaciÃ³n ...",
                     html: `0 / ${dates.length}`,
                     allowOutsideClick: false,
                     showConfirmButton: false,
@@ -349,7 +349,7 @@
                     }
                     const data = await response.json().catch(() => null);
 
-                    // Si tu API devuelve un código de error, puedes manejarlo aquí
+                    // Si tu API devuelve un cÃ³digo de error, puedes manejarlo aquÃ­
                     if (data && data.code !== undefined && data.code !== 0) {
                         throw new Error(data.message || `Error guardando fecha ${date}`);
                     }
@@ -359,11 +359,11 @@
                     } else {
                         responses.push('Fecha: ' + date + ' Total: ' + data.total);
                     }
-                    // Opcional: puedes hacer una pequeña pausa si tu API lo requiere
+                    // Opcional: puedes hacer una pequeÃ±a pausa si tu API lo requiere
                     // await new Promise(r => setTimeout(r, 200));
                 }
 
-                // Cerrar modal del range y notificar éxito
+                // Cerrar modal del range y notificar Ã©xito
                 document.getElementById('btnClose').click();
                 Swal.fire({
                     title: "Listo",
@@ -373,7 +373,7 @@
             } catch (error) {
                 Swal.fire({
                     title: "Error",
-                    text: error.message || "Ocurrió un error al procesar las fechas",
+                    text: error.message || "OcurriÃ³ un error al procesar las fechas",
                     icon: "error"
                 });
             } finally {
@@ -407,11 +407,11 @@
             }
 
             const confirmed = await Swal.fire({
-                title: 'Confirmar eliminación',
-                html: `¿Eliminar data desde <strong>${fechaInicio}</strong> hasta <strong>${fechaFin}</strong>?`,
+                title: 'Confirmar eliminaciÃ³n',
+                html: `Â¿Eliminar data desde <strong>${fechaInicio}</strong> hasta <strong>${fechaFin}</strong>?`,
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: 'Sí, eliminar',
+                confirmButtonText: 'SÃ­, eliminar',
                 cancelButtonText: 'Cancelar'
             });
             if (!confirmed.isConfirmed) return;
@@ -428,7 +428,7 @@
             btnEliminarDataFecha.disabled = true;
             try {
                 Swal.fire({
-                    title: "Eliminando información ...",
+                    title: "Eliminando informaciÃ³n ...",
                     html: `0 / ${dates.length}`,
                     allowOutsideClick: false,
                     showConfirmButton: false,
@@ -468,7 +468,7 @@
             } catch (error) {
                 Swal.fire({
                     title: "Error",
-                    text: error.message || "Ocurrió un error al procesar las fechas",
+                    text: error.message || "OcurriÃ³ un error al procesar las fechas",
                     icon: "error"
                 });
             } finally {
@@ -477,3 +477,4 @@
         });
     </script>
 @endsection
+

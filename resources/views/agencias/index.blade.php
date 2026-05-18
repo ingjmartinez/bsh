@@ -74,8 +74,8 @@
                                             <h5 class="mb-0 text-danger" id="countAgenciasInactivas" role="button" title="Ver detalle" style="cursor:pointer; text-decoration: underline; text-decoration-style: dotted;">0</h5>
                                         </div>
                                         <div>
-                                            <small class="text-muted d-block">Agencias Joselito</small>
-                                            <h5 class="mb-0 text-info" id="countAgenciasJoselito">0</h5>
+                                            <small class="text-muted d-block">Agencias BSH Support</small>
+                                            <h5 class="mb-0 text-info" id="countAgenciasBshSupport">0</h5>
                                         </div>
                                         <div>
                                             <small class="text-muted d-block">Agencias Negosur</small>
@@ -97,7 +97,7 @@
                                     </div>
                                     <div class="d-flex gap-2 flex-wrap">
                                         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnFiltroEmpresaTodas">Todas empresas</button>
-                                        <button type="button" class="btn btn-sm btn-outline-info" id="btnFiltroEmpresaJoselito">Joselito</button>
+                                        <button type="button" class="btn btn-sm btn-outline-info" id="btnFiltroEmpresaBshSupport">BSH Support</button>
                                         <button type="button" class="btn btn-sm btn-outline-primary" id="btnFiltroEmpresaNegosur">Negosur</button>
                                     </div>
                                 </div>
@@ -140,7 +140,7 @@
                     <div class="col-sm-6">
                         <script>
                             document.write(new Date().getFullYear())
-                        </script> &copy; CRM.
+                        </script> &copy; ERP.
                     </div>
                 </div>
             </div>
@@ -421,7 +421,7 @@
         var empresaFiltro = 'todas';
         var countAgenciasActivas = $('#countAgenciasActivas');
         var countAgenciasInactivas = $('#countAgenciasInactivas');
-        var countAgenciasJoselito = $('#countAgenciasJoselito');
+        var countAgenciasBshSupport = $('#countAgenciasBshSupport');
         var countAgenciasNegosur = $('#countAgenciasNegosur');
         var countAgenciasNoRegistradas = $('#countAgenciasNoRegistradas');
         var countAgenciasParaActualizar = $('#countAgenciasParaActualizar');
@@ -1184,11 +1184,11 @@
 
         function aplicarEmpresaBotones() {
             $('#btnFiltroEmpresaTodas').removeClass('btn-secondary').addClass('btn-outline-secondary');
-            $('#btnFiltroEmpresaJoselito').removeClass('btn-info').addClass('btn-outline-info');
+            $('#btnFiltroEmpresaBshSupport').removeClass('btn-info').addClass('btn-outline-info');
             $('#btnFiltroEmpresaNegosur').removeClass('btn-primary').addClass('btn-outline-primary');
 
-            if (empresaFiltro === 'joselito') {
-                $('#btnFiltroEmpresaJoselito').removeClass('btn-outline-info').addClass('btn-info');
+            if (empresaFiltro === 'bsh_support') {
+                $('#btnFiltroEmpresaBshSupport').removeClass('btn-outline-info').addClass('btn-info');
                 return;
             }
 
@@ -1232,7 +1232,7 @@
                 dataSrc: function(json) {
                     countAgenciasActivas.text((json.total_activas || 0).toLocaleString('es-DO'));
                     countAgenciasInactivas.text((json.total_inactivas || 0).toLocaleString('es-DO'));
-                    countAgenciasJoselito.text((json.total_joselito || 0).toLocaleString('es-DO'));
+                    countAgenciasBshSupport.text((json.total_bsh_support || 0).toLocaleString('es-DO'));
                     countAgenciasNegosur.text((json.total_negosur || 0).toLocaleString('es-DO'));
                     return json.data || [];
                 }
@@ -1409,8 +1409,8 @@
             table.ajax.reload();
         });
 
-        $('#btnFiltroEmpresaJoselito').on('click', function() {
-            empresaFiltro = 'joselito';
+        $('#btnFiltroEmpresaBshSupport').on('click', function() {
+            empresaFiltro = 'bsh_support';
             aplicarEmpresaBotones();
             table.ajax.reload();
         });
@@ -1689,4 +1689,5 @@
     });
 </script>
 @endsection
+
 

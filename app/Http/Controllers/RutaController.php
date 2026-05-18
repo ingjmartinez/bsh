@@ -71,7 +71,7 @@ class RutaController extends Controller
     {
         $validated = $request->validate([
             'nombre_ruta' => ['required', 'string', 'max:100', 'unique:rutas,nombre_ruta'],
-            'empresa' => ['required', 'in:Negosur,Joselito'],
+            'empresa' => ['required', 'in:Negosur,BSH Support'],
             'operador_ruta_id' => ['required', 'integer', 'exists:operador_ruta,id'],
         ], [
             'nombre_ruta.required' => 'El nombre de ruta es obligatorio.',
@@ -108,7 +108,7 @@ class RutaController extends Controller
     {
         $validated = $request->validate([
             'nombre_ruta' => ['required', 'string', 'max:100', 'unique:rutas,nombre_ruta,' . $ruta->id],
-            'empresa' => ['required', 'in:Negosur,Joselito'],
+            'empresa' => ['required', 'in:Negosur,BSH Support'],
             'operador_ruta_id' => ['required', 'integer', 'exists:operador_ruta,id'],
         ], [
             'nombre_ruta.required' => 'El nombre de ruta es obligatorio.',
@@ -192,6 +192,6 @@ class RutaController extends Controller
 
     private function getOpcionesEmpresa(): array
     {
-        return ['Negosur', 'Joselito'];
+        return ['Negosur', 'BSH Support'];
     }
 }

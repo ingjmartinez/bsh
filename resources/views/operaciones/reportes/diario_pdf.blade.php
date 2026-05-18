@@ -27,7 +27,7 @@
         $totalDiferencia = (float) $reportes->sum('diferencia');
     @endphp
 
-    <h2>Cuadre de ruta grupo joselito</h2>
+    <h2>Cuadre de ruta Business Support Hub</h2>
     <p>Fecha: {{ \Carbon\Carbon::parse($fechaFiltro)->format('d/m/Y') }}</p>
 
     <table class="summary-cards">
@@ -91,3 +91,4 @@
     </table>
 </body>
 </html>
+

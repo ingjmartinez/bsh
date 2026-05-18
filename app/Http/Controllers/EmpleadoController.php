@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\Log;
 
 class EmpleadoController extends Controller
 {
+    private const EMPRESAS_RRHH = [
+        '126' => 'Business Support Hub',
+        '100' => 'Consorcio SH-QPL',
+    ];
+
     public function index()
     {
         return view('empleado.index');
@@ -21,21 +26,22 @@ class EmpleadoController extends Controller
         $empresa = trim((string) $request->query('empresa', ''));
 
         $query = Empleado::select(
-            DB::raw("CASE WHEN companyid = '168'
-                THEN 'Grupo Joselito'
-                ELSE 'Negosur'
+            DB::raw("CASE
+                WHEN companyid = '126' THEN 'Business Support Hub'
+                WHEN companyid = '100' THEN 'Consorcio SH-QPL'
+                ELSE CONCAT('Empresa ', companyid)
             END AS company"),
             'empleadoid',
             'nombres',
             'apellidos',
-            'fechaingreso',
-            'fechasalida',
+            DB::raw('fecha_ingreso AS fechaingreso'),
+            DB::raw('fecha_egreso AS fechasalida'),
             'cedula',
-            'ciudad',
-            'salariomensual'
+            DB::raw('NULL AS ciudad'),
+            DB::raw('salario AS salariomensual')
         );
 
-        if (in_array($empresa, ['168', '169'], true)) {
+        if (array_key_exists($empresa, self::EMPRESAS_RRHH)) {
             $query->where('companyid', $empresa);
         }
 
@@ -48,7 +54,7 @@ class EmpleadoController extends Controller
         $empresa = trim((string) $request->query('empresa', ''));
 
         $query = Empleado::query();
-        if (in_array($empresa, ['168', '169'], true)) {
+        if (array_key_exists($empresa, self::EMPRESAS_RRHH)) {
             $query->where('companyid', $empresa);
         }
 
@@ -57,20 +63,19 @@ class EmpleadoController extends Controller
             'empleadoid',
             'nombres',
             'apellidos',
-            'fechaingreso',
-            'fechasalida',
-            'ciudad',
-            'salariomensual',
+            'fecha_ingreso',
+            'fecha_egreso',
+            'salario',
         ]);
 
         $normalizados = $empleados->map(function ($empleado) {
-            $fechaSalida = trim((string) ($empleado->fechasalida ?? ''));
-            $salario = is_numeric($empleado->salariomensual) ? (float) $empleado->salariomensual : 0.0;
-            $ciudad = trim((string) ($empleado->ciudad ?? '')) ?: 'Sin ciudad';
+            $fechaSalida = trim((string) ($empleado->fecha_egreso ?? ''));
+            $salario = is_numeric($empleado->salario) ? (float) $empleado->salario : 0.0;
+            $ciudad = 'Sin ciudad';
 
             return [
                 'companyid' => (string) $empleado->companyid,
-                'company' => (string) $empleado->companyid === '168' ? 'Grupo Joselito' : 'Negosur',
+                'company' => $this->empresaRrhhLabel((string) $empleado->companyid),
                 'activo' => $fechaSalida === '',
                 'ciudad' => $ciudad,
                 'salario' => $salario,
@@ -145,17 +150,19 @@ class EmpleadoController extends Controller
         ini_set('memory_limit', '512M');
         $empresa = trim((string) $request->query('empresa', ''));
 
-        if (!in_array($empresa, ['168', '169'], true)) {
-            return response()->json(['error' => 'Empresa invalida. Debe ser 168 o 169.'], 422);
+        if (!array_key_exists($empresa, self::EMPRESAS_RRHH)) {
+            return response()->json(['error' => 'Empresa invalida. Debe ser 126 o 100.'], 422);
         }
 
         try {
             $response = Http::withoutVerifying()
                 ->connectTimeout(20)
                 ->timeout(180)
-                ->acceptJson()
+                ->withHeaders([
+                    'Accept' => 'application/text',
+                ])
                 ->get('https://apisj.azurewebsites.net/ApiSJ/RRHH/Empleados/Listar', [
-                    'strToken' => '87eb2d56-25f3-4d46-9cb0-73c07a550bd2',
+                    'strToken' => '78177a3a-3679-4899-bf9f-22d3badeb737',
                     'intIdEmpresa' => $empresa,
                 ]);
         } catch (\Throwable $e) {
@@ -188,7 +195,7 @@ class EmpleadoController extends Controller
         }
 
         $columnasActualizables = array_values(array_filter((new Empleado())->getFillable(), function ($columna) {
-            return $columna !== 'empleadoid';
+            return !in_array($columna, ['companyid', 'empleadoid'], true);
         }));
 
         $lote = [];
@@ -238,7 +245,14 @@ class EmpleadoController extends Controller
             'total' => count($empleados),
             'procesados' => $procesados,
             'omitidos' => $omitidos,
+            'empresa' => $empresa,
+            'empresa_nombre' => $this->empresaRrhhLabel($empresa),
         ]);
+    }
+
+    private function empresaRrhhLabel(string $empresa): string
+    {
+        return self::EMPRESAS_RRHH[$empresa] ?? ('Empresa ' . $empresa);
     }
 
     private function mapearEmpleadoApi(array $e, string $empresa): array
@@ -246,77 +260,58 @@ class EmpleadoController extends Controller
         return [
             'companyid'                => $e['COMPANYID'] ?? $empresa,
             'empleadoid'               => $e['EMPLEADOID'],
-            'nombres'                  => $e['NOMBRES'] ?? null,
-            'apellidos'                => $e['APELLIDOS'] ?? null,
-            'idposicion'               => $e['IDPOSICION'] ?? null,
-            'posicion'                 => $e['POSICION'] ?? null,
-            'salariomensual'           => $e['SALARIOMENSUAL'] ?? null,
-            'iddepto'                  => $e['IDDEPTO'] ?? null,
-            'depto'                    => $e['DEPTO'] ?? null,
-            'idciudad'                 => $e['IDCIUDAD'] ?? null,
-            'ciudad'                   => $e['CIUDAD'] ?? null,
-            'idpais'                   => $e['IDPAIS'] ?? null,
-            'pais'                     => $e['PAIS'] ?? null,
-            'ctabanco'                 => $e['CTABANCO'] ?? null,
-            'tipodocidentidad'         => $e['TIPODOCIDENTIDAD'] ?? null,
-            'cedula'                   => $e['CEDULA'] ?? null,
-            'sexo'                     => $e['SEXO'] ?? null,
-            'estadocivil'              => $e['ESTADOCIVIL'] ?? null,
-            'nohijos'                  => $e['NOHIJOS'] ?? null,
-            'direccion'                => $e['DIRECCION'] ?? null,
-            'tel1'                     => $e['TEL1'] ?? null,
-            'tel2'                     => $e['TEL2'] ?? null,
-            'email'                    => $e['EMAIL'] ?? null,
-            'profesion1'               => $e['PROFESION1'] ?? null,
-            'profesion2'               => $e['PROFESION2'] ?? null,
-            'fechanacimiento'          => $e['FECHANACIMIENTO'] ?? null,
-            'fechaingreso'             => $e['FECHAINGRESO'] ?? null,
-            'fechasalida'              => $e['FECHASALIDA'] ?? null,
-            'iniciovacaciones'         => $e['INICIOVACACIONES'] ?? null,
-            'finalvacaciones'          => $e['FINALVACACIONES'] ?? null,
-            'clienteid'                => $e['CLIENTEID'] ?? null,
-            'codigovendedor'           => $e['CODIGOVENDEDOR'] ?? null,
-            'chofer'                   => $e['CHOFER'] ?? null,
-            'bombero'                  => $e['BOMBERO'] ?? null,
-            'creadopor'                => $e['CREADOPOR'] ?? null,
-            'modificadopor'            => $e['MODIFICADOPOR'] ?? null,
-            'fechagrabado'             => $e['FECHAGRABADO'] ?? null,
-            'fechamodificado'          => $e['FECHAMODIFICADO'] ?? null,
-            'atributoprn'              => $e['ATRIBUTOPRN'] ?? null,
-            'idsucursalturno'          => $e['IDSUCURSALTURNO'] ?? null,
-            'moduloturno'              => $e['MODULOTURNO'] ?? null,
-            'idturno'                  => $e['IDTURNO'] ?? null,
-            'nocalcularsalario'        => $e['NOCALCULARSALARIO'] ?? null,
-            'turnorotativo'            => $e['TURNOROTATIVO'] ?? null,
-            'porcientocomision'        => $e['PORCIENTOCOMISION'] ?? null,
-            'enporciento'              => $e['ENPORCIENTO'] ?? null,
-            'cuenta'                   => $e['CUENTA'] ?? null,
-            'cobrador'                 => $e['COBRADOR'] ?? null,
-            'mozo'                     => $e['MOZO'] ?? null,
-            'clavemozo'                => $e['CLAVEMOZO'] ?? null,
-            'lavador'                  => $e['LAVADOR'] ?? null,
-            'idsistemaviejo'           => $e['IDSISTEMAVIEJO'] ?? null,
-            'viapago'                  => $e['VIAPAGO'] ?? null,
-            'idcentrocosto'            => $e['IDCENTROCOSTO'] ?? null,
-            'cuentanav'                => $e['CUENTANAV'] ?? null,
-            'idbanco'                  => $e['IDBANCO'] ?? null,
-            'viapago_banco'            => $e['VIAPAGO_BANCO'] ?? null,
-            'idcalendario'             => $e['IDCALENDARIO'] ?? null,
-            'preaviso'                 => $e['PREAVISO'] ?? null,
-            'cesantia'                 => $e['CESANTIA'] ?? null,
-            'vacaciones'               => $e['VACACIONES'] ?? null,
-            'navidad'                  => $e['NAVIDAD'] ?? null,
-            'viapago_bancoemp'         => $e['VIAPAGO_BANCOEMP'] ?? null,
-            'tipocuenta'               => $e['TIPOCUENTA'] ?? null,
-            'cuentagastoinfotep'       => $e['CUENTAGASTOINFOTEP'] ?? null,
-            'cuentagastoriesgolaboral' => $e['CUENTAGASTORIESGOLABORAL'] ?? null,
-            'rutafoto'                 => $e['RUTAFOTO'] ?? null,
-            'enperiodo_prepost_natal'  => $e['ENPERIODO_PREPOST_NATAL'] ?? null,
-            'en_licencia_medica'       => $e['EN_LICENCIA_MEDICA'] ?? null,
-            'tipo_empleado'            => $e['TIPO_EMPLEADO'] ?? null,
-            'idplaza'                  => $e['IDPLAZA'] ?? null,
-            'doctor'                   => $e['DOCTOR'] ?? null,
+            'nombres'                  => $this->limitarTexto(($e['NOMBRES'] ?? null) ?: 'Sin nombre', 100),
+            'apellidos'                => $this->limitarTexto(($e['APELLIDOS'] ?? null) ?: 'Sin apellido', 100),
+            'cedula'                   => $this->limitarTexto($e['CEDULA'] ?? null, 30),
+            'salario'                  => $this->normalizarDecimal($e['SALARIOMENSUAL'] ?? null),
+            'fecha_nacimiento'         => $this->normalizarFecha($e['FECHANACIMIENTO'] ?? null),
+            'fecha_ingreso'            => $this->normalizarFecha($e['FECHAINGRESO'] ?? null),
+            'fecha_egreso'             => $this->normalizarFecha($e['FECHASALIDA'] ?? null),
+            'estatus'                  => empty($e['FECHASALIDA']) ? 1 : 0,
+            'telefono'                 => $this->limitarTexto($e['TEL1'] ?? ($e['TEL2'] ?? null), 30),
+            'email'                    => $this->limitarTexto($e['EMAIL'] ?? null, 150),
+            'numero_cuenta'            => $this->limitarTexto($e['CTABANCO'] ?? ($e['CUENTA'] ?? null), 50),
+            'tipo_cuenta'              => $this->limitarTexto($e['TIPOCUENTA'] ?? null, 30),
+            'fuente_sync'              => 'apisj_rrhh',
+            'ultima_sync_at'           => now(),
+            'created_at'               => now(),
+            'updated_at'               => now(),
         ];
+    }
+
+    private function normalizarFecha($valor): ?string
+    {
+        $texto = trim((string) ($valor ?? ''));
+
+        if ($texto === '' || $texto === '0000-00-00') {
+            return null;
+        }
+
+        $fecha = substr($texto, 0, 10);
+
+        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha) ? $fecha : null;
+    }
+
+    private function normalizarDecimal($valor): ?float
+    {
+        if ($valor === null || $valor === '') {
+            return null;
+        }
+
+        $numero = str_replace(',', '', (string) $valor);
+
+        return is_numeric($numero) ? (float) $numero : null;
+    }
+
+    private function limitarTexto($valor, int $limite): ?string
+    {
+        $texto = trim((string) ($valor ?? ''));
+
+        if ($texto === '') {
+            return null;
+        }
+
+        return mb_substr($texto, 0, $limite);
     }
 
     public function store(Request $request)
@@ -393,12 +388,13 @@ class EmpleadoController extends Controller
                 ELSE CONCAT(FORMAT(porcentaje_incentivo, 2), '%') 
             END AS porcentaje_incentivo"),
             'id',
-            'depto',
-            DB::raw("CASE WHEN companyid = 168
-                THEN 'Joselito'
-                ELSE 'Negosur'
+            DB::raw('NULL AS depto'),
+            DB::raw("CASE
+                WHEN companyid = 126 THEN 'Business Support Hub'
+                WHEN companyid = 100 THEN 'Consorcio SH-QPL'
+                ELSE CONCAT('Empresa ', companyid)
             END AS company"),
-        )->where('fechasalida', null)->get();
+        )->whereNull('fecha_egreso')->get();
         return response()->json($empleados);
     }
 

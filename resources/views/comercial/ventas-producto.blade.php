@@ -101,7 +101,7 @@
                                         <div class="mt-2">
                                             <button id="btnVerAgencias" class="btn btn-sm btn-outline-info">Ver Detalle</button>
                                             <button id="btnVerAgenciasSinVenta" class="btn btn-sm btn-outline-warning">Agencias sin venta</button>
-                                            <button id="btnConfigVentasMinimo" class="btn btn-sm btn-outline-primary">Ventas mínimo</button>
+                                            <button id="btnConfigVentasMinimo" class="btn btn-sm btn-outline-primary">Ventas mÃ­nimo</button>
                                             <button id="btnLimpiarAgencia" class="btn btn-sm btn-outline-secondary d-none">Limpiar Filtro</button>
                                         </div>
                                     </div>
@@ -154,7 +154,7 @@
                                     style="width:100%">
                                     <thead>
                                         <tr>
-                                            <th>Descripción (Producto)</th>
+                                            <th>DescripciÃ³n (Producto)</th>
                                             <th>Total Vendido</th>
                                         </tr>
                                     </thead>
@@ -166,7 +166,7 @@
                         <div class="card mt-3">
                             <div class="card-header d-flex align-items-center justify-content-between">
                                 <h5 class="card-title mb-0">Resumen por Agencia</h5>
-                                <span class="badge bg-light text-dark" id="labelMinimoVentas">Mínimo: RD$ 0.00</span>
+                                <span class="badge bg-light text-dark" id="labelMinimoVentas">MÃ­nimo: RD$ 0.00</span>
                             </div>
                             <div class="card-body">
                                 <table id="tableAgencias"
@@ -263,7 +263,7 @@
                             <tr>
                                 <th>Agencia</th>
                                 <th>Total Vendido</th>
-                                <th>Acción</th>
+                                <th>AcciÃ³n</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -313,11 +313,11 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalVentasMinimoLabel">Configurar Ventas Mínimo</h5>
+                <h5 class="modal-title" id="modalVentasMinimoLabel">Configurar Ventas MÃ­nimo</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <label for="inputVentasMinimo" class="form-label">Monto mínimo para cumplimiento</label>
+                <label for="inputVentasMinimo" class="form-label">Monto mÃ­nimo para cumplimiento</label>
                 <input type="number" class="form-control" id="inputVentasMinimo" min="0" step="0.01" value="0">
                 <small class="text-muted">Ejemplo: si configuras 1000, agencia con 1001 cumple; con 999 no cumple.</small>
             </div>
@@ -502,7 +502,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 search: 'Buscar:',
                 lengthMenu: 'Mostrar _MENU_ registros',
                 info: 'Mostrando _START_ a _END_ de _TOTAL_ registros',
-                paginate: { first: 'Primera', last: 'Última', next: 'Siguiente', previous: 'Anterior' }
+                paginate: { first: 'Primera', last: 'Ãšltima', next: 'Siguiente', previous: 'Anterior' }
             },
             order: [[1, 'desc']],
         });
@@ -538,7 +538,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 search: 'Buscar:',
                 lengthMenu: 'Mostrar _MENU_ registros',
                 info: 'Mostrando _START_ a _END_ de _TOTAL_ registros',
-                paginate: { first: 'Primera', last: 'Última', next: 'Siguiente', previous: 'Anterior' }
+                paginate: { first: 'Primera', last: 'Ãšltima', next: 'Siguiente', previous: 'Anterior' }
             },
             order: [[0, 'asc']],
         });
@@ -593,7 +593,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const getCumplimientoBadge = (total) => {
         const cumple = cumpleMinimo(total);
         return cumple
-            ? '<span class="badge bg-success">CUMPLIÓ</span>'
+            ? '<span class="badge bg-success">CUMPLIÃ“</span>'
             : '<span class="badge bg-danger">NO CUMPLE</span>';
     };
 
@@ -645,7 +645,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 search: 'Buscar:',
                 lengthMenu: 'Mostrar _MENU_ registros',
                 info: 'Mostrando _START_ a _END_ de _TOTAL_ registros',
-                paginate: { first: 'Primera', last: 'Última', next: 'Siguiente', previous: 'Anterior' }
+                paginate: { first: 'Primera', last: 'Ãšltima', next: 'Siguiente', previous: 'Anterior' }
             },
             order: [[0, 'asc']],
         });
@@ -683,7 +683,7 @@ document.addEventListener('DOMContentLoaded', function () {
         cardAgenciasNoCumplen.textContent = '0';
         cardTerminalesNoRegistradas.textContent = '0';
         labelFecha.textContent = '';
-        labelMinimoVentas.textContent = `Mínimo: RD$ ${formatMoney(ventasMinimoConfig)}`;
+        labelMinimoVentas.textContent = `MÃ­nimo: RD$ ${formatMoney(ventasMinimoConfig)}`;
         renderVentasExigidaLabel();
         resumenAgenciaVisibleActual = new Map();
         agenciaSeleccionada = null;
@@ -776,7 +776,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let totalVendido = 0;
 
         (ventas ?? []).forEach(item => {
-            const descripcion = (item.descripcion ?? 'SIN DESCRIPCIÓN').toString().trim() || 'SIN DESCRIPCIÓN';
+            const descripcion = (item.descripcion ?? 'SIN DESCRIPCIÃ“N').toString().trim() || 'SIN DESCRIPCIÃ“N';
             const agencia = (item.agencia_id ?? 'SIN AGENCIA').toString().trim() || 'SIN AGENCIA';
             const ciudad = (item.ciudad ?? 'SIN CIUDAD').toString().trim() || 'SIN CIUDAD';
             const ruta = (item.ruta ?? 'SIN RUTA').toString().trim() || 'SIN RUTA';
@@ -816,7 +816,7 @@ document.addEventListener('DOMContentLoaded', function () {
             (ventas ?? []).forEach(item => {
                 const agencia = (item.agencia_id ?? 'SIN AGENCIA').toString().trim() || 'SIN AGENCIA';
                 if (!agenciasPermitidas.has(agencia)) return;
-                const descripcion = (item.descripcion ?? 'SIN DESCRIPCIÓN').toString().trim() || 'SIN DESCRIPCIÓN';
+                const descripcion = (item.descripcion ?? 'SIN DESCRIPCIÃ“N').toString().trim() || 'SIN DESCRIPCIÃ“N';
                 const ciudad = (item.ciudad ?? 'SIN CIUDAD').toString().trim() || 'SIN CIUDAD';
                 const ruta = (item.ruta ?? 'SIN RUTA').toString().trim() || 'SIN RUTA';
                 const monto = Number(item.monto ?? 0);
@@ -895,7 +895,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 search: 'Buscar:',
                 lengthMenu: 'Mostrar _MENU_ registros',
                 info: 'Mostrando _START_ a _END_ de _TOTAL_ registros',
-                paginate: { first: 'Primera', last: 'Última', next: 'Siguiente', previous: 'Anterior' }
+                paginate: { first: 'Primera', last: 'Ãšltima', next: 'Siguiente', previous: 'Anterior' }
             },
             dom: 'Bfrtip',
             buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],
@@ -910,7 +910,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 search: 'Buscar:',
                 lengthMenu: 'Mostrar _MENU_ registros',
                 info: 'Mostrando _START_ a _END_ de _TOTAL_ registros',
-                paginate: { first: 'Primera', last: 'Última', next: 'Siguiente', previous: 'Anterior' }
+                paginate: { first: 'Primera', last: 'Ãšltima', next: 'Siguiente', previous: 'Anterior' }
             },
             dom: 'Bfrtip',
             buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],
@@ -925,7 +925,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 search: 'Buscar:',
                 lengthMenu: 'Mostrar _MENU_ registros',
                 info: 'Mostrando _START_ a _END_ de _TOTAL_ registros',
-                paginate: { first: 'Primera', last: 'Última', next: 'Siguiente', previous: 'Anterior' }
+                paginate: { first: 'Primera', last: 'Ãšltima', next: 'Siguiente', previous: 'Anterior' }
             },
             dom: 'Bfrtip',
             buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],
@@ -940,7 +940,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 search: 'Buscar:',
                 lengthMenu: 'Mostrar _MENU_ registros',
                 info: 'Mostrando _START_ a _END_ de _TOTAL_ registros',
-                paginate: { first: 'Primera', last: 'Última', next: 'Siguiente', previous: 'Anterior' }
+                paginate: { first: 'Primera', last: 'Ãšltima', next: 'Siguiente', previous: 'Anterior' }
             },
             dom: 'Bfrtip',
             buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],
@@ -1091,7 +1091,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (data?.error) return data.error;
         if (data?.message && !data?.success && !data?.ventas) return data.message;
         if (data?.code !== undefined && !isSuccessCode(data.code)) {
-            return data?.message || `Código inesperado: ${data.code}`;
+            return data?.message || `CÃ³digo inesperado: ${data.code}`;
         }
         return null;
     };
@@ -1111,7 +1111,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const raw = await response.text();
             const titleMatch = raw.match(/<title>(.*?)<\/title>/i);
             const title = titleMatch?.[1]?.trim();
-            throw new Error(title || `El servidor devolvió una respuesta no JSON (HTTP ${response.status}).`);
+            throw new Error(title || `El servidor devolviÃ³ una respuesta no JSON (HTTP ${response.status}).`);
         }
 
         const data = await response.json();
@@ -1171,7 +1171,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 if (!Array.isArray(data.ventas)) {
-                    Swal.fire({ title: 'Error', text: 'La API no devolvió un listado de ventas válido.', icon: 'error' });
+                    Swal.fire({ title: 'Error', text: 'La API no devolviÃ³ un listado de ventas vÃ¡lido.', icon: 'error' });
                     return;
                 }
 
@@ -1238,7 +1238,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 if (!Array.isArray(data.ventas)) {
-                    Swal.fire({ title: 'Error', text: 'La API no devolvió un listado de ventas válido.', icon: 'error' });
+                    Swal.fire({ title: 'Error', text: 'La API no devolviÃ³ un listado de ventas vÃ¡lido.', icon: 'error' });
                     return;
                 }
 
@@ -1332,7 +1332,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('btnGuardarVentasMinimo').addEventListener('click', function () {
         const value = Number(document.getElementById('inputVentasMinimo').value ?? 0);
         ventasMinimoConfig = value >= 0 ? value : 0;
-        labelMinimoVentas.textContent = `Mínimo: RD$ ${formatMoney(ventasMinimoConfig)}`;
+        labelMinimoVentas.textContent = `MÃ­nimo: RD$ ${formatMoney(ventasMinimoConfig)}`;
         renderVentasExigidaLabel();
 
         const modalInstance = bootstrap.Modal.getInstance(document.getElementById('modalVentasMinimo'));
@@ -1397,10 +1397,11 @@ document.addEventListener('DOMContentLoaded', function () {
         abrirModalTerminalesNoRegistradas();
     });
 
-    labelMinimoVentas.textContent = `Mínimo: RD$ ${formatMoney(ventasMinimoConfig)}`;
+    labelMinimoVentas.textContent = `MÃ­nimo: RD$ ${formatMoney(ventasMinimoConfig)}`;
     renderVentasExigidaLabel();
     updateFiltroLabel();
     updateModalFiltroLabel();
 });
 </script>
 @endsection
+

@@ -380,3 +380,4 @@
         document.addEventListener('DOMContentLoaded', cargarListado);
     </script>
 @endsection
+

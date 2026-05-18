@@ -7,12 +7,12 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                            <h4 class="mb-sm-0">Catálogo de Juegos</h4>
+                            <h4 class="mb-sm-0">CatÃ¡logo de Juegos</h4>
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li class="breadcrumb-item"><a href="{{ route('inicio.index') }}">Inicio</a></li>
                                     <li class="breadcrumb-item"><a href="{{ route('mantenimiento.index') }}">Mantenimientos</a></li>
-                                    <li class="breadcrumb-item active">Catálogo de Juegos</li>
+                                    <li class="breadcrumb-item active">CatÃ¡logo de Juegos</li>
                                 </ol>
                             </div>
                         </div>
@@ -32,8 +32,8 @@
                         <h5 class="card-title mb-0">Listado</h5>
                         <div class="d-flex gap-2 align-items-end flex-wrap">
                             <div>
-                                <label class="form-label form-label-sm mb-1">Año</label>
-                                <input type="number" min="2000" max="2100" id="detectar-anio" class="form-control form-control-sm" value="" placeholder="Año" style="width: 95px;">
+                                <label class="form-label form-label-sm mb-1">AÃ±o</label>
+                                <input type="number" min="2000" max="2100" id="detectar-anio" class="form-control form-control-sm" value="" placeholder="AÃ±o" style="width: 95px;">
                             </div>
                             <div>
                                 <label class="form-label form-label-sm mb-1">Mes</label>
@@ -74,7 +74,7 @@
                                         <th>ID</th>
                                         <th>Producto ID</th>
                                         <th>Tipo</th>
-                                        <th>Descripción</th>
+                                        <th>DescripciÃ³n</th>
                                         <th style="width: 140px;">Acciones</th>
                                     </tr>
                                 </thead>
@@ -137,7 +137,7 @@
                             <input type="text" class="form-control" name="tipo" maxlength="255" required>
                         </div>
                         <div class="mb-0">
-                            <label class="form-label">Descripción</label>
+                            <label class="form-label">DescripciÃ³n</label>
                             <input type="text" class="form-control" name="descripcion" maxlength="255" required>
                         </div>
                     </div>
@@ -170,7 +170,7 @@
                             <input type="text" class="form-control" name="tipo" id="edit-tipo" maxlength="255" required>
                         </div>
                         <div class="mb-0">
-                            <label class="form-label">Descripción</label>
+                            <label class="form-label">DescripciÃ³n</label>
                             <input type="text" class="form-control" name="descripcion" id="edit-descripcion" maxlength="255" required>
                         </div>
                     </div>
@@ -187,12 +187,12 @@
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Productos detectados fuera del catálogo</h5>
+                    <h5 class="modal-title">Productos detectados fuera del catÃ¡logo</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-info py-2 mb-3">
-                        Esta detección solo informa productos nuevos. La inserción se hará solo con los seleccionados.
+                        Esta detecciÃ³n solo informa productos nuevos. La inserciÃ³n se harÃ¡ solo con los seleccionados.
                         <div class="mt-1"><strong>Consulta:</strong> <span id="texto-periodo-deteccion">-</span></div>
                         <div class="mt-1 small text-muted"><strong>Debug:</strong> <span id="texto-debug-deteccion">-</span></div>
                     </div>
@@ -206,7 +206,7 @@
                     <div id="detectar-contenido" class="d-none">
                         <div class="mb-2 text-end">
                             <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-toggle-no-catalogo">
-                                Ver solo "No en catálogo"
+                                Ver solo "No en catÃ¡logo"
                             </button>
                         </div>
                         <div class="form-check mb-2">
@@ -221,7 +221,7 @@
                                     <tr>
                                         <th style="width:40px;" class="th-seleccion"></th>
                                         <th id="th-producto-id">Producto ID</th>
-                                        <th class="th-completa">Descripción (API)</th>
+                                        <th class="th-completa">DescripciÃ³n (API)</th>
                                         <th class="th-completa">Tipo</th>
                                         <th class="th-completa">Origen(es)</th>
                                     </tr>
@@ -251,7 +251,7 @@
                 <div class="modal-body">
                     <div class="alert alert-info py-2 mb-3">
                         <div><strong>Consulta:</strong> <span id="texto-periodo-comparativo-sql">-</span></div>
-                        <div class="small mt-1"><strong>Totales:</strong> BET <span id="total-bet-sql">-</span> | NET <span id="total-net-sql">-</span> | Catálogo <span id="total-catalogo-sql">-</span> | No en catálogo <span id="total-no-catalogo-sql">-</span></div>
+                        <div class="small mt-1"><strong>Totales:</strong> BET <span id="total-bet-sql">-</span> | NET <span id="total-net-sql">-</span> | CatÃ¡logo <span id="total-catalogo-sql">-</span> | No en catÃ¡logo <span id="total-no-catalogo-sql">-</span></div>
                     </div>
                     <div id="comparativo-sql-loader" class="text-center py-4 d-none">
                         <div class="spinner-border text-primary" role="status"></div>
@@ -368,7 +368,7 @@
                 const tipo = String(button?.getAttribute('data-tipo') || '').trim() || 'pendiente';
 
                 if (!productoId) {
-                    Swal.fire('Error', 'La fila no tiene un producto_id válido.', 'error');
+                    Swal.fire('Error', 'La fila no tiene un producto_id vÃ¡lido.', 'error');
                     return;
                 }
 
@@ -444,11 +444,11 @@
                 }
 
                 const confirmacion = await Swal.fire({
-                    title: '¿Insertar todos?',
-                    text: `Se intentarán insertar ${productos.length} registros al catálogo.`,
+                    title: 'Â¿Insertar todos?',
+                    text: `Se intentarÃ¡n insertar ${productos.length} registros al catÃ¡logo.`,
                     icon: 'question',
                     showCancelButton: true,
-                    confirmButtonText: 'Sí, insertar',
+                    confirmButtonText: 'SÃ­, insertar',
                     cancelButtonText: 'Cancelar',
                 });
 
@@ -549,13 +549,13 @@
                 }
 
                 if (thProductoId) {
-                    thProductoId.textContent = solo ? 'No en catálogo' : 'Producto ID';
+                    thProductoId.textContent = solo ? 'No en catÃ¡logo' : 'Producto ID';
                 }
 
                 if (btnToggleNoCatalogo) {
                     btnToggleNoCatalogo.textContent = solo
                         ? 'Ver vista completa'
-                        : 'Ver solo "No en catálogo"';
+                        : 'Ver solo "No en catÃ¡logo"';
                 }
 
                 if (btnInsertarDetectados) {
@@ -579,10 +579,10 @@
 
                     if (!consultarTodo) {
                         if (!Number.isInteger(anio) || anio < 2000 || anio > 2100) {
-                            throw new Error('El año debe estar entre 2000 y 2100.');
+                            throw new Error('El aÃ±o debe estar entre 2000 y 2100.');
                         }
                         if (!Number.isInteger(mes) || mes < 1 || mes > 12) {
-                            throw new Error('El mes seleccionado no es válido.');
+                            throw new Error('El mes seleccionado no es vÃ¡lido.');
                         }
                     }
 
@@ -634,7 +634,7 @@
                         if (puedeSugerir) {
                             detectarVacio.innerHTML = `
                                 No se encontraron productos nuevos en <strong>${String(payload?.periodo_texto || '-')}</strong>.<br>
-                                Último período con data: <strong>${sugerenciaTexto}</strong>.
+                                Ãšltimo perÃ­odo con data: <strong>${sugerenciaTexto}</strong>.
                                 <button type="button" class="btn btn-sm btn-outline-primary ms-2" id="btn-usar-periodo-sugerido">
                                     Usar ${sugerenciaTexto}
                                 </button>
@@ -699,7 +699,7 @@
                     aplicarVistaNoCatalogo(vistaSoloNoCatalogo);
                 } catch (error) {
                     detectarLoader.classList.add('d-none');
-                    Swal.fire('Error', error.message || 'No se pudo ejecutar la detección.', 'error');
+                    Swal.fire('Error', error.message || 'No se pudo ejecutar la detecciÃ³n.', 'error');
                 }
             }
 
@@ -720,10 +720,10 @@
 
                     if (!consultarTodo) {
                         if (!Number.isInteger(anio) || anio < 2000 || anio > 2100) {
-                            throw new Error('Debes indicar un año válido para la consulta SQL.');
+                            throw new Error('Debes indicar un aÃ±o vÃ¡lido para la consulta SQL.');
                         }
                         if (!Number.isInteger(mes) || mes < 1 || mes > 12) {
-                            throw new Error('Debes seleccionar un mes válido para la consulta SQL.');
+                            throw new Error('Debes seleccionar un mes vÃ¡lido para la consulta SQL.');
                         }
                     }
 
@@ -823,7 +823,7 @@
                                     emptyTable: 'No hay datos disponibles',
                                     paginate: {
                                         first: 'Primero',
-                                        last: 'Último',
+                                        last: 'Ãšltimo',
                                         next: 'Siguiente',
                                         previous: 'Anterior'
                                     }
@@ -866,11 +866,11 @@
                     const productoId = this.getAttribute('data-producto-id') || '';
 
                     Swal.fire({
-                        title: '¿Eliminar juego?',
+                        title: 'Â¿Eliminar juego?',
                         text: 'Producto ID: ' + productoId,
                         icon: 'warning',
                         showCancelButton: true,
-                        confirmButtonText: 'Sí, eliminar',
+                        confirmButtonText: 'SÃ­, eliminar',
                         cancelButtonText: 'Cancelar',
                     }).then(function (result) {
                         if (!result.isConfirmed) {
@@ -948,7 +948,7 @@
                         });
 
                     if (!seleccionados.length) {
-                        Swal.fire('Sin selección', 'Debes seleccionar al menos un producto para insertar.', 'warning');
+                        Swal.fire('Sin selecciÃ³n', 'Debes seleccionar al menos un producto para insertar.', 'warning');
                         return;
                     }
 
@@ -1004,7 +1004,7 @@
                         emptyTable: 'No hay datos disponibles',
                         paginate: {
                             first: 'Primero',
-                            last: 'Último',
+                            last: 'Ãšltimo',
                             next: 'Siguiente',
                             previous: 'Anterior'
                         }
@@ -1014,3 +1014,4 @@
         });
     </script>
 @endsection
+

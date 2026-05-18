@@ -4,9 +4,9 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>Iniciar Sesion | Grupo Joselito</title>
+    <title>Iniciar Sesion | Business Support Hub</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="CRM Grupo Joselito - Inicio de Sesion" />
+    <meta name="description" content="ERP BSH Support - Inicio de Sesion" />
     <link rel="shortcut icon" href="{{ asset('images/favicon.ico') }}">
 
     <link href="{{ asset('css/bootstrap.min.css') }}" rel="stylesheet" type="text/css" />
@@ -42,6 +42,37 @@
             font-weight: 500;
             opacity: 0.85;
         }
+
+        .auth-bg-cover {
+            background:
+                radial-gradient(circle at 18% 22%, rgba(236, 190, 19, 0.35) 0, rgba(236, 190, 19, 0) 28%),
+                radial-gradient(circle at 82% 18%, rgba(164, 57, 85, 0.36) 0, rgba(164, 57, 85, 0) 30%),
+                linear-gradient(135deg, #2C2B26 0%, #6A6B5F 42%, #738C79 68%, #A43955 100%);
+        }
+
+        .auth-bg-cover > .bg-overlay {
+            opacity: 0.34;
+            background-color: #2C2B26;
+            background-blend-mode: multiply;
+        }
+
+        .auth-one-bg {
+            background-image:
+                linear-gradient(145deg, rgba(44, 43, 38, 0.22), rgba(44, 43, 38, 0.58)),
+                url("{{ asset('images/auth-one-bg.jpg') }}");
+        }
+
+        .auth-one-bg .bg-overlay {
+            background:
+                radial-gradient(circle at 14% 16%, rgba(236, 190, 19, 0.42) 0, rgba(236, 190, 19, 0) 30%),
+                linear-gradient(135deg, rgba(44, 43, 38, 0.94) 0%, rgba(106, 107, 95, 0.88) 48%, rgba(164, 57, 85, 0.82) 100%);
+            opacity: 0.92;
+        }
+
+        .brand-wordmark .brand-icon {
+            background: rgba(236, 190, 19, 0.18);
+            color: #ECBE13;
+        }
     </style>
 </head>
 
@@ -65,7 +96,7 @@
                                                 <a href="/" class="d-block">
                                                     <span class="brand-wordmark">
                                                         <span class="brand-icon"><i class="ri-shield-user-line"></i></span>
-                                                        Grupo <span class="brand-suffix">Joselito</span>
+                                                        Business <span class="brand-suffix">Support Hub</span>
                                                     </span>
                                                 </a>
                                             </div>
@@ -82,13 +113,13 @@
                                                     </div>
                                                     <div class="carousel-inner text-center text-white-50 pb-5">
                                                         <div class="carousel-item active">
-                                                            <p class="fs-15 fst-italic">" Tu CRM operativo unificado: ventas, agencias, RRHH y servicios generales en un solo lugar. "</p>
+                                                            <p class="fs-15 fst-italic">" Tu ERP operativo unificado: ventas, agencias, RRHH y servicios generales en un solo lugar. "</p>
                                                         </div>
                                                         <div class="carousel-item">
                                                             <p class="fs-15 fst-italic">" Indicadores en tiempo real, control de tickets y seguimiento de incentivos para todo el equipo. "</p>
                                                         </div>
                                                         <div class="carousel-item">
-                                                            <p class="fs-15 fst-italic">" Plataforma desarrollada para Grupo Joselito - confiable, segura y al servicio de tu operacion. "</p>
+                                                            <p class="fs-15 fst-italic">" Plataforma desarrollada para Business Support Hub - confiable, segura y al servicio de tu operacion. "</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -101,7 +132,7 @@
                                     <div class="p-lg-5 p-4">
                                         <div>
                                             <h5 class="text-primary">Bienvenido!</h5>
-                                            <p class="text-muted">Inicia sesion para continuar en el CRM de Grupo Joselito.</p>
+                                            <p class="text-muted">Inicia sesion para continuar en el ERP de BSH Support.</p>
                                         </div>
 
                                         @if ($errors->any())
@@ -196,7 +227,7 @@
                     <div class="col-lg-12">
                         <div class="text-center">
                             <p class="mb-0 text-white-50">
-                                &copy; {{ date('Y') }} Grupo Joselito. Todos los derechos reservados.
+                                &copy; {{ date('Y') }} Business Support Hub. Todos los derechos reservados.
                             </p>
                         </div>
                     </div>
@@ -225,3 +256,4 @@
 </body>
 
 </html>
+

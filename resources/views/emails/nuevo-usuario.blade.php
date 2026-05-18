@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bienvenido a Grupo Joselito</title>
+    <title>Bienvenido a Business Support Hub</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f3f9;">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f3f3f9; padding: 40px 0;">
@@ -15,7 +15,7 @@
                     <tr>
                         <td style="background: linear-gradient(135deg, #405189 0%, #0ab39c 100%); padding: 30px 40px; text-align: center;">
                             <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">
-                                🎉 ¡Bienvenido a Grupo Joselito!
+                                ðŸŽ‰ Â¡Bienvenido a Business Support Hub!
                             </h1>
                             <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">
                                 Tu cuenta ha sido creada exitosamente
@@ -30,7 +30,7 @@
                                 Hola <strong>{{ $user->name }}</strong>,
                             </p>
                             <p style="color: #495057; font-size: 15px; margin: 0 0 25px; line-height: 1.6;">
-                                Se ha creado una cuenta para ti en el sistema CRM de <strong>Grupo Joselito</strong>. A continuación encontrarás tus datos de acceso:
+                                Se ha creado una cuenta para ti en el sistema ERP de <strong>BSH Support</strong>. A continuaciÃ³n encontrarÃ¡s tus datos de acceso:
                             </p>
 
                             <!-- Credentials Box -->
@@ -40,13 +40,13 @@
                                         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                                             <tr>
                                                 <td style="padding: 8px 0;">
-                                                    <span style="color: #878a99; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Correo electrónico</span><br>
+                                                    <span style="color: #878a99; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Correo electrÃ³nico</span><br>
                                                     <span style="color: #405189; font-size: 16px; font-weight: 600;">{{ $user->email }}</span>
                                                 </td>
                                             </tr>
                                             <tr>
                                                 <td style="padding: 8px 0;">
-                                                    <span style="color: #878a99; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Contraseña</span><br>
+                                                    <span style="color: #878a99; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">ContraseÃ±a</span><br>
                                                     <span style="color: #405189; font-size: 16px; font-weight: 600;">{{ $plainPassword }}</span>
                                                 </td>
                                             </tr>
@@ -60,7 +60,7 @@
                                 <tr>
                                     <td style="padding: 15px 20px;">
                                         <p style="color: #856404; font-size: 13px; margin: 0; line-height: 1.5;">
-                                            ⚠️ <strong>Importante:</strong> Por seguridad, te recomendamos cambiar tu contraseña después de iniciar sesión por primera vez. No compartas estos datos con nadie.
+                                            âš ï¸ <strong>Importante:</strong> Por seguridad, te recomendamos cambiar tu contraseÃ±a despuÃ©s de iniciar sesiÃ³n por primera vez. No compartas estos datos con nadie.
                                         </p>
                                     </td>
                                 </tr>
@@ -71,7 +71,7 @@
                                 <tr>
                                     <td align="center">
                                         <a href="{{ url('/login') }}" style="display: inline-block; background: linear-gradient(135deg, #405189 0%, #0ab39c 100%); color: #ffffff; text-decoration: none; padding: 14px 35px; border-radius: 6px; font-size: 15px; font-weight: 600;">
-                                            Iniciar Sesión
+                                            Iniciar SesiÃ³n
                                         </a>
                                     </td>
                                 </tr>
@@ -83,11 +83,11 @@
                     <tr>
                         <td style="background-color: #f3f6f9; padding: 20px 40px; text-align: center; border-top: 1px solid #e9ebec;">
                             <p style="color: #878a99; font-size: 12px; margin: 0; line-height: 1.5;">
-                                Este es un correo automático generado por el sistema CRM de <strong>Grupo Joselito</strong>.<br>
+                                Este es un correo automÃ¡tico generado por el sistema ERP de <strong>BSH Support</strong>.<br>
                                 Por favor, no respondas a este correo.
                             </p>
                             <p style="color: #adb5bd; font-size: 11px; margin: 10px 0 0;">
-                                &copy; {{ date('Y') }} Grupo Joselito. Todos los derechos reservados.
+                                &copy; {{ date('Y') }} Business Support Hub. Todos los derechos reservados.
                             </p>
                         </td>
                     </tr>
@@ -98,3 +98,4 @@
     </table>
 </body>
 </html>
+

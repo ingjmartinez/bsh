@@ -37,8 +37,8 @@
                                                 <label class="form-label text-white text-opacity-75">Empresa</label>
                                                 <select id="empresa" class="form-select border-0 shadow-sm">
                                                     <option value="">Todas</option>
-                                                    <option value="168">168 = Grupo Joselito</option>
-                                                    <option value="169">169 = Negosur</option>
+                                                    <option value="126">126 = Business Support Hub</option>
+                                                    <option value="100">100 = Consorcio SH-QPL</option>
                                                 </select>
                                             </div>
                                             <div class="col-sm-6 d-flex align-items-end">
@@ -74,7 +74,7 @@
                                         </span>
                                     </div>
                                 </div>
-                                <div class="text-muted small">Conteo total según empresa filtrada.</div>
+                                <div class="text-muted small">Conteo total segÃºn empresa filtrada.</div>
                             </div>
                         </div>
                     </div>
@@ -92,7 +92,7 @@
                                         </span>
                                     </div>
                                 </div>
-                                <div class="text-muted small">Fecha de salida vacía = empleado activo.</div>
+                                <div class="text-muted small">Fecha de salida vacÃ­a = empleado activo.</div>
                             </div>
                         </div>
                     </div>
@@ -240,7 +240,7 @@
                     <div class="col-sm-6">
                         <script>
                             document.write(new Date().getFullYear())
-                        </script> © Velzon.
+                        </script> Â© Velzon.
                     </div>
                     <div class="col-sm-6">
                         <div class="text-sm-end d-none d-sm-block">
@@ -269,8 +269,8 @@
         }
 
         function empresaTexto(valor) {
-            if (String(valor) === '168') return 'Grupo Joselito';
-            if (String(valor) === '169') return 'Negosur';
+            if (String(valor) === '126') return 'Business Support Hub';
+            if (String(valor) === '100') return 'Consorcio SH-QPL';
             return 'Todas las empresas';
         }
 
@@ -579,12 +579,12 @@
                 },
             })
                 .then(response => parsearRespuestaJson(response, 'Error durante la sincronizacion de empleados'))
-                .then(() => {
+                .then((payload) => {
                     textSwal.innerHTML = "Sincronizando: 100%";
                     clearInterval(interval);
                     Swal.fire({
                         title: "Listo",
-                        text: "Sincronización completada con éxito",
+                        text: "Sincronizacion completada con exito para " + (payload.empresa_nombre || empresaTexto(empresa)),
                         icon: "success"
                     });
                     cargarDashboard();
@@ -617,3 +617,4 @@
         });
     </script>
 @endsection
+

@@ -9,7 +9,7 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                            <h4 class="mb-sm-0">Gestión de Tareas</h4>
+                            <h4 class="mb-sm-0">GestiÃ³n de Tareas</h4>
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li class="breadcrumb-item"><a href="/">Inicio</a></li>
@@ -20,7 +20,7 @@
                     </div>
                 </div>
 
-                <!-- ═══════════ STAT CARDS ═══════════ -->
+                <!-- â•â•â•â•â•â•â•â•â•â•â• STAT CARDS â•â•â•â•â•â•â•â•â•â•â• -->
                 <div class="row">
                     <div class="col-xl-3 col-md-6">
                         <div class="card card-animate">
@@ -110,7 +110,7 @@
                     </div>
                 </div>
 
-                <!-- ═══════════ FILTROS + ACCIONES ═══════════ -->
+                <!-- â•â•â•â•â•â•â•â•â•â•â• FILTROS + ACCIONES â•â•â•â•â•â•â•â•â•â•â• -->
                 <div class="row">
                     <div class="col-12">
                         <div class="card">
@@ -167,7 +167,7 @@
                     </div>
                 </div>
 
-                <!-- ═══════════ TABS: GANTT / TABLA ═══════════ -->
+                <!-- â•â•â•â•â•â•â•â•â•â•â• TABS: GANTT / TABLA â•â•â•â•â•â•â•â•â•â•â• -->
                 <div class="row">
                     <div class="col-12">
                         <div class="card">
@@ -204,7 +204,7 @@
                                                 <thead class="table-light">
                                                     <tr>
                                                         <th style="width:40px">ID</th>
-                                                        <th>Título</th>
+                                                        <th>TÃ­tulo</th>
                                                         <th>Departamento</th>
                                                         <th>Asignado</th>
                                                         <th>Estado</th>
@@ -231,13 +231,13 @@
         <footer class="footer">
             <div class="container-fluid">
                 <div class="row">
-                    <div class="col-sm-6"><script>document.write(new Date().getFullYear())</script> © CRM.</div>
+                    <div class="col-sm-6"><script>document.write(new Date().getFullYear())</script> Â© ERP.</div>
                 </div>
             </div>
         </footer>
     </div>
 
-    <!-- ═══════════ MODAL — CREAR/EDITAR TAREA ═══════════ -->
+    <!-- â•â•â•â•â•â•â•â•â•â•â• MODAL â€” CREAR/EDITAR TAREA â•â•â•â•â•â•â•â•â•â•â• -->
     <div class="modal fade" id="modalTarea" tabindex="-1" aria-labelledby="modalTareaLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -250,26 +250,26 @@
                         <input type="hidden" id="tarea-id" value="">
                         <div class="row g-3">
                             <div class="col-md-8">
-                                <label class="form-label">Título <span class="text-danger">*</span></label>
+                                <label class="form-label">TÃ­tulo <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="tarea-titulo" required>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Prioridad <span class="text-danger">*</span></label>
                                 <select class="form-select" id="tarea-prioridad">
-                                    <option value="baja">🟢 Baja</option>
-                                    <option value="media" selected>🔵 Media</option>
-                                    <option value="alta">🟡 Alta</option>
-                                    <option value="critica">🔴 Crítica</option>
+                                    <option value="baja">ðŸŸ¢ Baja</option>
+                                    <option value="media" selected>ðŸ”µ Media</option>
+                                    <option value="alta">ðŸŸ¡ Alta</option>
+                                    <option value="critica">ðŸ”´ CrÃ­tica</option>
                                 </select>
                             </div>
                             <div class="col-12">
-                                <label class="form-label">Descripción</label>
+                                <label class="form-label">DescripciÃ³n</label>
                                 <textarea class="form-control" id="tarea-descripcion" rows="3" placeholder="Describe la tarea..."></textarea>
                             </div>
                             <div class="col-12">
                                 <label class="form-label">Adjunto (opcional)</label>
                                 <input type="file" class="form-control" id="tarea-adjunto" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.rar,.txt">
-                                <small class="text-muted">Tamaño máximo: 10MB</small>
+                                <small class="text-muted">TamaÃ±o mÃ¡ximo: 10MB</small>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Departamento <span class="text-danger">*</span></label>
@@ -324,7 +324,7 @@
         </div>
     </div>
 
-    <!-- ═══════════ MODAL — DETALLE TAREA ═══════════ -->
+    <!-- â•â•â•â•â•â•â•â•â•â•â• MODAL â€” DETALLE TAREA â•â•â•â•â•â•â•â•â•â•â• -->
     <div class="modal fade" id="modalDetalle" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -344,7 +344,7 @@
         </div>
     </div>
 
-    <!-- ═══════════ MODAL — DEPARTAMENTOS ═══════════ -->
+    <!-- â•â•â•â•â•â•â•â•â•â•â• MODAL â€” DEPARTAMENTOS â•â•â•â•â•â•â•â•â•â•â• -->
     <div class="modal fade" id="modalDepartamento" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -358,7 +358,7 @@
                             <input type="text" class="form-control form-control-sm" id="depto-nombre" placeholder="Nombre">
                         </div>
                         <div class="col-4">
-                            <input type="text" class="form-control form-control-sm" id="depto-descripcion" placeholder="Descripción">
+                            <input type="text" class="form-control form-control-sm" id="depto-descripcion" placeholder="DescripciÃ³n">
                         </div>
                         <div class="col-1">
                             <input type="color" class="form-control form-control-sm form-control-color p-0" id="depto-color" value="#405189" style="height:31px;">
@@ -380,10 +380,10 @@
         <div class="modal-dialog modal-sm">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Confirmar eliminación</h5>
+                    <h5 class="modal-title">Confirmar eliminaciÃ³n</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">¿Está seguro que desea eliminar esta tarea?</div>
+                <div class="modal-body">Â¿EstÃ¡ seguro que desea eliminar esta tarea?</div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-danger btn-sm" id="btn-confirmar-eliminar">Eliminar</button>
@@ -395,7 +395,7 @@
 
 @section('script')
 <style>
-    /* ═══ GANTT CUSTOM CSS ═══ */
+    /* â•â•â• GANTT CUSTOM CSS â•â•â• */
     .gantt-header { display:flex; position:sticky; top:0; z-index:2; background:#f3f6f9; border-bottom:2px solid #e9ebec; }
     .gantt-header-label { padding:6px 0; text-align:center; font-size:11px; font-weight:600; color:#878a99; border-right:1px solid #e9ebec; }
     .gantt-row { display:flex; align-items:center; border-bottom:1px solid #f3f3f9; min-height:38px; position:relative; }
@@ -458,7 +458,7 @@ function aplicarFiltroTareaDesdeUrl() {
     }
 }
 
-/* ═══════════ FILTROS ═══════════ */
+/* â•â•â•â•â•â•â•â•â•â•â• FILTROS â•â•â•â•â•â•â•â•â•â•â• */
 function getFiltros() {
     return {
         departamento_id: $('#filtro-departamento').val(),
@@ -484,7 +484,7 @@ function actualizarStats() {
     });
 }
 
-/* ═══════════ GANTT CHART ═══════════ */
+/* â•â•â•â•â•â•â•â•â•â•â• GANTT CHART â•â•â•â•â•â•â•â•â•â•â• */
 function cargarGantt() {
     $('#gantt-loading').show();
     $('#gantt-container').empty();
@@ -513,7 +513,7 @@ function renderGantt(tareas) {
     let minDate = new Date(Math.min(...allDates));
     let maxDate = new Date(Math.max(...allDates));
 
-    // Extender rango ±7 días
+    // Extender rango Â±7 dÃ­as
     minDate.setDate(minDate.getDate() - 3);
     maxDate.setDate(maxDate.getDate() + 7);
 
@@ -553,7 +553,7 @@ function renderGantt(tareas) {
         const barWidth = Math.max((endOff - startOff) * dayWidth, 4);
         const barLeft = startOff * dayWidth;
 
-        const prioIcons = {baja:'🟢',media:'🔵',alta:'🟡',critica:'🔴'};
+        const prioIcons = {baja:'ðŸŸ¢',media:'ðŸ”µ',alta:'ðŸŸ¡',critica:'ðŸ”´'};
         const estadoLabels = {pendiente:'Pendiente',en_progreso:'En Progreso',completada:'Completada',cancelada:'Cancelada'};
         const barColor = t.atrasada ? '#f06548' : t.color;
         const atrasadaBadge = t.atrasada ? ' <span class="badge bg-danger badge-atrasada ms-1" style="font-size:9px">-' + t.dias_atraso + 'd</span>' : '';
@@ -582,7 +582,7 @@ function renderGantt(tareas) {
     container.html(headerHtml + '<div style="max-height:420px;overflow-y:auto;">' + rowsHtml + '</div>');
 }
 
-/* ═══════════ DATATABLE ═══════════ */
+/* â•â•â•â•â•â•â•â•â•â•â• DATATABLE â•â•â•â•â•â•â•â•â•â•â• */
 function initDataTable() {
     dataTable = $('#tableTareas').DataTable({
         processing: true,
@@ -615,7 +615,7 @@ function initDataTable() {
                 return '<span class="badge bg-'+row.badge_estado+'">'+labels[data]+'</span>';
             }},
             { data: 'prioridad', render: function(data) {
-                const icons = {baja:'🟢 Baja',media:'🔵 Media',alta:'🟡 Alta',critica:'🔴 Crítica'};
+                const icons = {baja:'ðŸŸ¢ Baja',media:'ðŸ”µ Media',alta:'ðŸŸ¡ Alta',critica:'ðŸ”´ CrÃ­tica'};
                 return icons[data] || data;
             }},
             { data: 'progreso', render: function(data) {
@@ -634,7 +634,7 @@ function initDataTable() {
                 }
 
                 return '<div class="d-flex gap-1 justify-content-center">' +
-                    '<button class="btn btn-sm btn-soft-info" onclick="verDetalle('+row.id+')" title="Ver detalle y conversación"><i class="ri-chat-3-line"></i></button>' +
+                    '<button class="btn btn-sm btn-soft-info" onclick="verDetalle('+row.id+')" title="Ver detalle y conversaciÃ³n"><i class="ri-chat-3-line"></i></button>' +
                     botonCierre +
                     '<button class="btn btn-sm btn-soft-primary" onclick="editarTarea('+row.id+')" title="Editar"><i class="ri-pencil-line"></i></button>' +
                     '<button class="btn btn-sm btn-soft-danger" onclick="confirmarEliminar('+row.id+')" title="Eliminar"><i class="ri-delete-bin-line"></i></button>' +
@@ -646,7 +646,7 @@ function initDataTable() {
     });
 }
 
-/* ═══════════ CRUD TAREAS ═══════════ */
+/* â•â•â•â•â•â•â•â•â•â•â• CRUD TAREAS â•â•â•â•â•â•â•â•â•â•â• */
 function limpiarFormTarea() {
     $('#tarea-id').val('');
     $('#formTarea')[0].reset();
@@ -713,7 +713,7 @@ function guardarTarea() {
         data: formData,
         success: function(res) {
             $('#modalTarea').modal('hide');
-            Swal.fire({ icon:'success', title:'¡Éxito!', text:res.message, timer:2000, showConfirmButton:false });
+            Swal.fire({ icon:'success', title:'Â¡Ã‰xito!', text:res.message, timer:2000, showConfirmButton:false });
             cargarGantt();
             if (dataTable) dataTable.ajax.reload(null, false);
             actualizarStats();
@@ -722,7 +722,7 @@ function guardarTarea() {
             const errors = xhr.responseJSON?.errors;
             if (errors) {
                 let msg = Object.values(errors).flat().join('<br>');
-                Swal.fire({ icon:'error', title:'Error de validación', html:msg });
+                Swal.fire({ icon:'error', title:'Error de validaciÃ³n', html:msg });
             } else {
                 Swal.fire('Error', xhr.responseJSON?.message || 'Error al guardar.', 'error');
             }
@@ -753,11 +753,11 @@ function editarTarea(id) {
 
 function solicitarCierreTarea(id) {
     Swal.fire({
-        title: '¿Solicitar cierre?',
-        text: 'Se enviará una notificación al admin/superior para finalizar esta tarea.',
+        title: 'Â¿Solicitar cierre?',
+        text: 'Se enviarÃ¡ una notificaciÃ³n al admin/superior para finalizar esta tarea.',
         icon: 'question',
         showCancelButton: true,
-        confirmButtonText: 'Sí, solicitar',
+        confirmButtonText: 'SÃ­, solicitar',
         cancelButtonText: 'Cancelar'
     }).then((result) => {
         if (!result.isConfirmed) return;
@@ -781,10 +781,10 @@ function solicitarCierreTarea(id) {
 function finalizarTarea(id) {
     Swal.fire({
         title: 'Finalizar tarea',
-        text: 'Esta acción cerrará definitivamente la tarea.',
+        text: 'Esta acciÃ³n cerrarÃ¡ definitivamente la tarea.',
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonText: 'Sí, finalizar',
+        confirmButtonText: 'SÃ­, finalizar',
         cancelButtonText: 'Cancelar'
     }).then((result) => {
         if (!result.isConfirmed) return;
@@ -813,12 +813,12 @@ function verDetalle(id) {
     $.getJSON(URL_TAREAS + '/' + id, function(res) {
         const t = res.tarea;
         const estadoLabels = {pendiente:'Pendiente',en_progreso:'En Progreso',completada:'Completada',cancelada:'Cancelada'};
-        const prioIcons = {baja:'🟢 Baja',media:'🔵 Media',alta:'🟡 Alta',critica:'🔴 Crítica'};
+        const prioIcons = {baja:'ðŸŸ¢ Baja',media:'ðŸ”µ Media',alta:'ðŸŸ¡ Alta',critica:'ðŸ”´ CrÃ­tica'};
         const badgeColors = {pendiente:'warning',en_progreso:'info',completada:'success',cancelada:'danger'};
 
         let html = '<div class="row g-3">';
         html += '<div class="col-md-8"><h5 class="mb-1">' + t.titulo + '</h5>';
-        if (res.atrasada) html += '<span class="badge bg-danger badge-atrasada me-1">Atrasada -' + res.dias_atraso + ' días</span>';
+        if (res.atrasada) html += '<span class="badge bg-danger badge-atrasada me-1">Atrasada -' + res.dias_atraso + ' dÃ­as</span>';
         html += '<span class="badge bg-' + badgeColors[t.estado] + '">' + estadoLabels[t.estado] + '</span>';
         html += ' <span>' + prioIcons[t.prioridad] + '</span>';
         html += '</div>';
@@ -875,7 +875,7 @@ function verDetalle(id) {
             });
             html += '</div>';
         } else {
-            html += '<p class="text-muted fs-12">Sin historial aún.</p>';
+            html += '<p class="text-muted fs-12">Sin historial aÃºn.</p>';
         }
 
         // Formulario comentario
@@ -921,7 +921,7 @@ function agregarComentario(tareaId) {
     });
 }
 
-/* ═══════════ DEPARTAMENTOS ═══════════ */
+/* â•â•â•â•â•â•â•â•â•â•â• DEPARTAMENTOS â•â•â•â•â•â•â•â•â•â•â• */
 function cargarDepartamentosModal() {
     $.getJSON(URL_DEPTOS, function(data) {
         let html = '<div class="list-group">';
@@ -929,7 +929,7 @@ function cargarDepartamentosModal() {
             html += '<div class="list-group-item d-flex align-items-center justify-content-between py-2">';
             html += '<div class="d-flex align-items-center gap-2"><span class="rounded-circle d-inline-block" style="width:14px;height:14px;background:'+d.color+'"></span>';
             html += '<strong class="fs-13">'+d.nombre+'</strong>';
-            if (d.descripcion) html += ' <small class="text-muted">— '+d.descripcion+'</small>';
+            if (d.descripcion) html += ' <small class="text-muted">â€” '+d.descripcion+'</small>';
             html += '</div>';
             html += '<button class="btn btn-sm btn-soft-danger" onclick="eliminarDepartamento('+d.id+')"><i class="ri-delete-bin-line"></i></button>';
             html += '</div>';
@@ -958,7 +958,7 @@ function guardarDepartamento() {
             $('#depto-descripcion').val('');
             cargarDepartamentosModal();
             Swal.fire({ icon:'success', title:'Departamento creado', timer:1500, showConfirmButton:false });
-            // Recargar la página para actualizar selects
+            // Recargar la pÃ¡gina para actualizar selects
             setTimeout(() => location.reload(), 1600);
         },
         error: function(xhr) {
@@ -969,7 +969,7 @@ function guardarDepartamento() {
 
 function eliminarDepartamento(id) {
     Swal.fire({
-        title: '¿Eliminar departamento?',
+        title: 'Â¿Eliminar departamento?',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#f06548',
@@ -994,7 +994,7 @@ function eliminarDepartamento(id) {
     });
 }
 
-/* ═══════════ HELPERS ═══════════ */
+/* â•â•â•â•â•â•â•â•â•â•â• HELPERS â•â•â•â•â•â•â•â•â•â•â• */
 function formatDate(dateStr) {
     if (!dateStr) return '-';
     const d = new Date(dateStr);
@@ -1007,3 +1007,4 @@ function formatDateTime(dateStr) {
 }
 </script>
 @endsection
+

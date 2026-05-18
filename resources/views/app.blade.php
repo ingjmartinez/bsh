@@ -5,7 +5,7 @@
 <head>
 
     <meta charset="utf-8" />
-    <title>Grupo Joselito</title>
+    <title>Business Support Hub</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta content="Premium Multipurpose Admin & Dashboard Template" name="description" />
     <meta content="Themesbrand" name="author" />
@@ -135,6 +135,38 @@
 
         #navbar-nav .menu-dropdown .nav-link:hover {
             transform: translateX(2px);
+        }
+
+        #navbar-nav .sidebar-brand-title {
+            padding: 1.05rem 1.5rem 0.7rem;
+        }
+
+        #navbar-nav .sidebar-brand-title .brand-mark {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            color: #ffffff;
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: 0;
+            line-height: 1.1;
+        }
+
+        #navbar-nav .sidebar-brand-title .brand-mark i {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            color: var(--bsh-yellow, #ECBE13);
+            background: rgba(236, 190, 19, 0.14);
+            font-size: 1rem;
+        }
+
+        html[data-sidebar-size="sm"] #navbar-nav .sidebar-brand-title,
+        html[data-sidebar-size="sm-hover"] #navbar-nav .sidebar-brand-title {
+            display: none;
         }
 
         #navbar-nav .menu-dropdown.show {
@@ -441,7 +473,7 @@
                                     data-lang="sp" title="Spanish">
                                     <img src="images/flags/spain.svg" alt="user-image" class="me-2 rounded"
                                         height="18">
-                                    <span class="align-middle">Española</span>
+                                    <span class="align-middle">Espanol</span>
                                 </a>
 
                                 <!-- item-->
@@ -464,7 +496,7 @@
                                     data-lang="ru" title="Russian">
                                     <img src="images/flags/russia.svg" alt="user-image" class="me-2 rounded"
                                         height="18">
-                                    <span class="align-middle">русский</span>
+                                    <span class="align-middle">Russian</span>
                                 </a>
 
                                 <!-- item-->
@@ -472,7 +504,7 @@
                                     data-lang="ch" title="Chinese">
                                     <img src="images/flags/china.svg" alt="user-image" class="me-2 rounded"
                                         height="18">
-                                    <span class="align-middle">中国人</span>
+                                    <span class="align-middle">Chinese</span>
                                 </a>
 
                                 <!-- item-->
@@ -480,7 +512,7 @@
                                     data-lang="fr" title="French">
                                     <img src="images/flags/french.svg" alt="user-image" class="me-2 rounded"
                                         height="18">
-                                    <span class="align-middle">français</span>
+                                    <span class="align-middle">French</span>
                                 </a>
                             </div>
                         </div>
@@ -780,13 +812,13 @@
                                 </span>
                             </button>
                             <div class="dropdown-menu dropdown-menu-end">
-                                <h6 class="dropdown-header">¡Bienvenido{{ auth()->check() ? ' ' . auth()->user()->name : '' }}!</h6>
+                                <h6 class="dropdown-header">Bienvenido{{ auth()->check() ? ' ' . auth()->user()->name : '' }}!</h6>
                                 <div class="dropdown-divider"></div>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
                                     <button type="submit" class="dropdown-item text-danger">
                                         <i class="mdi mdi-logout text-muted fs-16 align-middle me-1"></i>
-                                        <span class="align-middle">Cerrar Sesión</span>
+                                        <span class="align-middle">Cerrar Sesion</span>
                                     </button>
                                 </form>
                             </div>
@@ -827,6 +859,13 @@
                 <div class="container-fluid">
                     <div id="two-column-menu"></div>
                     <ul class="navbar-nav" id="navbar-nav">
+                        <li class="sidebar-brand-title">
+                            <a href="{{ url('/') }}" class="brand-mark text-decoration-none">
+                                <i class="ri-shield-user-line"></i>
+                                <span>BSH Support</span>
+                            </a>
+                        </li>
+
                         <li class="menu-title">
                             <a href="{{ url('/') }}" class="text-reset text-decoration-none">
                                 <span data-key="t-menu">Inicio</span>
@@ -861,6 +900,12 @@
                         <li class="nav-item">
                             <a href="{{ url('/tareas') }}" class="nav-link menu-link">
                                 <i class="ri-task-line"></i> <span data-key="t-tareas">Tareas</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('tickets.index') }}"
+                                class="nav-link menu-link {{ request()->is('tickets*') ? 'active' : '' }}">
+                                <i class="ri-ticket-2-line"></i> <span data-key="t-tickets">Ticket</span>
                             </a>
                         </li>
                         <li class="nav-item">
@@ -1095,11 +1140,11 @@
                     <div class="col-sm-6">
                         <script>
                             document.write(new Date().getFullYear())
-                        </script> © CRM.
+                        </script> &copy; ERP.
                     </div>
                     <div class="col-sm-6">
                         <div class="text-sm-end d-none d-sm-block">
-                            Versión {{ $appVersion }}
+                            Version {{ $appVersion }}
                         </div>
                     </div>
                 </div>
@@ -1973,3 +2018,4 @@
 </body>
 
 </html>
+

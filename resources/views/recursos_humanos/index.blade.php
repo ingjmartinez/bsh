@@ -66,7 +66,7 @@
                     <div class="col-lg-7">
                         <div class="search-box">
                             <input type="text" id="buscarModuloRrhh" class="form-control"
-                                placeholder="Buscar por nombre, categoria o descripcion...">
+                                placeholder="Buscar por nombre, categoría o descripción...">
                             <i class="ri-search-line search-icon"></i>
                         </div>
                     </div>
@@ -135,7 +135,7 @@
                         </div>
                     </div>
                     <h5 class="mb-1">Sin resultados</h5>
-                    <p class="text-muted mb-0">No hay opciones de Recursos Humanos que coincidan con la busqueda actual.</p>
+                    <p class="text-muted mb-0">No hay opciones de Recursos Humanos que coincidan con la búsqueda actual.</p>
                 </div>
             </div>
         </div>
@@ -188,3 +188,4 @@
         });
     </script>
 @endsection
+

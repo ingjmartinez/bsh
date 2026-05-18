@@ -483,7 +483,7 @@ class IncentivosController extends Controller
             FROM (
                 SELECT 
                     e.companyid,
-                    CASE WHEN e.companyid = 168 THEN 'Joselito' ELSE 'Negosur' END AS company,
+                    CASE WHEN e.companyid = 168 THEN 'BSH Support' ELSE 'Negosur' END AS company,
                     c.empleado_id AS empleadoid,
                     e.cedula,
                     e.nombres,
@@ -634,7 +634,7 @@ class IncentivosController extends Controller
                 GROUP BY pad.tipo_producto
             )
             SELECT 
-                CASE WHEN emp.companyid = '168' THEN 'Joselito' ELSE 'Negosur' END AS empresa,
+                CASE WHEN emp.companyid = '168' THEN 'BSH Support' ELSE 'Negosur' END AS empresa,
                 emp.cedula,
                 emp.companyid,
                 emp.empleadoid,
@@ -1655,7 +1655,7 @@ class IncentivosController extends Controller
         $data = DB::select(
             "SELECT 
                 CASE 
-                    WHEN e.companyid = 168 THEN 'Joselito'
+                    WHEN e.companyid = 168 THEN 'BSH Support'
                     WHEN e.companyid = 169 THEN 'Negosur'
                     ELSE 'Otra Empresa'
                 END AS company,

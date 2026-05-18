@@ -69,7 +69,7 @@
                                                 <th>Empleado ID</th>
                                                 <th>Nombres</th>
                                                 <th>Apellidos</th>
-                                                <th>Cédula</th>
+                                                <th>CÃ©dula</th>
                                                 <th class="text-center">Horas NET</th>
                                                 <th class="text-center">Horas BET</th>
                                                 <th class="text-center">Horas Total</th>
@@ -108,7 +108,7 @@
                     <div class="col-sm-6">
                         <script>
                             document.write(new Date().getFullYear())
-                        </script> © CRM.
+                        </script> Â© ERP.
                     </div>
                 </div>
             </div>
@@ -227,3 +227,4 @@
         });
     </script>
 @endsection
+

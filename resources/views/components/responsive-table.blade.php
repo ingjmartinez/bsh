@@ -1,4 +1,4 @@
-{{-- Componente de Tabla Responsiva para Móvil --}}
+{{-- Componente de Tabla Responsiva para MÃ³vil --}}
 <div class="table-responsive">
     <table {{ $attributes->merge(['class' => 'table table-bordered table-striped align-middle mobile-table']) }}>
         <thead class="table-light d-none d-md-table-header-group">
@@ -57,3 +57,4 @@
         }
     }
 </style>
+

@@ -585,7 +585,7 @@
 
                 let y = 36;
                 doc.setFontSize(20);
-                doc.text('Flujo de ruta Grupo Joselito', margin, y);
+                doc.text('Flujo de ruta Business Support Hub', margin, y);
                 y += 20;
                 doc.setFontSize(10);
                 doc.setTextColor(90, 90, 90);
@@ -915,3 +915,4 @@
         });
     </script>
 @endsection
+

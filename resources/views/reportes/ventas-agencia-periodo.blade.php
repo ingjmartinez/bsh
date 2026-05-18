@@ -8,12 +8,12 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                            <h4 class="mb-sm-0">Ventas por Agencia y Período</h4>
+                            <h4 class="mb-sm-0">Ventas por Agencia y PerÃ­odo</h4>
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li class="breadcrumb-item"><a href="{{ route('inicio.index') }}">Inicio</a></li>
                                     <li class="breadcrumb-item"><a href="{{ route('reportes.index') }}">Reportes</a></li>
-                                    <li class="breadcrumb-item active">Ventas por Agencia y Período</li>
+                                    <li class="breadcrumb-item active">Ventas por Agencia y PerÃ­odo</li>
                                 </ol>
                             </div>
                         </div>
@@ -45,9 +45,9 @@
                                         <input type="date" id="fecha_fin" class="form-control" value="{{ date('Y-m-d') }}">
                                     </div>
                                     <div class="col-md-2">
-                                        <label for="periodo" class="form-label">Período</label>
+                                        <label for="periodo" class="form-label">PerÃ­odo</label>
                                         <select id="periodo" class="form-control">
-                                            <option value="dia">Día</option>
+                                            <option value="dia">DÃ­a</option>
                                             <option value="mes">Mes</option>
                                         </select>
                                     </div>
@@ -77,7 +77,7 @@
                                         <thead>
                                             <tr>
                                                 <th>Agencia</th>
-                                                <th>Período</th>
+                                                <th>PerÃ­odo</th>
                                                 <th>Tradicional</th>
                                                 <th>No Tradicional</th>
                                                 <th>Recargas</th>
@@ -181,3 +181,4 @@
         });
     </script>
 @endsection
+

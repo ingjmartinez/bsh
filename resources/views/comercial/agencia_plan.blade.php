@@ -73,7 +73,7 @@
                             @if($fechaCorteData)
                                 <div class="alert alert-info py-2 mb-3" role="alert">
                                     <strong>Tabla origen:</strong> {{ $tablaOrigen }} | <strong>Fecha corte con data:</strong> {{ $fechaCorteData }} |
-                                    <strong>Conteo por agencia:</strong> hacia atrás desde la fecha corte hasta {{ $diasObjetivo }} días efectivos de venta.
+                                    <strong>Conteo por agencia:</strong> hacia atrÃ¡s desde la fecha corte hasta {{ $diasObjetivo }} dÃ­as efectivos de venta.
                                 </div>
                             @else
                                 <div class="alert alert-warning py-2 mb-3" role="alert">
@@ -111,7 +111,7 @@
                     <div class="col-12">
                         <div class="card">
                             <div class="card-header d-flex align-items-center justify-content-between">
-                                <h5 class="card-title mb-0">Agencias con {{ $diasObjetivo }} días con venta</h5>
+                                <h5 class="card-title mb-0">Agencias con {{ $diasObjetivo }} dÃ­as con venta</h5>
                                 <span class="badge bg-primary-subtle text-primary">{{ number_format(($filas ?? collect())->count(), 0) }} registros</span>
                             </div>
                             <div class="card-body">
@@ -122,10 +122,10 @@
                                                 <th>Agencia</th>
                                                 <th>Nombre Agencia</th>
                                                 <th>Sistema</th>
-                                                <th>Días Efectivos</th>
-                                                <th>Días Faltantes</th>
+                                                <th>DÃ­as Efectivos</th>
+                                                <th>DÃ­as Faltantes</th>
                                                 <th>Aplica</th>
-                                                <th>Monto 90 días</th>
+                                                <th>Monto 90 dÃ­as</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -138,7 +138,7 @@
                                                     <td>{{ number_format((int) ($row->dias_faltantes ?? 0), 0) }}</td>
                                                     <td>
                                                         @if(($row->aplica ?? false) === true)
-                                                            <span class="badge bg-success">Sí</span>
+                                                            <span class="badge bg-success">SÃ­</span>
                                                         @else
                                                             <span class="badge bg-danger">No</span>
                                                         @endif
@@ -148,7 +148,7 @@
                                             @empty
                                                 <tr>
                                                     <td colspan="7" class="text-center text-muted">
-                                                        {{ ($filtrosAplicados ?? false) ? 'No hay agencias que cumplan los ' . $diasObjetivo . ' días con venta para el filtro aplicado.' : 'Presiona Generar Data para cargar la información.' }}
+                                                        {{ ($filtrosAplicados ?? false) ? 'No hay agencias que cumplan los ' . $diasObjetivo . ' dÃ­as con venta para el filtro aplicado.' : 'Presiona Generar Data para cargar la informaciÃ³n.' }}
                                                     </td>
                                                 </tr>
                                             @endforelse
@@ -228,7 +228,7 @@
                     search: 'Buscar:',
                     lengthMenu: 'Mostrar _MENU_ registros',
                     info: 'Mostrando _START_ a _END_ de _TOTAL_ registros',
-                    paginate: { first: 'Primera', last: 'Última', next: 'Siguiente', previous: 'Anterior' }
+                    paginate: { first: 'Primera', last: 'Ãšltima', next: 'Siguiente', previous: 'Anterior' }
                 },
                 order: [[6, 'desc']],
             });
@@ -236,3 +236,4 @@
     });
 </script>
 @endsection
+

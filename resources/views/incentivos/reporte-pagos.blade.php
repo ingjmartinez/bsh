@@ -47,12 +47,12 @@
                                                 <div><label class="mb-0" for="empresa">Empresa</label></div>
                                                 <select id="empresa" class="form-select">
                                                     <option value="">Todas</option>
-                                                    <option value="168">Joselito</option>
+                                                    <option value="168">BSH Support</option>
                                                     <option value="169">Negosur</option>
                                                 </select>
                                             </div>
                                             <div>
-                                                <div><label class="mb-0" for="year">Año</label></div>
+                                                <div><label class="mb-0" for="year">AÃ±o</label></div>
                                                 <select id="year" class="form-select">
                                                     <option value="2026">2026</option>
                                                     <option value="2025">2025</option>
@@ -137,7 +137,7 @@
                             <div class="card-header d-flex align-items-center justify-content-between">
                                 <div>
                                     <h5 class="card-title mb-0">Reporte Nuevo Incentivo</h5>
-                                    <small class="text-muted">Evalúa el último mes dentro del rango seleccionado.</small>
+                                    <small class="text-muted">EvalÃºa el Ãºltimo mes dentro del rango seleccionado.</small>
                                 </div>
                                 <div class="d-flex gap-3 align-items-end flex-wrap">
                                     <div>
@@ -157,11 +157,11 @@
                                         <input type="date" id="ni_fecha_fin" class="form-control">
                                     </div>
                                     <div>
-                                        <label class="mb-0" for="ni_minimo_agencia">Mínimo agencia</label>
+                                        <label class="mb-0" for="ni_minimo_agencia">MÃ­nimo agencia</label>
                                         <input type="number" id="ni_minimo_agencia" class="form-control" value="80000" min="0" step="0.01">
                                     </div>
                                     <div>
-                                        <label class="mb-0" for="ni_min_dias">Mín. días venta</label>
+                                        <label class="mb-0" for="ni_min_dias">MÃ­n. dÃ­as venta</label>
                                         <input type="number" id="ni_min_dias" class="form-control" value="10" min="1" step="1">
                                     </div>
                                     <button type="button" class="btn btn-primary" id="btnGenerarNuevoIncentivo">
@@ -176,12 +176,12 @@
                                     style="width:100%">
                                     <thead>
                                         <tr>
-                                            <th>Cédula</th>
-                                            <th>Ventas Último Mes</th>
-                                            <th>Días Ventas Último Mes</th>
-                                            <th>Mínimo Agencia</th>
-                                            <th>Cumple Mínimo</th>
-                                            <th>% Comisión</th>
+                                            <th>CÃ©dula</th>
+                                            <th>Ventas Ãšltimo Mes</th>
+                                            <th>DÃ­as Ventas Ãšltimo Mes</th>
+                                            <th>MÃ­nimo Agencia</th>
+                                            <th>Cumple MÃ­nimo</th>
+                                            <th>% ComisiÃ³n</th>
                                             <th>Nuevo Incentivo</th>
                                         </tr>
                                     </thead>
@@ -224,7 +224,7 @@
             let pago = document.getElementById('pago').value;
 
             Swal.fire({
-                title: "Procesando Información ...",
+                title: "Procesando InformaciÃ³n ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -240,7 +240,7 @@
                 .then(data => {
                     if ('message' in data) {
                         Swal.fire({
-                            title: "Información",
+                            title: "InformaciÃ³n",
                             text: data.message,
                             icon: "warning"
                         });
@@ -287,14 +287,14 @@
                         scrollY: '500px',
                         scrollCollapse: true,
                         language: {
-                            lengthMenu: "Mostrar _MENU_ registros por página",
+                            lengthMenu: "Mostrar _MENU_ registros por pÃ¡gina",
                             info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
                             infoEmpty: "No hay registros disponibles",
                             infoFiltered: "(filtrado de _MAX_ registros totales)",
                             search: "Buscar:",
                             paginate: {
                                 first: "Primero",
-                                last: "Último",
+                                last: "Ãšltimo",
                                 next: "Siguiente",
                                 previous: "Anterior"
                             }
@@ -320,7 +320,7 @@
 
             if (!fechaIni || !fechaFin) {
                 Swal.fire({
-                    title: 'Información',
+                    title: 'InformaciÃ³n',
                     text: 'Debe seleccionar fecha inicio y fecha fin.',
                     icon: 'warning'
                 });
@@ -328,7 +328,7 @@
             }
 
             Swal.fire({
-                title: 'Procesando Información ...',
+                title: 'Procesando InformaciÃ³n ...',
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -354,7 +354,7 @@
                 .then(resp => {
                     if ('message' in resp) {
                         Swal.fire({
-                            title: 'Información',
+                            title: 'InformaciÃ³n',
                             text: resp.message,
                             icon: 'warning'
                         });
@@ -394,14 +394,14 @@
                         scrollY: '500px',
                         scrollCollapse: true,
                         language: {
-                            lengthMenu: 'Mostrar _MENU_ registros por página',
+                            lengthMenu: 'Mostrar _MENU_ registros por pÃ¡gina',
                             info: 'Mostrando _START_ a _END_ de _TOTAL_ registros',
                             infoEmpty: 'No hay registros disponibles',
                             infoFiltered: '(filtrado de _MAX_ registros totales)',
                             search: 'Buscar:',
                             paginate: {
                                 first: 'Primero',
-                                last: 'Último',
+                                last: 'Ãšltimo',
                                 next: 'Siguiente',
                                 previous: 'Anterior'
                             }
@@ -428,3 +428,4 @@
         });
     </script>
 @endsection
+

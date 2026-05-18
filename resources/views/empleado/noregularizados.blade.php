@@ -62,7 +62,7 @@
                     <div class="col-sm-6">
                         <script>
                             document.write(new Date().getFullYear())
-                        </script> © Velzon.
+                        </script> Â© Velzon.
                     </div>
                     <div class="col-sm-6">
                         <div class="text-sm-end d-none d-sm-block">
@@ -170,7 +170,7 @@
             if (cedula.length < 11 || cedula.length > 11) {
                 Swal.fire({
                     title: "Error",
-                    text: "La cédula debe tener 11 dígitos",
+                    text: "La cÃ©dula debe tener 11 dÃ­gitos",
                     icon: "error"
                 });
                 return;
@@ -179,7 +179,7 @@
             if (!/^\d{11}$/.test(cedula)) {
                 Swal.fire({
                     title: "Error",
-                    text: "La cédula debe contener solo números",
+                    text: "La cÃ©dula debe contener solo nÃºmeros",
                     icon: "error"
                 });
                 return;
@@ -226,7 +226,7 @@
                 .then(data => {
                     Swal.fire({
                         title: "Listo",
-                        text: "Registrado con éxito",
+                        text: "Registrado con Ã©xito",
                         icon: "success"
                     });
                     // Cerrar el modal
@@ -238,9 +238,10 @@
                 .catch(error => console.error('Error saving data:', error));
         });
 
-        // Cargar la lista al cargar la página
+        // Cargar la lista al cargar la pÃ¡gina
         document.addEventListener('DOMContentLoaded', function() {
             list();
         });
     </script>
 @endsection
+

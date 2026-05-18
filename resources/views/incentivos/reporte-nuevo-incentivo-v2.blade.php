@@ -58,7 +58,7 @@
                         <div class="card">
                             <div class="card-header d-flex align-items-center justify-content-between">
                                 <div>
-                                    <h5 class="card-title mb-0">Cálculo por sistema y rango (V2)</h5>
+                                    <h5 class="card-title mb-0">CÃ¡lculo por sistema y rango (V2)</h5>
                                     <small class="text-muted">Configura tramos de venta mensual y pago fijo por agente.</small>
                                 </div>
                                 <div class="d-flex gap-3 align-items-end flex-wrap">
@@ -88,7 +88,7 @@
                                         <input type="date" id="ni_fecha_fin" class="form-control">
                                     </div>
                                     <div>
-                                        <label class="mb-0" for="ni_min_dias">Mín. días venta</label>
+                                        <label class="mb-0" for="ni_min_dias">MÃ­n. dÃ­as venta</label>
                                         <input type="number" id="ni_min_dias" class="form-control" value="10" min="1" step="1">
                                     </div>
                                     <div class="form-check mb-2">
@@ -106,10 +106,10 @@
                                 <table id="tableNuevoIncentivo" class="table table-bordered dt-responsive nowrap table-striped align-middle" style="width:100%">
                                     <thead>
                                         <tr>
-                                            <th>Cédula</th>
-                                            <th>Ventas Último Mes</th>
+                                            <th>CÃ©dula</th>
+                                            <th>Ventas Ãšltimo Mes</th>
                                             <th>Ventas Mes Actual</th>
-                                            <th>Días Ventas Mes Actual</th>
+                                            <th>DÃ­as Ventas Mes Actual</th>
                                             <th>Cumple Regla</th>
                                             <th>Pago Escala</th>
                                             <th>Nuevo Incentivo</th>
@@ -369,7 +369,7 @@
 
         data.forEach(item => {
             const cumpleBadge = item.cumple_minimo === 'SI'
-                ? '<span class="badge bg-success">CUMPLIÓ</span>'
+                ? '<span class="badge bg-success">CUMPLIÃ“</span>'
                 : '<span class="badge bg-danger">NO CUMPLE</span>';
 
             const row = document.createElement('tr');
@@ -394,14 +394,14 @@
             scrollY: '500px',
             scrollCollapse: true,
             language: {
-                lengthMenu: 'Mostrar _MENU_ registros por página',
+                lengthMenu: 'Mostrar _MENU_ registros por pÃ¡gina',
                 info: 'Mostrando _START_ a _END_ de _TOTAL_ registros',
                 infoEmpty: 'No hay registros disponibles',
                 infoFiltered: '(filtrado de _MAX_ registros totales)',
                 search: 'Buscar:',
                 paginate: {
                     first: 'Primero',
-                    last: 'Último',
+                    last: 'Ãšltimo',
                     next: 'Siguiente',
                     previous: 'Anterior'
                 }
@@ -411,7 +411,7 @@
 
     function applyLocalFilters(showFilterAlert = false) {
         if (!cachedRows.length) {
-            Swal.fire({ title: 'Información', text: 'Primero debes generar el reporte.', icon: 'warning' });
+            Swal.fire({ title: 'InformaciÃ³n', text: 'Primero debes generar el reporte.', icon: 'warning' });
             return;
         }
 
@@ -419,7 +419,7 @@
         const filtroCumplimiento = document.getElementById('ni_filtro_cumplimiento').value;
 
         if (cachedSistema !== sistema) {
-            Swal.fire({ title: 'Información', text: 'Cambiaste el sistema. Presiona "Generar Reporte" para recargar datos de ese sistema.', icon: 'info' });
+            Swal.fire({ title: 'InformaciÃ³n', text: 'Cambiaste el sistema. Presiona "Generar Reporte" para recargar datos de ese sistema.', icon: 'info' });
             return;
         }
 
@@ -495,24 +495,24 @@
             try {
                 payoutRanges = readRangesFromTable();
             } catch (e) {
-                Swal.fire({ title: 'Validación', text: e.message, icon: 'warning' });
+                Swal.fire({ title: 'ValidaciÃ³n', text: e.message, icon: 'warning' });
                 return;
             }
 
             bootstrap.Modal.getInstance(document.getElementById('modalConfigPct'))?.hide();
-            Swal.fire({ title: 'Configuración guardada', text: 'Los tramos se aplicarán al generar el reporte.', icon: 'success' });
+            Swal.fire({ title: 'ConfiguraciÃ³n guardada', text: 'Los tramos se aplicarÃ¡n al generar el reporte.', icon: 'success' });
         });
 
         document.querySelector('#btnGuardarPct2').addEventListener('click', function() {
             try {
                 payoutRanges2 = readRangesFromTable2();
             } catch (e) {
-                Swal.fire({ title: 'Validación', text: e.message, icon: 'warning' });
+                Swal.fire({ title: 'ValidaciÃ³n', text: e.message, icon: 'warning' });
                 return;
             }
 
             bootstrap.Modal.getInstance(document.getElementById('modalConfigPct2'))?.hide();
-            Swal.fire({ title: 'Configuración guardada', text: 'Los Tramo2 se aplicarán al generar el reporte.', icon: 'success' });
+            Swal.fire({ title: 'ConfiguraciÃ³n guardada', text: 'Los Tramo2 se aplicarÃ¡n al generar el reporte.', icon: 'success' });
         });
 
         document.querySelector('#btnGuardarAdminPct').addEventListener('click', function() {
@@ -528,7 +528,7 @@
             }
 
             Swal.fire({
-                title: 'Configuración guardada',
+                title: 'ConfiguraciÃ³n guardada',
                 text: 'El % administrativo se aplica sobre el Total Incentivo a Pagar.',
                 icon: 'success'
             });
@@ -543,12 +543,12 @@
         const usarTramo2 = document.getElementById('checkTramo2').checked;
 
         if (!fechaIni || !fechaFin) {
-            Swal.fire({ title: 'Información', text: 'Debe seleccionar fecha inicio y fecha fin.', icon: 'warning' });
+            Swal.fire({ title: 'InformaciÃ³n', text: 'Debe seleccionar fecha inicio y fecha fin.', icon: 'warning' });
             return;
         }
 
         Swal.fire({
-            title: 'Procesando Información ...',
+            title: 'Procesando InformaciÃ³n ...',
             icon: 'info',
             allowOutsideClick: false,
             showConfirmButton: false,
@@ -572,7 +572,7 @@
             .then(response => response.json())
             .then(resp => {
                 if ('message' in resp) {
-                    Swal.fire({ title: 'Información', text: resp.message, icon: 'warning' });
+                    Swal.fire({ title: 'InformaciÃ³n', text: resp.message, icon: 'warning' });
                     return;
                 }
 
@@ -602,3 +602,4 @@
     });
 </script>
 @endsection
+

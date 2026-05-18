@@ -30,7 +30,7 @@
                                 <h5 class="card-title mb-0">Incentivos</h5>
 
                                 <div class="d-flex gap-3 align-items-center justify-content-between">
-                                    <div><label class="mb-0" for="year">Año</label></div>
+                                    <div><label class="mb-0" for="year">AÃ±o</label></div>
                                     <div>
                                         <select id="year" class="form-select">
                                             <option value="2026">2026</option>
@@ -529,7 +529,7 @@
 
         document.querySelector("#btnGuardar").addEventListener("click", function() {
             Swal.fire({
-                title: "Guardndo Información ...",
+                title: "Guardndo InformaciÃ³n ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -569,7 +569,7 @@
 
         document.querySelector("#btnGuardarPlanAgencia").addEventListener("click", function() {
             Swal.fire({
-                title: "Guardndo Información ...",
+                title: "Guardndo InformaciÃ³n ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -609,7 +609,7 @@
 
         document.querySelector("#btnGuardarEfectividad").addEventListener("click", function() {
             Swal.fire({
-                title: "Guardndo Información ...",
+                title: "Guardndo InformaciÃ³n ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -649,7 +649,7 @@
 
         document.querySelector("#btnGuardarPagoAgente").addEventListener("click", function() {
             Swal.fire({
-                title: "Guardndo Información ...",
+                title: "Guardndo InformaciÃ³n ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -691,7 +691,7 @@
 
         document.querySelector("#btnGuardarPagoCoordinador").addEventListener("click", function() {
             Swal.fire({
-                title: "Guardndo Información ...",
+                title: "Guardndo InformaciÃ³n ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -733,7 +733,7 @@
 
         document.querySelector("#btnGuardarPagoAdmin").addEventListener("click", function() {
             Swal.fire({
-                title: "Guardndo Información ...",
+                title: "Guardndo InformaciÃ³n ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -783,14 +783,14 @@
             let mes = document.getElementById('mes').value;
             if (mes === '') {
                 Swal.fire({
-                    title: "Información",
+                    title: "InformaciÃ³n",
                     text: 'Seleccione un mes para generar los incentivos',
                     icon: "warning"
                 });
                 return;
             }
             Swal.fire({
-                title: "Procesando Información ...",
+                title: "Procesando InformaciÃ³n ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -863,14 +863,14 @@
             let year = document.getElementById('year').value;
             if (mes === '') {
                 Swal.fire({
-                    title: "Información",
-                    text: 'Seleccione un mes para generar la información',
+                    title: "InformaciÃ³n",
+                    text: 'Seleccione un mes para generar la informaciÃ³n',
                     icon: "warning"
                 });
                 return;
             }
             Swal.fire({
-                title: "Procesando Información ...",
+                title: "Procesando InformaciÃ³n ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -885,7 +885,7 @@
                 .then(data => {
                     if ('message' in data) {
                         Swal.fire({
-                            title: "Información",
+                            title: "InformaciÃ³n",
                             text: data.message,
                             icon: "warning"
                         });
@@ -942,7 +942,7 @@
                 });
         }
 
-        // Cargar la lista al cargar la página
+        // Cargar la lista al cargar la pÃ¡gina
         document.querySelector("#btnGenerarDataPlan").addEventListener('click', function() {
             listAgenciaPlan();
         });
@@ -952,8 +952,8 @@
             let mes = document.getElementById('mes_efectividad').value;
             if (mes === '') {
                 Swal.fire({
-                    title: "Información",
-                    text: 'Seleccione un mes para generar la información',
+                    title: "InformaciÃ³n",
+                    text: 'Seleccione un mes para generar la informaciÃ³n',
                     icon: "warning"
                 });
                 return;
@@ -968,7 +968,7 @@
             let excluidos = productosExcluidos.join(',');
             let year = document.getElementById('year').value;
             Swal.fire({
-                title: "Procesando Información ...",
+                title: "Procesando InformaciÃ³n ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -983,7 +983,7 @@
                 .then(data => {
                     if ('message' in data) {
                         Swal.fire({
-                            title: "Información",
+                            title: "InformaciÃ³n",
                             text: data.message,
                             icon: "warning"
                         });
@@ -1048,14 +1048,14 @@
             let year = document.getElementById('year').value;
             if (mes === '') {
                 Swal.fire({
-                    title: "Información",
-                    text: 'Seleccione un mes para generar la información',
+                    title: "InformaciÃ³n",
+                    text: 'Seleccione un mes para generar la informaciÃ³n',
                     icon: "warning"
                 });
                 return;
             }
             Swal.fire({
-                title: "Procesando Información ...",
+                title: "Procesando InformaciÃ³n ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -1070,7 +1070,7 @@
                 .then(data => {
                     if ('message' in data) {
                         Swal.fire({
-                            title: "Información",
+                            title: "InformaciÃ³n",
                             text: data.message,
                             icon: "warning"
                         });
@@ -1131,14 +1131,14 @@
             let year = document.getElementById('year').value;
             if (mes === '') {
                 Swal.fire({
-                    title: "Información",
-                    text: 'Seleccione un mes para generar la información',
+                    title: "InformaciÃ³n",
+                    text: 'Seleccione un mes para generar la informaciÃ³n',
                     icon: "warning"
                 });
                 return;
             }
             Swal.fire({
-                title: "Procesando Información ...",
+                title: "Procesando InformaciÃ³n ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -1153,7 +1153,7 @@
                 .then(data => {
                     if ('message' in data) {
                         Swal.fire({
-                            title: "Información",
+                            title: "InformaciÃ³n",
                             text: data.message,
                             icon: "warning"
                         });
@@ -1214,7 +1214,7 @@
 
             datosToSave = [];
             Swal.fire({
-                title: "Procesando Información ...",
+                title: "Procesando InformaciÃ³n ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -1235,7 +1235,7 @@
                 .then(data => {
                     if ('message' in data) {
                         Swal.fire({
-                            title: "Información",
+                            title: "InformaciÃ³n",
                             text: data.message,
                             icon: "warning"
                         });
@@ -1290,14 +1290,14 @@
             let year = document.getElementById('year').value;
             if (mes === '') {
                 Swal.fire({
-                    title: "Información",
-                    text: 'Seleccione un mes para generar la información',
+                    title: "InformaciÃ³n",
+                    text: 'Seleccione un mes para generar la informaciÃ³n',
                     icon: "warning"
                 });
                 return;
             }
             Swal.fire({
-                title: "Procesando Información ...",
+                title: "Procesando InformaciÃ³n ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -1312,7 +1312,7 @@
                 .then(data => {
                     if ('message' in data) {
                         Swal.fire({
-                            title: "Información",
+                            title: "InformaciÃ³n",
                             text: data.message,
                             icon: "warning"
                         });
@@ -1381,7 +1381,7 @@
             let year = document.getElementById('year').value;
 
             Swal.fire({
-                title: "Procesando Información ...",
+                title: "Procesando InformaciÃ³n ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -1396,7 +1396,7 @@
                 .then(data => {
                     if ('message' in data) {
                         Swal.fire({
-                            title: "Información",
+                            title: "InformaciÃ³n",
                             text: data.message,
                             icon: "warning"
                         });
@@ -1444,3 +1444,4 @@
         }
     </script>
 @endsection
+

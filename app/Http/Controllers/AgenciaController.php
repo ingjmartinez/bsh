@@ -280,8 +280,13 @@ class AgenciaController extends Controller
             $query->where('estatus', 0);
         }
 
-        if ($empresaFilter === 'joselito') {
-            $query->whereRaw('LOWER(COALESCE(empresa, "")) LIKE ?', ['%joselito%']);
+        if (in_array($empresaFilter, ['bsh_support', 'joselito'], true)) {
+            $query->where(function ($empresaQuery) {
+                $empresaQuery
+                    ->whereRaw('LOWER(COALESCE(empresa, "")) LIKE ?', ['%joselito%'])
+                    ->orWhereRaw('LOWER(COALESCE(empresa, "")) LIKE ?', ['%bsh support%'])
+                    ->orWhereRaw('LOWER(COALESCE(empresa, "")) LIKE ?', ['%business support hub%']);
+            });
         } elseif ($empresaFilter === 'negosur') {
             $query->whereRaw('LOWER(COALESCE(empresa, "")) LIKE ?', ['%negosur%']);
         }
@@ -321,7 +326,14 @@ class AgenciaController extends Controller
 
         $totalActivas = Agencia::query()->where('estatus', 1)->count();
         $totalInactivas = Agencia::query()->where('estatus', 0)->count();
-        $totalJoselito = Agencia::query()->whereRaw('LOWER(COALESCE(empresa, "")) LIKE ?', ['%joselito%'])->count();
+        $totalBshSupport = Agencia::query()
+            ->where(function ($empresaQuery) {
+                $empresaQuery
+                    ->whereRaw('LOWER(COALESCE(empresa, "")) LIKE ?', ['%joselito%'])
+                    ->orWhereRaw('LOWER(COALESCE(empresa, "")) LIKE ?', ['%bsh support%'])
+                    ->orWhereRaw('LOWER(COALESCE(empresa, "")) LIKE ?', ['%business support hub%']);
+            })
+            ->count();
         $totalNegosur = Agencia::query()->whereRaw('LOWER(COALESCE(empresa, "")) LIKE ?', ['%negosur%'])->count();
 
         return response()->json([
@@ -331,7 +343,7 @@ class AgenciaController extends Controller
             'data' => $agencias,
             'total_activas' => $totalActivas,
             'total_inactivas' => $totalInactivas,
-            'total_joselito' => $totalJoselito,
+            'total_bsh_support' => $totalBshSupport,
             'total_negosur' => $totalNegosur,
         ]);
     }

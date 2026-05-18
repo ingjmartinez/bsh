@@ -54,7 +54,7 @@
             margin-top: 0.25rem;
         }
 
-        /* En móvil, columnas full-width a menos que sean col-12 */
+        /* En mÃ³vil, columnas full-width a menos que sean col-12 */
         .responsive-form .col-md-6,
         .responsive-form .col-lg-4,
         .responsive-form .col-lg-6 {
@@ -62,7 +62,7 @@
             max-width: 100%;
         }
 
-        /* Botones full-width en móvil */
+        /* Botones full-width en mÃ³vil */
         .responsive-form .btn-container {
             display: flex;
             flex-direction: column;
@@ -82,3 +82,4 @@
         }
     }
 </style>
+

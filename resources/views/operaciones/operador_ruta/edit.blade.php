@@ -50,14 +50,14 @@
                                         </div>
 
                                         <div class="col-md-6">
-                                            <label class="form-label">Cédula <span class="text-danger">*</span></label>
+                                            <label class="form-label">CÃ©dula <span class="text-danger">*</span></label>
                                             <input type="text" name="cedula" class="form-control @error('cedula') is-invalid @enderror" value="{{ old('cedula', $registro->cedula) }}" inputmode="numeric" pattern="[0-9]{11}" oninput="this.value=this.value.replace(/\D/g,''); this.setCustomValidity('')" oninvalid="if(this.validity.valueMissing){this.setCustomValidity('Campo de 11 Digitos obligatorios')}else if(this.value.length < 11){this.setCustomValidity('Faltan digitos: la cedula debe tener 11')}else if(this.value.length > 11){this.setCustomValidity('Tiene digitos de mas: la cedula debe tener 11')}else{this.setCustomValidity('Campo de 11 Digitos obligatorios')}" required>
                                             <div class="form-text">Campo de 11 Digitos obligatorios</div>
                                             @error('cedula')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                         </div>
 
                                         <div class="col-md-6">
-                                            <label class="form-label">Teléfono <span class="text-danger">*</span></label>
+                                            <label class="form-label">TelÃ©fono <span class="text-danger">*</span></label>
                                             <input type="text" name="telefono" class="form-control @error('telefono') is-invalid @enderror" value="{{ old('telefono', $registro->telefono) }}" inputmode="numeric" pattern="[0-9]{10}" oninput="this.value=this.value.replace(/\D/g,''); this.setCustomValidity('')" oninvalid="if(this.validity.valueMissing){this.setCustomValidity('Campo de 10 Digitos obligatorios')}else if(this.value.length < 10){this.setCustomValidity('Faltan digitos: el telefono debe tener 10')}else if(this.value.length > 10){this.setCustomValidity('Tiene digitos de mas: el telefono debe tener 10')}else{this.setCustomValidity('Campo de 10 Digitos obligatorios')}" required>
                                             <div class="form-text">Campo de 10 Digitos obligatorios</div>
                                             @error('telefono')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -87,3 +87,4 @@
         </div>
     </div>
 @endsection
+

@@ -632,3 +632,4 @@
     .spin { display: inline-block; animation: spin 1s linear infinite; }
 </style>
 @endsection
+

@@ -35,4 +35,22 @@ return [
         ],
     ],
 
+    'whatsapp' => [
+        'send_endpoint' => env('WA_API_URL_SINGLE'),
+        'campaign_endpoint' => env('WA_API_URL_BULK'),
+        'link_endpoint' => env('WA_API_URL_LINK'),
+        'relink_endpoint' => env('WA_API_URL_RELINK'),
+        'accounts_endpoint' => env('WA_API_URL_GET_ACCOUNTS'),
+        'api_key' => env('WA_API_KEY'),
+        'sid' => env('WA_API_SID'),
+        'default_account' => env('WA_DEFAULT_ACCOUNT'),
+        'webhook_token' => env('WA_WEBHOOK_TOKEN'),
+        'timeout' => env('WA_API_TIMEOUT', 30),
+        'verify_ssl' => env('WA_API_VERIFY_SSL', true),
+        'chatbot_welcome_message' => env(
+            'WA_CHATBOT_WELCOME_MESSAGE',
+            'Hola, soy el asistente virtual. Hemos recibido tu mensaje.'
+        ),
+    ],
+
 ];

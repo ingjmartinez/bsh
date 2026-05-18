@@ -7,7 +7,7 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                            <h4 class="mb-sm-0">Novedades_de_Horario</h4>
+                            <h4 class="mb-sm-0">Novedades de Horario</h4>
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li class="breadcrumb-item"><a href="{{ route('inicio.index') }}">Inicio</a></li>
@@ -104,11 +104,11 @@
                                                 <th>Nombre de Agencia</th>
                                                 <th>Ruta</th>
                                                 <th>Nombre de Empleado</th>
-                                                <th>Cedula</th>
+                                                <th>Cédula</th>
                                                 <th>Fecha</th>
                                                 <th>Primer Login</th>
-                                                <th>Ultimo Login</th>
-                                                <th class="text-end">Horas_Acumuladas</th>
+                                                <th>Último Login</th>
+                                                <th class="text-end">Horas Acumuladas</th>
                                             </tr>
                                         </thead>
                                         <tbody></tbody>
@@ -207,3 +207,4 @@
         document.getElementById('btnBuscar').addEventListener('click', cargarNovedadesHorario);
     </script>
 @endsection
+

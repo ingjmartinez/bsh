@@ -58,8 +58,8 @@
                         <div class="card">
                             <div class="card-header d-flex align-items-center justify-content-between">
                                 <div>
-                                    <h5 class="card-title mb-0">Cálculo por sistema y rango</h5>
-                                    <small class="text-muted">Evalúa el mes anterior completo según la fecha fin seleccionada.</small>
+                                    <h5 class="card-title mb-0">CÃ¡lculo por sistema y rango</h5>
+                                    <small class="text-muted">EvalÃºa el mes anterior completo segÃºn la fecha fin seleccionada.</small>
                                 </div>
                                 <div class="d-flex gap-3 align-items-end flex-wrap">
                                     <div>
@@ -90,11 +90,11 @@
                                         <input type="date" id="ni_fecha_fin" class="form-control">
                                     </div>
                                     <div>
-                                        <label class="mb-0" for="ni_minimo_agencia">Mínimo agencia</label>
+                                        <label class="mb-0" for="ni_minimo_agencia">MÃ­nimo agencia</label>
                                         <input type="number" id="ni_minimo_agencia" class="form-control" value="80000" min="0" step="0.01">
                                     </div>
                                     <div>
-                                        <label class="mb-0" for="ni_min_dias">Mín. días venta</label>
+                                        <label class="mb-0" for="ni_min_dias">MÃ­n. dÃ­as venta</label>
                                         <input type="number" id="ni_min_dias" class="form-control" value="10" min="1" step="1">
                                     </div>
                                     <button type="button" class="btn btn-soft-secondary" id="btnConfigPct">
@@ -115,13 +115,13 @@
                                     style="width:100%">
                                     <thead>
                                         <tr>
-                                            <th>Cédula</th>
-                                            <th>Ventas Último Mes</th>
+                                            <th>CÃ©dula</th>
+                                            <th>Ventas Ãšltimo Mes</th>
                                             <th>Ventas Mes Actual</th>
-                                            <th>Días Ventas Mes Actual</th>
-                                            <th>Mínimo Agencia</th>
-                                            <th>Cumple Mínimo</th>
-                                            <th>% Comisión</th>
+                                            <th>DÃ­as Ventas Mes Actual</th>
+                                            <th>MÃ­nimo Agencia</th>
+                                            <th>Cumple MÃ­nimo</th>
+                                            <th>% ComisiÃ³n</th>
                                             <th>Nuevo Incentivo</th>
                                         </tr>
                                     </thead>
@@ -139,7 +139,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Configurar % Comisión</h5>
+                    <h5 class="modal-title">Configurar % ComisiÃ³n</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -248,7 +248,7 @@
 
             data.forEach(item => {
                 const cumpleBadge = item.cumple_minimo === 'SI'
-                    ? '<span class="badge bg-success">CUMPLIÓ</span>'
+                    ? '<span class="badge bg-success">CUMPLIÃ“</span>'
                     : '<span class="badge bg-danger">NO CUMPLE</span>';
 
                 const row = document.createElement('tr');
@@ -274,14 +274,14 @@
                 scrollY: '500px',
                 scrollCollapse: true,
                 language: {
-                    lengthMenu: 'Mostrar _MENU_ registros por página',
+                    lengthMenu: 'Mostrar _MENU_ registros por pÃ¡gina',
                     info: 'Mostrando _START_ a _END_ de _TOTAL_ registros',
                     infoEmpty: 'No hay registros disponibles',
                     infoFiltered: '(filtrado de _MAX_ registros totales)',
                     search: 'Buscar:',
                     paginate: {
                         first: 'Primero',
-                        last: 'Último',
+                        last: 'Ãšltimo',
                         next: 'Siguiente',
                         previous: 'Anterior'
                     }
@@ -292,7 +292,7 @@
         function applyLocalFilters(showFilterAlert = false) {
             if (!cachedRows.length) {
                 Swal.fire({
-                    title: 'Información',
+                    title: 'InformaciÃ³n',
                     text: 'Primero debes generar el reporte.',
                     icon: 'warning'
                 });
@@ -305,7 +305,7 @@
             // El filtro en memoria aplica al mismo sistema con el que se cargaron los datos.
             if (cachedSistema !== sistema) {
                 Swal.fire({
-                    title: 'Información',
+                    title: 'InformaciÃ³n',
                     text: 'Cambiaste el sistema. Presiona "Generar Reporte" para recargar datos de ese sistema.',
                     icon: 'info'
                 });
@@ -370,8 +370,8 @@
 
                 bootstrap.Modal.getInstance(document.getElementById('modalConfigPct'))?.hide();
                 Swal.fire({
-                    title: 'Configuración guardada',
-                    text: 'Los porcentajes se aplicarán al generar el reporte.',
+                    title: 'ConfiguraciÃ³n guardada',
+                    text: 'Los porcentajes se aplicarÃ¡n al generar el reporte.',
                     icon: 'success'
                 });
             });
@@ -389,7 +389,7 @@
                 }
 
                 Swal.fire({
-                    title: 'Configuración guardada',
+                    title: 'ConfiguraciÃ³n guardada',
                     text: 'El % administrativo se aplica sobre el Total Incentivo a Pagar.',
                     icon: 'success'
                 });
@@ -405,7 +405,7 @@
 
             if (!fechaIni || !fechaFin) {
                 Swal.fire({
-                    title: 'Información',
+                    title: 'InformaciÃ³n',
                     text: 'Debe seleccionar fecha inicio y fecha fin.',
                     icon: 'warning'
                 });
@@ -413,7 +413,7 @@
             }
 
             Swal.fire({
-                title: 'Procesando Información ...',
+                title: 'Procesando InformaciÃ³n ...',
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -441,7 +441,7 @@
                 .then(resp => {
                     if ('message' in resp) {
                         Swal.fire({
-                            title: 'Información',
+                            title: 'InformaciÃ³n',
                             text: resp.message,
                             icon: 'warning'
                         });
@@ -479,3 +479,4 @@
         });
     </script>
 @endsection
+

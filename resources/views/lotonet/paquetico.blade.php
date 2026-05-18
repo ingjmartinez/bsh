@@ -68,9 +68,9 @@
                                             <th>Fecha</th>
                                             <th>Consorcio</th>
                                             <th>Agencia</th>
-                                            <th>Identificación</th>
+                                            <th>IdentificaciÃ³n</th>
                                             <th>Monto</th>
-                                            <th>Descripción</th>
+                                            <th>DescripciÃ³n</th>
                                             <th>Cargo Servicio</th>
                                             <th>Cantidad</th>
                                             <th>Proveedor Nombre</th>
@@ -226,7 +226,7 @@
             }
 
             Swal.fire({
-                title: "Guardando información ...",
+                title: "Guardando informaciÃ³n ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -258,7 +258,7 @@
             }
 
             Swal.fire({
-                title: "Guardando información ...",
+                title: "Guardando informaciÃ³n ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -451,7 +451,7 @@
 
             const confirmed = await Swal.fire({
                 title: 'Confirmar eliminacion',
-                html: `¿Eliminar data desde <strong>${fechaInicio}</strong> hasta <strong>${fechaFin}</strong>?`,
+                html: `Â¿Eliminar data desde <strong>${fechaInicio}</strong> hasta <strong>${fechaFin}</strong>?`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: 'Si, eliminar',
@@ -496,3 +496,4 @@
         });
     </script>
 @endsection
+

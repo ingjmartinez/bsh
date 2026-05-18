@@ -43,6 +43,7 @@ use App\Http\Controllers\SuperAdminSesionController;
 use App\Http\Controllers\ServicioGeneralRequerimientoController;
 use App\Http\Controllers\TareaController;
 use App\Http\Controllers\TecnologiaSolicitudController;
+use App\Http\Controllers\TicketSolicitudController;
 use App\Http\Controllers\TokenController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VentaFlashController;
@@ -449,6 +450,12 @@ Route::prefix('tecnologia')->name('tecnologia.')->group(function () {
     Route::put('/solicitudes/{solicitud}', [TecnologiaSolicitudController::class, 'update'])->name('solicitudes.update');
     Route::post('/solicitudes/{solicitud}/solicitar-cierre', [TecnologiaSolicitudController::class, 'solicitarCierre'])->name('solicitudes.solicitar-cierre');
     Route::post('/solicitudes/{solicitud}/finalizar', [TecnologiaSolicitudController::class, 'finalizar'])->name('solicitudes.finalizar');
+});
+
+Route::prefix('tickets')->name('tickets.')->group(function () {
+    Route::get('/', [TicketSolicitudController::class, 'index'])->name('index');
+    Route::post('/', [TicketSolicitudController::class, 'store'])->name('store');
+    Route::put('/{ticket}/estado', [TicketSolicitudController::class, 'updateEstado'])->name('estado');
 });
 
 Route::prefix('servicios-generales')->name('servicios-generales.')

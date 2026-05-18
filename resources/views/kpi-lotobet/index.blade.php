@@ -25,7 +25,7 @@
                 <!-- Filtros -->
                 <div class="row mb-4 g-3">
                     <div class="col-12 col-md-4 col-lg-3">
-                        <label for="anio" class="form-label">Año</label>
+                        <label for="anio" class="form-label">AÃ±o</label>
                         <input type="number" id="anio" class="form-control" value="{{ date('Y') }}" min="2020" max="2030">
                     </div>
                     <div class="col-12 col-md-4 col-lg-3">
@@ -52,12 +52,12 @@
                     </div>
                 </div>
 
-                <!-- Parámetros de Meta -->
+                <!-- ParÃ¡metros de Meta -->
                 <div class="row mb-3">
                     <div class="col-12">
                         <div class="card shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                             <div class="card-body">
-                                <h5 class="card-title mb-3 text-white"><i class="ri-settings-3-line me-2"></i>Parámetros de Meta</h5>
+                                <h5 class="card-title mb-3 text-white"><i class="ri-settings-3-line me-2"></i>ParÃ¡metros de Meta</h5>
                                 <div class="row text-center">
                                     <div class="col-6 col-md-3">
                                         <p class="text-white-50 mb-1">Meta Total</p>
@@ -147,7 +147,7 @@
                     </div>
                 </div>
 
-                <!-- KPIs de Días Cumplidos -->
+                <!-- KPIs de DÃ­as Cumplidos -->
                 <div class="row mb-3">
                     <div class="col-12">
                         <h5 class="mb-3"><i class="ri-calendar-check-line me-2"></i>Agencias por Cumplimiento</h5>
@@ -164,7 +164,7 @@
                                 </div>
                                 <h6 class="text-muted mb-2">Agencias que Cumplieron</h6>
                                 <h3 id="kpi-agencias-cumplieron" style="color: #4BC0C0;">0</h3>
-                                <p class="text-muted mb-0"><small>Con al menos 1 día cumplido</small></p>
+                                <p class="text-muted mb-0"><small>Con al menos 1 dÃ­a cumplido</small></p>
                                 <small class="text-primary"><i class="ri-eye-line"></i> Click para ver detalle</small>
                             </div>
                         </div>
@@ -179,7 +179,7 @@
                                 </div>
                                 <h6 class="text-muted mb-2">Agencias que No Cumplieron</h6>
                                 <h3 id="kpi-agencias-no-cumplieron" style="color: #FF6384;">0</h3>
-                                <p class="text-muted mb-0"><small>Sin días cumplidos</small></p>
+                                <p class="text-muted mb-0"><small>Sin dÃ­as cumplidos</small></p>
                                 <small class="text-primary"><i class="ri-eye-line"></i> Click para ver detalle</small>
                             </div>
                         </div>
@@ -192,7 +192,7 @@
                                         <i class="ri-line-chart-line"></i>
                                     </div>
                                 </div>
-                                <h6 class="text-muted mb-2">Promedio Días Cumplidos</h6>
+                                <h6 class="text-muted mb-2">Promedio DÃ­as Cumplidos</h6>
                                 <h3 id="kpi-promedio-cumplidos" style="color: #9966FF;">0</h3>
                             </div>
                         </div>
@@ -205,7 +205,7 @@
                                         <i class="ri-bar-chart-line"></i>
                                     </div>
                                 </div>
-                                <h6 class="text-muted mb-2">Promedio Días No Cumplidos</h6>
+                                <h6 class="text-muted mb-2">Promedio DÃ­as No Cumplidos</h6>
                                 <h3 id="kpi-promedio-no-cumplidos" style="color: #FF9F40;">0</h3>
                             </div>
                         </div>
@@ -226,7 +226,7 @@
                                     <div>
                                         <h6 class="card-title text-muted mb-2">Excelencia</h6>
                                         <h2 id="kpi-excelencia" class="mb-0" style="color: #4BC0C0;">0</h2>
-                                        <p class="text-muted mb-0"><small>21-31 días</small></p>
+                                        <p class="text-muted mb-0"><small>21-31 dÃ­as</small></p>
                                     </div>
                                     <div class="avatar-sm">
                                         <div class="avatar-title rounded-circle fs-2" style="background-color: rgba(75, 192, 192, 0.2); color: #4BC0C0;">
@@ -244,7 +244,7 @@
                                     <div>
                                         <h6 class="card-title text-muted mb-2">Estable</h6>
                                         <h2 id="kpi-estable" class="mb-0" style="color: #36A2EB;">0</h2>
-                                        <p class="text-muted mb-0"><small>11-20 días</small></p>
+                                        <p class="text-muted mb-0"><small>11-20 dÃ­as</small></p>
                                     </div>
                                     <div class="avatar-sm">
                                         <div class="avatar-title rounded-circle fs-2" style="background-color: rgba(54, 162, 235, 0.2); color: #36A2EB;">
@@ -262,7 +262,7 @@
                                     <div>
                                         <h6 class="card-title text-muted mb-2">En Riesgo</h6>
                                         <h2 id="kpi-riesgo" class="mb-0" style="color: #FFCE56;">0</h2>
-                                        <p class="text-muted mb-0"><small>3-10 días</small></p>
+                                        <p class="text-muted mb-0"><small>3-10 dÃ­as</small></p>
                                     </div>
                                     <div class="avatar-sm">
                                         <div class="avatar-title rounded-circle fs-2" style="background-color: rgba(255, 206, 86, 0.2); color: #FFCE56;">
@@ -278,9 +278,9 @@
                             <div class="card-body">
                                 <div class="d-flex align-items-center justify-content-between">
                                     <div>
-                                        <h6 class="card-title text-muted mb-2">Crítica</h6>
+                                        <h6 class="card-title text-muted mb-2">CrÃ­tica</h6>
                                         <h2 id="kpi-critica" class="mb-0" style="color: #FF6384;">0</h2>
-                                        <p class="text-muted mb-0"><small>0-2 días</small></p>
+                                        <p class="text-muted mb-0"><small>0-2 dÃ­as</small></p>
                                     </div>
                                     <div class="avatar-sm">
                                         <div class="avatar-title rounded-circle fs-2" style="background-color: rgba(255, 99, 132, 0.2); color: #FF6384;">
@@ -309,8 +309,8 @@
                                                 <th>Meta Tradicional</th>
                                                 <th>Meta No Tradicional</th>
                                                 <th>Meta Recargas</th>
-                                                <th>Días Cumplidos</th>
-                                                <th>Días No Cumplidos</th>
+                                                <th>DÃ­as Cumplidos</th>
+                                                <th>DÃ­as No Cumplidos</th>
                                                 <th>Severidad</th>
                                             </tr>
                                         </thead>
@@ -341,7 +341,7 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>Agencia</th>
-                                    <th>Días Cumplidos</th>
+                                    <th>DÃ­as Cumplidos</th>
                                     <th>Cumplimiento Tradicional</th>
                                     <th>Cumplimiento No Tradicional</th>
                                     <th>Cumplimiento Recargas</th>
@@ -376,7 +376,7 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>Agencia</th>
-                                    <th>Días No Cumplidos</th>
+                                    <th>DÃ­as No Cumplidos</th>
                                     <th>Meta Tradicional</th>
                                     <th>Meta No Tradicional</th>
                                     <th>Meta Recargas</th>
@@ -410,7 +410,7 @@
                         <div class="col-12 col-lg-4 mb-3">
                             <div class="card shadow-sm border-success">
                                 <div class="card-header bg-success text-white">
-                                    <h6 class="mb-0"><i class="ri-fire-line me-2"></i>Top 10 Más Vendidos</h6>
+                                    <h6 class="mb-0"><i class="ri-fire-line me-2"></i>Top 10 MÃ¡s Vendidos</h6>
                                 </div>
                                 <div class="card-body p-0">
                                     <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
@@ -485,7 +485,7 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="col-sm-6">
-                    <script>document.write(new Date().getFullYear())</script> © CRM.
+                    <script>document.write(new Date().getFullYear())</script> Â© ERP.
                 </div>
             </div>
         </div>
@@ -536,13 +536,13 @@
                 Swal.close();
                 currentData = data;
 
-                // Actualizar parámetros
+                // Actualizar parÃ¡metros
                 document.getElementById('param-meta-total').textContent = formatCurrency(data.parametros.meta_total);
                 document.getElementById('param-meta-trad').textContent = formatCurrency(data.parametros.meta_trad);
                 document.getElementById('param-meta-notrad').textContent = formatCurrency(data.parametros.meta_notrad);
                 document.getElementById('param-meta-rec').textContent = formatCurrency(data.parametros.meta_rec);
                 
-                // Actualizar parámetros diarios
+                // Actualizar parÃ¡metros diarios
                 document.getElementById('param-meta-trad-d').textContent = formatCurrency(data.parametros.meta_trad_d);
                 document.getElementById('param-meta-notrad-d').textContent = formatCurrency(data.parametros.meta_notrad_d);
                 document.getElementById('param-meta-rec-d').textContent = formatCurrency(data.parametros.meta_rec_d);
@@ -555,7 +555,7 @@
                 document.getElementById('kpi-meta-rec').textContent = data.kpis.cumplio_rec;
                 document.getElementById('kpi-meta-rec-pct').textContent = data.kpis.pct_cumplio_rec + '%';
 
-                // Actualizar KPIs de días
+                // Actualizar KPIs de dÃ­as
                 document.getElementById('kpi-agencias-cumplieron').textContent = data.kpis.agencias_cumplieron;
                 document.getElementById('kpi-agencias-no-cumplieron').textContent = data.kpis.agencias_no_cumplieron;
                 document.getElementById('kpi-promedio-cumplidos').textContent = data.kpis.promedio_dias_cumplidos;
@@ -565,7 +565,7 @@
                 document.getElementById('kpi-excelencia').textContent = data.severidad.Excelencia;
                 document.getElementById('kpi-estable').textContent = data.severidad.Estable;
                 document.getElementById('kpi-riesgo').textContent = data.severidad['En riesgo'];
-                document.getElementById('kpi-critica').textContent = data.severidad['Crítica'];
+                document.getElementById('kpi-critica').textContent = data.severidad['CrÃ­tica'];
 
                 // Actualizar tabla
                 if (tableInstance) {
@@ -643,7 +643,7 @@
             },
             order: [[1, 'desc']],
             drawCallback: function() {
-                // Adjuntar eventos a los botones después del renderizado
+                // Adjuntar eventos a los botones despuÃ©s del renderizado
                 $('#tabla-cumplieron .ver-productos').off('click').on('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -694,7 +694,7 @@
             },
             order: [[1, 'desc']],
             drawCallback: function() {
-                // Adjuntar eventos a los botones después del renderizado
+                // Adjuntar eventos a los botones despuÃ©s del renderizado
                 $('#tabla-no-cumplieron .ver-productos').off('click').on('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -733,7 +733,7 @@
             .then(data => {
                 Swal.close();
 
-                // Llenar tabla de más vendidos
+                // Llenar tabla de mÃ¡s vendidos
                 const tablaMasVendidos = document.getElementById('tabla-mas-vendidos');
                 tablaMasVendidos.innerHTML = '';
                 data.mas_vendidos.forEach((prod, index) => {
@@ -791,3 +791,4 @@
     });
 </script>
 @endsection
+
