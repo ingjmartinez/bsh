@@ -12,9 +12,18 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('agencias')) {
+            return;
+        }
+
         Schema::table('agencias', function (Blueprint $table) {
-            $table->string('horario_am', 35)->nullable()->after('terminal');
-            $table->string('horario_pm', 35)->nullable()->after('horario_am');
+            if (!Schema::hasColumn('agencias', 'horario_am')) {
+                $table->string('horario_am', 35)->nullable()->after('terminal');
+            }
+
+            if (!Schema::hasColumn('agencias', 'horario_pm')) {
+                $table->string('horario_pm', 35)->nullable()->after('horario_am');
+            }
         });
 
         $horarios = [
@@ -68,8 +77,19 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (!Schema::hasTable('agencias')) {
+            return;
+        }
+
         Schema::table('agencias', function (Blueprint $table) {
-            $table->dropColumn(['horario_am', 'horario_pm']);
+            $columns = array_values(array_filter(
+                ['horario_am', 'horario_pm'],
+                fn (string $column) => Schema::hasColumn('agencias', $column)
+            ));
+
+            if (!empty($columns)) {
+                $table->dropColumn($columns);
+            }
         });
     }
 

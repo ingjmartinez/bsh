@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('agencias')) {
+            return;
+        }
+
         if (!Schema::hasColumn('agencias', 'estatus')) {
             Schema::table('agencias', function (Blueprint $table) {
                 $table->tinyInteger('estatus')->default(1)->after('coordinador');
@@ -23,6 +27,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (!Schema::hasTable('agencias')) {
+            return;
+        }
+
         if (Schema::hasColumn('agencias', 'estatus')) {
             Schema::table('agencias', function (Blueprint $table) {
                 $table->dropColumn('estatus');
