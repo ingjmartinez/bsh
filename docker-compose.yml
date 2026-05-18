@@ -5,13 +5,13 @@ services:
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
-      APP_URL: https://crm.helppro.com.do
+      APP_URL: https://bshsupport.com
       DB_CONNECTION: mysql
       DB_HOST: db
       DB_PORT: 3306
-      DB_DATABASE: crm_v3
-      DB_USERNAME: crm_user
-      DB_PASSWORD: wSyEP6ZZEUxBUiwj5ZeR
+      DB_DATABASE: bsh
+      DB_USERNAME: bsh_user
+      DB_PASSWORD: OtormKr2CrnBFxvlvXik
       QUEUE_CONNECTION: redis
       CACHE_DRIVER: redis
       REDIS_HOST: redis
@@ -38,10 +38,10 @@ services:
     image: mysql:8.0
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: crm_v3
-      MYSQL_USER: crm_user
-      MYSQL_PASSWORD: wSyEP6ZZEUxBUiwj5ZeR
-      MYSQL_ROOT_PASSWORD: wSyEP6ZZEUxBUiwj5ZeR
+      MYSQL_DATABASE: bsh
+      MYSQL_USER: bsh_user
+      MYSQL_PASSWORD: OtormKr2CrnBFxvlvXik
+      MYSQL_ROOT_PASSWORD: OtormKr2CrnBFxvlvXik
     volumes:
       - db_data:/var/lib/mysql
 
@@ -70,9 +70,9 @@ services:
       DB_CONNECTION: mysql
       DB_HOST: db
       DB_PORT: 3306
-      DB_DATABASE: crm_v3
-      DB_USERNAME: crm_user
-      DB_PASSWORD: wSyEP6ZZEUxBUiwj5ZeR
+      DB_DATABASE: bsh
+      DB_USERNAME: bsh_user
+      DB_PASSWORD: OtormKr2CrnBFxvlvXik
       QUEUE_CONNECTION: redis
       REDIS_HOST: redis
     volumes:
@@ -92,9 +92,9 @@ services:
       DB_CONNECTION: mysql
       DB_HOST: db
       DB_PORT: 3306
-      DB_DATABASE: crm_v3
-      DB_USERNAME: crm_user
-      DB_PASSWORD: wSyEP6ZZEUxBUiwj5ZeR
+      DB_DATABASE: bsh
+      DB_USERNAME: bsh_user
+      DB_PASSWORD: OtormKr2CrnBFxvlvXik
       REDIS_HOST: redis
     volumes:
       - ./:/var/www
