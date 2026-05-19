@@ -57,9 +57,49 @@
         }
 
         .auth-one-bg {
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
             background-image:
                 linear-gradient(145deg, rgba(44, 43, 38, 0.22), rgba(44, 43, 38, 0.58)),
                 url("{{ asset('images/bsh2.png') }}");
+            background-size: cover;
+            background-position: center;
+        }
+
+        .auth-one-bg::before,
+        .auth-one-bg::after {
+            content: "";
+            position: absolute;
+            pointer-events: none;
+            z-index: 3;
+            mix-blend-mode: screen;
+        }
+
+        .auth-one-bg::before {
+            inset: -24% -12%;
+            background:
+                radial-gradient(circle at 22% 24%, rgba(255, 255, 255, 0.42) 0 11%, rgba(255, 255, 255, 0) 36%),
+                radial-gradient(circle at 78% 20%, rgba(255, 255, 255, 0.30) 0 10%, rgba(255, 255, 255, 0) 32%),
+                linear-gradient(125deg, rgba(255, 255, 255, 0) 26%, rgba(255, 255, 255, 0.26) 40%, rgba(255, 255, 255, 0) 56%),
+                linear-gradient(160deg, rgba(255, 255, 255, 0) 33%, rgba(255, 255, 255, 0.20) 46%, rgba(255, 255, 255, 0) 62%);
+            filter: blur(18px);
+            opacity: 0.78;
+            transform: rotate(-6deg) scale(1.06);
+        }
+
+        .auth-one-bg::after {
+            right: -120px;
+            bottom: -150px;
+            width: 440px;
+            height: 440px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.34);
+            box-shadow:
+                0 0 0 42px rgba(255, 255, 255, 0.09),
+                0 0 0 96px rgba(255, 255, 255, 0.04);
+            filter: blur(3px);
+            opacity: 0.72;
         }
 
         .auth-one-bg .bg-overlay {
@@ -67,6 +107,11 @@
                 radial-gradient(circle at 14% 16%, rgba(236, 190, 19, 0.42) 0, rgba(236, 190, 19, 0) 30%),
                 linear-gradient(135deg, rgba(44, 43, 38, 0.94) 0%, rgba(106, 107, 95, 0.88) 48%, rgba(164, 57, 85, 0.82) 100%);
             opacity: 0.92;
+            z-index: 2;
+        }
+
+        .auth-one-bg > .position-relative {
+            z-index: 4;
         }
 
         .brand-wordmark .brand-icon {
