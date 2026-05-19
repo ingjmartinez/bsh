@@ -59,7 +59,7 @@
         .auth-one-bg {
             background-image:
                 linear-gradient(145deg, rgba(44, 43, 38, 0.22), rgba(44, 43, 38, 0.58)),
-                url("{{ asset('images/auth-one-bg.jpg') }}");
+                url("{{ asset('images/bsh2.png') }}");
         }
 
         .auth-one-bg .bg-overlay {
