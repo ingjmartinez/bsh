@@ -169,13 +169,18 @@
                                                     </td>
                                                     <td>{{ optional($solicitud->created_at)->format('d/m/Y h:i A') }}</td>
                                                     <td style="min-width: 260px;">
+                                                        @php
+                                                            $estadosGestion = $solicitud->categoria === 'anular_ticket'
+                                                                ? ['pendiente' => 'Pendiente', 'nulo' => 'Nulo']
+                                                                : ['pendiente' => 'Pendiente', 'pagado' => 'Pagado'];
+                                                        @endphp
                                                         <form method="POST" action="{{ route('tickets.estado', $solicitud) }}" class="d-flex gap-2">
                                                             @csrf
                                                             @method('PUT')
                                                             <select class="form-select form-select-sm" name="estado">
-                                                                <option value="pendiente" @selected($solicitud->estado === 'pendiente')>Pendiente</option>
-                                                                <option value="pagado" @selected($solicitud->estado === 'pagado')>Pagado</option>
-                                                                <option value="nulo" @selected($solicitud->estado === 'nulo')>Nulo</option>
+                                                                @foreach ($estadosGestion as $estadoValue => $estadoLabel)
+                                                                    <option value="{{ $estadoValue }}" @selected($solicitud->estado === $estadoValue)>{{ $estadoLabel }}</option>
+                                                                @endforeach
                                                             </select>
                                                             <button class="btn btn-sm btn-success" type="submit">
                                                                 <i class="ri-save-3-line"></i>

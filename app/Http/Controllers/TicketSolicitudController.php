@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class TicketSolicitudController extends Controller
@@ -91,9 +92,13 @@ class TicketSolicitudController extends Controller
             return back()->withErrors(['tickets' => 'La tabla del modulo aun no existe. Ejecuta las migraciones.']);
         }
 
+        $estadosPermitidos = $this->allowedEstadosForCategoria((string) $ticket->categoria);
+
         $validated = $request->validate([
-            'estado' => 'required|in:pendiente,pagado,nulo',
+            'estado' => ['required', Rule::in($estadosPermitidos)],
             'notas' => 'nullable|string|max:1000',
+        ], [
+            'estado.in' => 'El estado seleccionado no es valido para esta categoria de ticket.',
         ]);
 
         $estadoAnterior = (string) $ticket->estado;
@@ -182,5 +187,24 @@ class TicketSolicitudController extends Controller
             'pagar' => 0,
             'anular' => 0,
         ];
+    }
+
+    private function allowedEstadosForCategoria(string $categoria): array
+    {
+        return match ($categoria) {
+            TicketSolicitud::CATEGORIA_ANULAR => [
+                TicketSolicitud::ESTADO_PENDIENTE,
+                TicketSolicitud::ESTADO_NULO,
+            ],
+            TicketSolicitud::CATEGORIA_PAGAR => [
+                TicketSolicitud::ESTADO_PENDIENTE,
+                TicketSolicitud::ESTADO_PAGADO,
+            ],
+            default => [
+                TicketSolicitud::ESTADO_PENDIENTE,
+                TicketSolicitud::ESTADO_PAGADO,
+                TicketSolicitud::ESTADO_NULO,
+            ],
+        };
     }
 }
