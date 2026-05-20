@@ -898,7 +898,8 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ url('/tareas') }}" class="nav-link menu-link">
+                            <a href="{{ route('tareas.index') }}"
+                                class="nav-link menu-link {{ request()->is('tareas') || request()->is('tareas-list*') || (request()->is('tareas/*') && !request()->routeIs('tareas.proyecto')) ? 'active' : '' }}">
                                 <i class="ri-task-line"></i> <span data-key="t-tareas">Tareas</span>
                             </a>
                         </li>
@@ -911,7 +912,8 @@
                             </li>
                         @endcan
                         <li class="nav-item">
-                            <a href="{{ route('tareas.proyecto') }}" class="nav-link menu-link">
+                            <a href="{{ route('tareas.proyecto') }}"
+                                class="nav-link menu-link {{ request()->routeIs('tareas.proyecto') ? 'active' : '' }}">
                                 <i class="ri-stack-line"></i> <span data-key="t-proyecto">Proyecto</span>
                             </a>
                         </li>
