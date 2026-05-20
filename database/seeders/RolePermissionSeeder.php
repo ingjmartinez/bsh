@@ -25,6 +25,8 @@ class RolePermissionSeeder extends Seeder
             'permissions.create',
             'permissions.edit',
             'permissions.delete',
+            'tickets.view',
+            'tickets.manage',
             'servicios_generales.view',
             'servicios_generales.create',
             'servicios_generales.manage',
@@ -42,6 +44,10 @@ class RolePermissionSeeder extends Seeder
             'rh' => ['usuarios.view', 'usuarios.list'],
             'comercial' => ['usuarios.view', 'usuarios.list'],
             'monitoreo' => ['usuarios.view', 'usuarios.list'],
+            'tickets' => [
+                'tickets.view',
+                'tickets.manage',
+            ],
             'servicios_generales' => [
                 'servicios_generales.view',
                 'servicios_generales.create',

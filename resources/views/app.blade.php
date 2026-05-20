@@ -902,12 +902,14 @@
                                 <i class="ri-task-line"></i> <span data-key="t-tareas">Tareas</span>
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a href="{{ route('tickets.index') }}"
-                                class="nav-link menu-link {{ request()->is('tickets*') ? 'active' : '' }}">
-                                <i class="ri-ticket-2-line"></i> <span data-key="t-tickets">Ticket</span>
-                            </a>
-                        </li>
+                        @can('tickets.view')
+                            <li class="nav-item">
+                                <a href="{{ route('tickets.index') }}"
+                                    class="nav-link menu-link {{ request()->is('tickets*') ? 'active' : '' }}">
+                                    <i class="ri-ticket-2-line"></i> <span data-key="t-tickets">Ticket</span>
+                                </a>
+                            </li>
+                        @endcan
                         <li class="nav-item">
                             <a href="{{ route('tareas.proyecto') }}" class="nav-link menu-link">
                                 <i class="ri-stack-line"></i> <span data-key="t-proyecto">Proyecto</span>
