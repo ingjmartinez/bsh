@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+
+echo "Running encoding guard..."
+composer check:encoding
+STATUS=$?
+
+if [ $STATUS -ne 0 ]; then
+  echo "Commit blocked by encoding guard."
+  exit $STATUS
+fi
+
+exit 0

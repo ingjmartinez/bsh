@@ -109,7 +109,7 @@ class WhatsAppChatbotService
                     'categoria_label' => 'Pagar ticket',
                 ];
 
-                return 'Indica el numero del ticket que deseas pagar.';
+                return 'Indica el codigo del terminal que deseas pagar.';
             }
 
             if ($message === '4') {
@@ -119,7 +119,7 @@ class WhatsAppChatbotService
                     'categoria_label' => 'Anular ticket',
                 ];
 
-                return 'Indica el numero del ticket que deseas anular.';
+                return 'Indica el codigo del terminal que deseas anular.';
             }
 
             return self::MENU_MESSAGE;
@@ -132,19 +132,19 @@ class WhatsAppChatbotService
 
     private function guardarTicketYEsperarImagen(ChatbotSession $session, string $message): string
     {
-        $ticketNumero = trim($message);
+        $terminalCodigo = trim($message);
 
-        if ($ticketNumero === '' || strlen($ticketNumero) < 2) {
-            return 'No pude identificar el numero del ticket. Envia solo el numero o codigo del ticket.';
+        if ($terminalCodigo === '' || strlen($terminalCodigo) < 2) {
+            return 'No pude identificar el codigo del terminal. Envia solo el codigo del terminal.';
         }
 
         $context = is_array($session->context) ? $session->context : [];
         $session->step = self::STEP_TICKET_IMAGEN;
         $session->context = array_merge($context, [
-            'ticket_numero' => $ticketNumero,
+            'ticket_numero' => $terminalCodigo,
         ]);
 
-        return "Perfecto. Ticket {$ticketNumero} recibido.\n\nAhora envia la imagen del comprobante para registrar la solicitud.";
+        return "Perfecto. Codigo de terminal {$terminalCodigo} recibido.\n\nAhora envia la imagen del comprobante para registrar la solicitud.";
     }
 
     private function registrarSolicitudTicketConImagen(ChatbotSession $session, array $incoming): string
@@ -192,7 +192,7 @@ class WhatsAppChatbotService
 
         $this->resetSession($session);
 
-        return "Solicitud registrada correctamente.\n\nCodigo: {$solicitud->codigo}\nCategoria: {$solicitud->categoria_label}\nTicket: {$solicitud->ticket_numero}\nImagen: Recibida\nEstado: Pendiente";
+        return "Solicitud registrada correctamente.\n\nCodigo: {$solicitud->codigo}\nCategoria: {$solicitud->categoria_label}\nTerminal: {$solicitud->ticket_numero}\nImagen: Recibida\nEstado: Pendiente";
     }
 
     private function normalizeAttachmentUrl(mixed $attachment): ?string

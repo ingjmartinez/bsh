@@ -119,7 +119,7 @@
                                     <div class="col-md-3">
                                         <label class="form-label" for="buscar">Buscar</label>
                                         <div class="input-group">
-                                            <input type="text" class="form-control" id="buscar" name="buscar" value="{{ $filtros['buscar'] ?? '' }}" placeholder="Ticket o telefono">
+                                            <input type="text" class="form-control" id="buscar" name="buscar" value="{{ $filtros['buscar'] ?? '' }}" placeholder="Terminal o telefono">
                                             <button class="btn btn-primary" type="submit">
                                                 <i class="ri-search-line"></i>
                                             </button>
@@ -134,7 +134,7 @@
                                             <tr>
                                                 <th>Solicitud</th>
                                                 <th>Categoria</th>
-                                                <th>Ticket</th>
+                                                <th>Codigo terminal</th>
                                                 <th>Telefono</th>
                                                 <th>Estado</th>
                                                 <th>Imagen</th>
@@ -220,7 +220,7 @@
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="form-label" for="manual_ticket">Numero de ticket</label>
+                                        <label class="form-label" for="manual_ticket">Codigo de terminal</label>
                                         <input type="text" class="form-control" id="manual_ticket" name="ticket_numero" required>
                                     </div>
                                     <div>
