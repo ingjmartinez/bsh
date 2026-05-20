@@ -18,8 +18,8 @@ class TicketSolicitudController extends Controller
 {
     public function __construct(private readonly WhatsAppService $whatsAppService)
     {
-        $this->middleware('permission:tickets.view')->only(['index', 'activity']);
-        $this->middleware('permission:tickets.manage')->only(['store', 'updateEstado']);
+        $this->middleware('role_or_permission:superadmin|admin|tickets.view')->only(['index', 'activity']);
+        $this->middleware('role_or_permission:superadmin|admin|tickets.manage')->only(['store', 'updateEstado']);
     }
 
     public function index(Request $request): View
