@@ -37,9 +37,14 @@ class RolePermissionSeeder extends Seeder
             Permission::findOrCreate($permission, 'web');
         }
 
+        $adminPermissions = array_values(array_filter(
+            $permissions,
+            static fn(string $permission): bool => !str_ends_with($permission, '.delete')
+        ));
+
         $roles = [
             'superadmin' => $permissions,
-            'admin' => $permissions,
+            'admin' => $adminPermissions,
             'contabilidad' => ['usuarios.view', 'usuarios.list'],
             'rh' => ['usuarios.view', 'usuarios.list'],
             'comercial' => ['usuarios.view', 'usuarios.list'],

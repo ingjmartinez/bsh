@@ -858,6 +858,9 @@
             <div id="scrollbar">
                 <div class="container-fluid">
                     <div id="two-column-menu"></div>
+                    @php
+                        $showAllModulesForAdmin = auth()->check() && auth()->user()->hasAnyRole(['superadmin', 'admin']);
+                    @endphp
                     <ul class="navbar-nav" id="navbar-nav">
                         <li class="sidebar-brand-title">
                             <a href="{{ url('/') }}" class="brand-mark text-decoration-none">
@@ -903,28 +906,28 @@
                                 <i class="ri-task-line"></i> <span data-key="t-tareas">Tareas</span>
                             </a>
                         </li>
-                        @can('tickets.view')
+                        @if ($showAllModulesForAdmin || auth()->user()?->can('tickets.view'))
                             <li class="nav-item">
                                 <a href="{{ route('tickets.index') }}"
                                     class="nav-link menu-link {{ request()->is('tickets*') ? 'active' : '' }}">
                                     <i class="ri-ticket-2-line"></i> <span data-key="t-tickets">Ticket</span>
                                 </a>
                             </li>
-                        @endcan
+                        @endif
                         <li class="nav-item">
                             <a href="{{ route('tareas.proyecto') }}"
                                 class="nav-link menu-link {{ request()->routeIs('tareas.proyecto') ? 'active' : '' }}">
                                 <i class="ri-stack-line"></i> <span data-key="t-proyecto">Proyecto</span>
                             </a>
                         </li>
-                        @can('servicios_generales.view')
+                        @if ($showAllModulesForAdmin || auth()->user()?->can('servicios_generales.view'))
                             <li class="nav-item">
                                 <a href="{{ route('servicios-generales.index') }}"
                                     class="nav-link menu-link {{ request()->is('servicios-generales*') ? 'active' : '' }}">
                                     <i class="ri-tools-line"></i> <span data-key="t-servicios-generales">Servicios Generales</span>
                                 </a>
                             </li>
-                        @endcan
+                        @endif
                         <li class="nav-item">
                             <a href="{{ route('tecnologia.index') }}"
                                 class="nav-link menu-link {{ request()->is('tecnologia*') ? 'active' : '' }}">
