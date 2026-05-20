@@ -454,6 +454,7 @@ Route::prefix('tecnologia')->name('tecnologia.')->group(function () {
 
 Route::prefix('tickets')->name('tickets.')->group(function () {
     Route::get('/', [TicketSolicitudController::class, 'index'])->name('index');
+    Route::get('/activity', [TicketSolicitudController::class, 'activity'])->name('activity');
     Route::post('/', [TicketSolicitudController::class, 'store'])->name('store');
     Route::put('/{ticket}/estado', [TicketSolicitudController::class, 'updateEstado'])->name('estado');
 });

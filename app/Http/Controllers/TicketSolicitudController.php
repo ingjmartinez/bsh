@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\TicketSolicitud;
 use App\Services\WhatsAppService;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -16,7 +18,7 @@ class TicketSolicitudController extends Controller
 {
     public function __construct(private readonly WhatsAppService $whatsAppService)
     {
-        $this->middleware('permission:tickets.view')->only(['index']);
+        $this->middleware('permission:tickets.view')->only(['index', 'activity']);
         $this->middleware('permission:tickets.manage')->only(['store', 'updateEstado']);
     }
 
@@ -54,11 +56,34 @@ class TicketSolicitudController extends Controller
             ->paginate(20)
             ->withQueryString();
 
+        $ticketFeedSignature = $this->buildFeedSignature($baseQuery);
+
         return view('tickets.index', [
             'filtros' => $filtros,
             'solicitudes' => $solicitudes,
             'stats' => $stats,
             'setupPending' => $setupPending,
+            'ticketFeedSignature' => $ticketFeedSignature,
+            'ticketActivityUrl' => route('tickets.activity', $filtros),
+        ]);
+    }
+
+    public function activity(Request $request): JsonResponse
+    {
+        if (!Schema::hasTable('ticket_solicitudes')) {
+            return response()->json([
+                'setup_pending' => true,
+                'signature' => 'setup-pending',
+            ]);
+        }
+
+        $filtros = $request->only(['categoria', 'estado', 'desde', 'hasta', 'buscar']);
+        $baseQuery = TicketSolicitud::query()->filtro($filtros);
+
+        return response()->json([
+            'setup_pending' => false,
+            'signature' => $this->buildFeedSignature($baseQuery),
+            'server_time' => now()->toIso8601String(),
         ]);
     }
 
@@ -208,5 +233,18 @@ class TicketSolicitudController extends Controller
                 TicketSolicitud::ESTADO_NULO,
             ],
         };
+    }
+
+    private function buildFeedSignature(Builder $query): string
+    {
+        $snapshot = (clone $query)
+            ->selectRaw('COUNT(*) as total, MAX(updated_at) as last_activity_at, MAX(id) as max_id')
+            ->first();
+
+        $total = (int) ($snapshot->total ?? 0);
+        $lastActivity = (string) ($snapshot->last_activity_at ?? '');
+        $maxId = (int) ($snapshot->max_id ?? 0);
+
+        return sha1($total . '|' . $lastActivity . '|' . $maxId);
     }
 }

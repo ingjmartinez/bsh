@@ -306,5 +306,59 @@
                 title.textContent = 'Imagen de ticket';
             });
         })();
+
+        (function () {
+            const activityUrl = @json($ticketActivityUrl ?? null);
+            let currentSignature = @json($ticketFeedSignature ?? null);
+
+            if (!activityUrl || !currentSignature) {
+                return;
+            }
+
+            let pollTimer = null;
+
+            async function checkTicketActivity() {
+                if (document.hidden) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(activityUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        cache: 'no-store',
+                    });
+
+                    if (!response.ok) {
+                        return;
+                    }
+
+                    const data = await response.json();
+                    const signature = data?.signature || null;
+
+                    if (!signature) {
+                        return;
+                    }
+
+                    if (signature !== currentSignature) {
+                        currentSignature = signature;
+                        window.location.reload();
+                    }
+                } catch (error) {
+                    // Polling silencioso para no interrumpir al usuario.
+                }
+            }
+
+            pollTimer = window.setInterval(checkTicketActivity, 5000);
+
+            window.addEventListener('beforeunload', function () {
+                if (pollTimer) {
+                    window.clearInterval(pollTimer);
+                }
+            });
+        })();
     </script>
 @endsection
