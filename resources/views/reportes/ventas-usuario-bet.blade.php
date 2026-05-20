@@ -10,7 +10,7 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                            <h4 class="mb-sm-0">VerificaciÃ³n de Usuario Lotobet</h4>
+                            <h4 class="mb-sm-0">Verificación de Usuario Lotobet</h4>
 
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
@@ -97,7 +97,7 @@
                     <div class="col-sm-6">
                         <script>
                             document.write(new Date().getFullYear())
-                        </script> Â© Velzon.
+                        </script> © Velzon.
                     </div>
                     <div class="col-sm-6">
                         <div class="text-sm-end d-none d-sm-block">

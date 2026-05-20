@@ -4,9 +4,9 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>Confirmar Reset de ContraseÃ±a | Business Support Hub</title>
+    <title>Confirmar Reset de Contraseña | Business Support Hub</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="ERP BSH Support - Confirmar reset de contraseÃ±a" />
+    <meta name="description" content="ERP BSH Support - Confirmar reset de contraseña" />
     <link rel="shortcut icon" href="{{ asset('images/favicon.ico') }}">
     <link href="{{ asset('css/bootstrap.min.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('css/icons.min.css') }}" rel="stylesheet" type="text/css" />
@@ -51,7 +51,7 @@
                         <a href="/login">
                             <h2><i class="ri-shield-user-line me-2"></i>Business Support Hub</h2>
                         </a>
-                        <p class="text-muted mt-2 mb-0">Confirma el cÃ³digo y crea tu nueva contraseÃ±a</p>
+                        <p class="text-muted mt-2 mb-0">Confirma el código y crea tu nueva contraseña</p>
                     </div>
 
                     @if ($errors->any())
@@ -82,13 +82,13 @@
                         @csrf
 
                         <div class="mb-3">
-                            <label for="email" class="form-label">Correo electrÃ³nico</label>
+                            <label for="email" class="form-label">Correo electrónico</label>
                             <input type="email" class="form-control @error('email') is-invalid @enderror" id="email"
                                 name="email" value="{{ old('email', $email) }}" required>
                         </div>
 
                         <div class="mb-3">
-                            <label for="codigo" class="form-label">Ingrese el cÃ³digo enviado por correo</label>
+                            <label for="codigo" class="form-label">Ingrese el código enviado por correo</label>
                             <input type="text" class="form-control @error('codigo') is-invalid @enderror" id="codigo"
                                 name="codigo" value="{{ old('codigo') }}" placeholder="Ej: A1B2C3D4" required>
                         </div>
@@ -106,13 +106,13 @@
                         </div>
 
                         <button class="btn btn-primary w-100 py-2" type="submit">
-                            <i class="ri-check-line me-1"></i> Guardar nueva contraseÃ±a
+                            <i class="ri-check-line me-1"></i> Guardar nueva contraseña
                         </button>
                     </form>
 
                     <div class="text-center mt-3">
                         <a href="{{ route('login') }}" class="text-muted">
-                            <i class="ri-arrow-left-line"></i> Volver al inicio de sesiÃ³n
+                            <i class="ri-arrow-left-line"></i> Volver al inicio de sesión
                         </a>
                     </div>
                 </div>

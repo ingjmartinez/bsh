@@ -28,12 +28,12 @@ class TareaAsignadaNotification extends Notification
         return (new MailMessage)
             ->subject('Nueva tarea asignada en ERP')
             ->greeting('Hola ' . ($notifiable->name ?? ''))
-            ->line('Se te asignÃ³ una nueva tarea en el sistema.')
+            ->line('Se te asignó una nueva tarea en el sistema.')
             ->line('Tarea: ' . $this->tarea->titulo)
             ->line('Asignada por: ' . $this->asignador->name)
             ->line('Fecha fin: ' . optional($this->tarea->fecha_fin)->format('d/m/Y'))
             ->action('Ver tarea', url('/tareas'))
-            ->line('Por favor revisa el mÃ³dulo de tareas para mÃ¡s detalles.');
+            ->line('Por favor revisa el módulo de tareas para más detalles.');
     }
 
     public function toArray(object $notifiable): array
@@ -41,7 +41,7 @@ class TareaAsignadaNotification extends Notification
         return [
             'module' => 'tareas',
             'title' => 'Nueva tarea asignada',
-            'message' => $this->asignador->name . ' te asignÃ³ la tarea: ' . $this->tarea->titulo,
+            'message' => $this->asignador->name . ' te asignó la tarea: ' . $this->tarea->titulo,
             'task_id' => $this->tarea->id,
             'url' => url('/tareas?tarea_id=' . $this->tarea->id),
             'actor' => $this->asignador->name,

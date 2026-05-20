@@ -113,7 +113,7 @@
                     <div class="col-sm-6">
                         <script>
                             document.write(new Date().getFullYear())
-                        </script> Â© ERP.
+                        </script> © ERP.
                     </div>
                 </div>
             </div>

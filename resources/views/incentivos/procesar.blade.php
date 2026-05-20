@@ -8,7 +8,7 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                            <h4 class="mb-sm-0">Procesar Incentivos AutomÃ¡ticamente</h4>
+                            <h4 class="mb-sm-0">Procesar Incentivos Automáticamente</h4>
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li class="breadcrumb-item"><a href="{{ route('inicio.index') }}">Inicio</a></li>
@@ -24,12 +24,12 @@
                     <div class="col-lg-12">
                         <div class="card">
                             <div class="card-header">
-                                <h5 class="card-title mb-0">Ejecutar todos los cÃ¡lculos de incentivos</h5>
+                                <h5 class="card-title mb-0">Ejecutar todos los cálculos de incentivos</h5>
                             </div>
                             <div class="card-body">
                                 <div class="row mb-3">
                                     <div class="col-2">
-                                        <label for="inputYear" class="form-label">AÃ±o</label>
+                                        <label for="inputYear" class="form-label">Año</label>
                                         <select id="inputYear" class="form-control">
                                             <option value="2026">2026</option>
                                             <option value="2025">2025</option>
@@ -72,13 +72,13 @@
                                     <div class="col-12 col-lg-5 mb-3">
                                         <div class="card">
                                             <div class="card-body">
-                                                <h6>Estados por mÃ³dulo</h6>
+                                                <h6>Estados por módulo</h6>
                                                 <div style="max-height:400px; overflow:auto;">
                                                     <table class="table table-sm table-bordered" id="statusTable">
                                                         <thead>
                                                             <tr>
                                                                 <th style="width:1%">#</th>
-                                                                <th>MÃ³dulo</th>
+                                                                <th>Módulo</th>
                                                                 <th style="width:1%">Estado</th>
                                                                 <th>Detalle</th>
                                                             </tr>
@@ -95,7 +95,7 @@
                                     <div class="col-12 col-lg-7">
                                         <div class="card">
                                             <div class="card-body">
-                                                <h6>Registro de ejecuciÃ³n</h6>
+                                                <h6>Registro de ejecución</h6>
                                                 <div id="logContainer" style="max-height:400px; overflow:auto; background:#f8f9fa; padding:10px; border-radius:4px;">
                                                     <!-- logs -->
                                                 </div>
@@ -160,7 +160,7 @@
 
 @section('script')
     <script>
-        // Lista de mÃ³dulos de incentivos en el orden de ejecuciÃ³n
+        // Lista de módulos de incentivos en el orden de ejecución
         const modules = [
             { name: 'Incentivos Base', type: 'list', url: '/incentivos/list', saveUrl: '/incentivos/save' },
             { name: 'Plan Agencia', type: 'list', url: '/incentivos/list/plan-agencia', saveUrl: '/incentivos/save/plan-agencia' },
@@ -258,15 +258,15 @@
             addLog(`-> Consultando ${mod.name} (${mod.url})`);
             
             try {
-                // Construir URL segÃºn el tipo de mÃ³dulo
+                // Construir URL según el tipo de módulo
                 let listUrl = `${mod.url}?mes=${mes}&year=${year}`;
                 
-                // Agregar parÃ¡metros especÃ­ficos segÃºn el mÃ³dulo
+                // Agregar parámetros específicos según el módulo
                 if (mod.name === 'Incentivos Base' || mod.name.includes('Efectividad')) {
                     listUrl += `&excluidos=${productosExcluidos}`;
                 }
                 
-                // Agregar sistema si el mÃ³dulo lo requiere
+                // Agregar sistema si el módulo lo requiere
                 if (mod.sistema) {
                     listUrl += `&sistema=${mod.sistema}`;
                 }
@@ -368,7 +368,7 @@
                 return { ok: true, data: lastSaveData };
                 
             } catch (err) {
-                addLog(`EXCEPCIÃ“N ${mod.name}: ${err.message}`, 'error');
+                addLog(`EXCEPCIÓN ${mod.name}: ${err.message}`, 'error');
                 setStatus(mod.name, 'Error', err.message);
                 return { ok: false, message: err.message };
             }
@@ -417,7 +417,7 @@
             
             Swal.fire({
                 title: 'Resumen',
-                html: `Mes/AÃ±o: <strong>${mes}/${year}</strong><br>OK: <strong>${okCount}</strong><br>Errores: <strong>${errCount}</strong>`,
+                html: `Mes/Año: <strong>${mes}/${year}</strong><br>OK: <strong>${okCount}</strong><br>Errores: <strong>${errCount}</strong>`,
                 icon: errCount > 0 ? 'warning' : 'success'
             });
             

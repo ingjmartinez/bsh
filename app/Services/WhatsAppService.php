@@ -7,6 +7,62 @@ use Illuminate\Support\Facades\Log;
 
 class WhatsAppService
 {
+    public function fetchReceivedAttachmentByMessageId(string $messageId): ?string
+    {
+        $endpoint = config('services.whatsapp.message_endpoint');
+        $secret = config('services.whatsapp.api_key');
+        $timeout = (int) config('services.whatsapp.timeout', 30);
+        $verifySsl = filter_var(config('services.whatsapp.verify_ssl', true), FILTER_VALIDATE_BOOLEAN);
+        $messageId = trim($messageId);
+
+        if ($messageId === '' || !$endpoint || !$secret) {
+            return null;
+        }
+
+        try {
+            $response = Http::timeout($timeout)
+                ->acceptJson()
+                ->withOptions(['verify' => $verifySsl])
+                ->get($endpoint, [
+                    'secret' => $secret,
+                    'id' => $messageId,
+                    'type' => 'received',
+                ]);
+
+            if (!$response->successful()) {
+                Log::warning('WhatsApp get message no exitoso para adjunto', [
+                    'status' => $response->status(),
+                    'message_id' => $messageId,
+                ]);
+
+                return null;
+            }
+
+            $payload = $response->json();
+            $data = is_array($payload) ? ($payload['data'] ?? []) : [];
+            $attachment = is_array($data) ? ($data['attachment'] ?? null) : null;
+
+            if (!is_string($attachment)) {
+                return null;
+            }
+
+            $attachment = trim($attachment);
+
+            if ($attachment === '' || strtolower($attachment) === 'false') {
+                return null;
+            }
+
+            return $attachment;
+        } catch (\Throwable $e) {
+            Log::warning('WhatsApp get message excepcion buscando adjunto', [
+                'message_id' => $messageId,
+                'message' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
     public function sendText(string $recipient, string $message, ?string $account = null): array
     {
         $endpoint = config('services.whatsapp.send_endpoint');

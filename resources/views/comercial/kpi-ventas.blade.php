@@ -123,7 +123,7 @@
                                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                                     <div>
                                         <p class="text-muted mb-1">Fase 1: acumulado por mes</p>
-                                        <small class="text-muted">Resumen de cumplimiento por agencia segÃºn gasto configurado.</small>
+                                        <small class="text-muted">Resumen de cumplimiento por agencia según gasto configurado.</small>
                                     </div>
                                     <div class="d-flex align-items-center gap-4">
                                         <div>
@@ -290,7 +290,7 @@
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
                                 <button type="button" class="btn btn-primary" id="btn-guardar-meta-diaria">
-                                    <i class="ri-save-line me-1"></i>Guardar configuraciÃ³n
+                                    <i class="ri-save-line me-1"></i>Guardar configuración
                                 </button>
                             </div>
                         </div>
@@ -785,7 +785,7 @@
 
                 Swal.fire({
                     icon: 'success',
-                    title: 'ConfiguraciÃ³n guardada',
+                    title: 'Configuración guardada',
                     text: 'Las metas diarias por producto fueron actualizadas.',
                     timer: 1700,
                     showConfirmButton: false

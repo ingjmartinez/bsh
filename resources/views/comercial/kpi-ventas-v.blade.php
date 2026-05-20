@@ -119,7 +119,7 @@
 
                     <div class="col-12 mt-1">
                         <div class="alert alert-light py-2 mb-3" role="alert">
-                            <strong>Ventas semana anterior (mismo dÃ­a):</strong>
+                            <strong>Ventas semana anterior (mismo día):</strong>
                             {{ $fechaSemanaAnterior ?? '-' }}
                         </div>
                     </div>
@@ -198,7 +198,7 @@
 
                     <div class="col-12 mt-1">
                         <div class="alert alert-light py-2 mb-3" role="alert">
-                            <strong>Ventas mes anterior (mismo dÃ­a):</strong>
+                            <strong>Ventas mes anterior (mismo día):</strong>
                             {{ $fechaMesAnterior ?? '-' }}
                         </div>
                     </div>
@@ -277,7 +277,7 @@
 
                     <div class="col-12 mt-1">
                         <div class="alert alert-light py-2 mb-3" role="alert">
-                            <strong>Ventas aÃ±o anterior (mismo dÃ­a):</strong>
+                            <strong>Ventas año anterior (mismo día):</strong>
                             {{ $fechaAnioAnterior ?? '-' }}
                         </div>
                     </div>
@@ -287,7 +287,7 @@
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
                                     <div class="flex-grow-1">
-                                        <p class="text-uppercase fw-medium text-muted mb-0">Tradicional - AÃ±o Anterior</p>
+                                        <p class="text-uppercase fw-medium text-muted mb-0">Tradicional - Año Anterior</p>
                                     </div>
                                 </div>
                                 <div class="d-flex align-items-end justify-content-between mt-4">
@@ -311,7 +311,7 @@
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
                                     <div class="flex-grow-1">
-                                        <p class="text-uppercase fw-medium text-muted mb-0">No Tradicional - AÃ±o Anterior</p>
+                                        <p class="text-uppercase fw-medium text-muted mb-0">No Tradicional - Año Anterior</p>
                                     </div>
                                 </div>
                                 <div class="d-flex align-items-end justify-content-between mt-4">
@@ -335,7 +335,7 @@
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
                                     <div class="flex-grow-1">
-                                        <p class="text-uppercase fw-medium text-muted mb-0">Recargas - AÃ±o Anterior</p>
+                                        <p class="text-uppercase fw-medium text-muted mb-0">Recargas - Año Anterior</p>
                                     </div>
                                 </div>
                                 <div class="d-flex align-items-end justify-content-between mt-4">
@@ -357,8 +357,8 @@
                     <div class="col-12 mt-2">
                         <div class="card">
                             <div class="card-header d-flex align-items-center justify-content-between">
-                                <h5 class="card-title mb-0">Tabla de ValidaciÃ³n (vt_usuarios_bet)</h5>
-                                <span class="badge bg-light text-dark">Filtrado por dÃ­a</span>
+                                <h5 class="card-title mb-0">Tabla de Validación (vt_usuarios_bet)</h5>
+                                <span class="badge bg-light text-dark">Filtrado por día</span>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
@@ -432,7 +432,7 @@
                                                             @elseif($varGeneral < 0)
                                                                 <div class="text-danger fs-11">Por debajo {{ number_format(abs($varGeneral), 2) }}%</div>
                                                             @else
-                                                                <div class="text-muted fs-11">Sin variaciÃ³n</div>
+                                                                <div class="text-muted fs-11">Sin variación</div>
                                                             @endif
                                                         @endif
                                                     </td>
@@ -446,7 +446,7 @@
                                                             @elseif($varTrad < 0)
                                                                 <div class="text-danger fs-11">Por debajo {{ number_format(abs($varTrad), 2) }}%</div>
                                                             @else
-                                                                <div class="text-muted fs-11">Sin variaciÃ³n</div>
+                                                                <div class="text-muted fs-11">Sin variación</div>
                                                             @endif
                                                         @endif
                                                     </td>
@@ -460,7 +460,7 @@
                                                             @elseif($varNoTrad < 0)
                                                                 <div class="text-danger fs-11">Por debajo {{ number_format(abs($varNoTrad), 2) }}%</div>
                                                             @else
-                                                                <div class="text-muted fs-11">Sin variaciÃ³n</div>
+                                                                <div class="text-muted fs-11">Sin variación</div>
                                                             @endif
                                                         @endif
                                                     </td>
@@ -474,7 +474,7 @@
                                                             @elseif($varRecargas < 0)
                                                                 <div class="text-danger fs-11">Por debajo {{ number_format(abs($varRecargas), 2) }}%</div>
                                                             @else
-                                                                <div class="text-muted fs-11">Sin variaciÃ³n</div>
+                                                                <div class="text-muted fs-11">Sin variación</div>
                                                             @endif
                                                         @endif
                                                     </td>

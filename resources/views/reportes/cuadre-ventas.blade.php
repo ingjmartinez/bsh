@@ -63,7 +63,7 @@
                                     <div class="col-md-2">
                                         <label class="form-label">&nbsp;</label>
                                         <button type="button" class="btn btn-success d-block w-100" id="btnDiasFaltantes" disabled>
-                                            DÃ­as faltantes del rango
+                                            Días faltantes del rango
                                         </button>
                                     </div>
                                 </div>
@@ -90,7 +90,7 @@
                                                 <th>No Tradicional</th>
                                                 <th>Recarga</th>
                                                 <th>Paquetico</th>
-                                                <th>Total DÃ­a</th>
+                                                <th>Total Día</th>
                                             </tr>
                                         </thead>
                                         <tbody></tbody>
@@ -181,13 +181,13 @@
 
             if (!fechasFaltantesGlobal.length) {
                 btnDiasFaltantes.classList.add('btn-success');
-                btnDiasFaltantes.textContent = 'No faltan dÃ­as del rango';
+                btnDiasFaltantes.textContent = 'No faltan días del rango';
                 btnDiasFaltantes.disabled = true;
                 return;
             }
 
             btnDiasFaltantes.classList.add('btn-rojo-claro');
-            btnDiasFaltantes.textContent = `Faltan ${fechasFaltantesGlobal.length} dÃ­as del rango`;
+            btnDiasFaltantes.textContent = `Faltan ${fechasFaltantesGlobal.length} días del rango`;
             btnDiasFaltantes.disabled = false;
         }
 
@@ -319,7 +319,7 @@
 
         actualizarBotonDiasFaltantes();
 
-        // Cargar datos automÃ¡ticamente al inicio
+        // Cargar datos automáticamente al inicio
         document.addEventListener('DOMContentLoaded', function() {
             // cargarDatos();
         });

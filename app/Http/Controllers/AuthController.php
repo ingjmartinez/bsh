@@ -27,7 +27,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Procesar inicio de sesiÃ³n.
+     * Procesar inicio de sesión.
      */
     public function login(Request $request)
     {
@@ -60,7 +60,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Cerrar sesiÃ³n.
+     * Cerrar sesión.
      */
     public function logout(Request $request)
     {
@@ -73,15 +73,15 @@ class AuthController extends Controller
     }
 
     /**
-     * Enviar cÃ³digo de reseteo al correo del usuario.
+     * Enviar código de reseteo al correo del usuario.
      */
     public function resetPassword(Request $request)
     {
         $data = $request->validate([
             'email_reset' => ['required', 'email'],
         ], [
-            'email_reset.required' => 'Debe indicar el correo electrÃ³nico.',
-            'email_reset.email' => 'El correo electrÃ³nico no es vÃ¡lido.',
+            'email_reset.required' => 'Debe indicar el correo electrónico.',
+            'email_reset.email' => 'El correo electrónico no es válido.',
         ]);
 
         $email = strtolower(trim($data['email_reset']));
@@ -96,8 +96,8 @@ class AuthController extends Controller
             $remainingSeconds = $seconds % 60;
 
             $waitMessage = $minutes > 0
-                ? "Espere {$minutes} min {$remainingSeconds} seg para volver a resetear esta contraseÃ±a."
-                : "Espere {$remainingSeconds} seg para volver a resetear esta contraseÃ±a.";
+                ? "Espere {$minutes} min {$remainingSeconds} seg para volver a resetear esta contraseña."
+                : "Espere {$remainingSeconds} seg para volver a resetear esta contraseña.";
 
             return back()->withErrors(['email_reset' => $waitMessage])->withInput();
         }
@@ -123,19 +123,19 @@ class AuthController extends Controller
         try {
             Mail::raw(
                 "Hola {$user->name},\n\n" .
-                "Se solicitÃ³ un reseteo de contraseÃ±a para tu cuenta.\n" .
-                "Tu cÃ³digo de verificaciÃ³n es: {$codigo}\n\n" .
-                "Este cÃ³digo expira en 15 minutos.\n" .
-                "Luego de ingresarlo podrÃ¡s definir una nueva contraseÃ±a.\n\n" .
+                "Se solicitó un reseteo de contraseña para tu cuenta.\n" .
+                "Tu código de verificación es: {$codigo}\n\n" .
+                "Este código expira en 15 minutos.\n" .
+                "Luego de ingresarlo podrás definir una nueva contraseña.\n\n" .
                 "ERP BSH Support",
                 function ($message) use ($user) {
                     $message->to($user->email)
-                        ->subject('CÃ³digo para resetear contraseÃ±a - ERP BSH Support');
+                        ->subject('Código para resetear contraseña - ERP BSH Support');
                 }
             );
         } catch (Throwable $error) {
             return back()->withErrors([
-                'email_reset' => 'No se pudo enviar el correo de verificaciÃ³n. Verifique la configuraciÃ³n SMTP.',
+                'email_reset' => 'No se pudo enviar el correo de verificación. Verifique la configuración SMTP.',
             ]);
         }
 
@@ -143,11 +143,11 @@ class AuthController extends Controller
 
         return redirect()
             ->route('login.reset-password.form', ['email' => $email])
-            ->with('status', 'Se enviÃ³ un cÃ³digo al correo indicado. IngrÃ©salo para definir tu nueva contraseÃ±a.');
+            ->with('status', 'Se envió un código al correo indicado. Ingrésalo para definir tu nueva contraseña.');
     }
 
     /**
-     * Mostrar formulario para validar cÃ³digo y definir nueva contraseÃ±a.
+     * Mostrar formulario para validar código y definir nueva contraseña.
      */
     public function showResetPasswordForm(Request $request)
     {
@@ -157,7 +157,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Confirmar cÃ³digo y cambiar contraseÃ±a.
+     * Confirmar código y cambiar contraseña.
      */
     public function confirmResetPassword(Request $request)
     {
@@ -166,9 +166,9 @@ class AuthController extends Controller
             'codigo' => ['required', 'string', 'min:4', 'max:20'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ], [
-            'codigo.required' => 'Debe ingresar el cÃ³digo enviado por correo.',
-            'password.confirmed' => 'La confirmaciÃ³n de contraseÃ±a no coincide.',
-            'password.min' => 'La nueva contraseÃ±a debe tener al menos 8 caracteres.',
+            'codigo.required' => 'Debe ingresar el código enviado por correo.',
+            'password.confirmed' => 'La confirmación de contraseña no coincide.',
+            'password.min' => 'La nueva contraseña debe tener al menos 8 caracteres.',
         ]);
 
         $email = strtolower(trim($data['email']));
@@ -178,13 +178,13 @@ class AuthController extends Controller
 
         if (!$payload) {
             return back()->withErrors([
-                'codigo' => 'El cÃ³digo es invÃ¡lido o ha expirado. Solicite uno nuevo.',
+                'codigo' => 'El código es inválido o ha expirado. Solicite uno nuevo.',
             ])->withInput();
         }
 
         if (!Hash::check($data['codigo'], $payload['code_hash'])) {
             return back()->withErrors([
-                'codigo' => 'El cÃ³digo ingresado no es correcto.',
+                'codigo' => 'El código ingresado no es correcto.',
             ])->withInput();
         }
 
@@ -204,7 +204,7 @@ class AuthController extends Controller
 
         return redirect()
             ->route('login')
-            ->with('status', 'ContraseÃ±a actualizada correctamente. Ya puedes iniciar sesiÃ³n.');
+            ->with('status', 'Contraseña actualizada correctamente. Ya puedes iniciar sesión.');
     }
 }
 

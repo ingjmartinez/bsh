@@ -23,6 +23,8 @@ class TicketSolicitud extends Model
         'ticket_numero',
         'estado',
         'mensaje_original',
+        'attachment_url',
+        'attachment_message_id',
         'notas',
         'procesado_por_id',
         'procesado_at',

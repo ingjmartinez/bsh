@@ -34,7 +34,7 @@
                             <div class="card-body">
                                 <div class="row g-2 mb-3 acciones-lotonet align-items-end">
                                     <div class="col-12 col-lg-2 d-grid">
-                                        <button id="btnGenerarToken" class="btn btn-secondary">Iniciar SesiÃ³n</button>
+                                        <button id="btnGenerarToken" class="btn btn-secondary">Iniciar Sesión</button>
                                     </div>
 
                                     <div class="col-12 col-md-4 col-lg-2">
@@ -58,13 +58,13 @@
                                     <div class="col-12 col-lg-5 mb-3">
                                         <div class="card">
                                             <div class="card-body">
-                                                <h6>Estados por mÃ³dulo</h6>
+                                                <h6>Estados por módulo</h6>
                                                 <div style="max-height:360px; overflow:auto;">
                                                     <table class="table table-sm table-bordered" id="statusTable">
                                                         <thead>
                                                             <tr>
                                                                 <th style="width:1%">#</th>
-                                                                <th>MÃ³dulo</th>
+                                                                <th>Módulo</th>
                                                                 <th style="width:1%">Estado</th>
                                                                 <th>Detalle</th>
                                                             </tr>
@@ -81,7 +81,7 @@
                                     <div class="col-12 col-lg-7">
                                         <div class="card">
                                             <div class="card-body">
-                                                <h6>Registro de ejecuciÃ³n</h6>
+                                                <h6>Registro de ejecución</h6>
                                                 <div id="logContainer" style="max-height:360px; overflow:auto; background:#f8f9fa; padding:10px; border-radius:4px;">
                                                     <!-- logs -->
                                                 </div>
@@ -176,7 +176,7 @@
 
 @section('script')
     <script>
-        // Lista de endpoints save en el orden de ejecuciÃ³n (Lotonet)
+        // Lista de endpoints save en el orden de ejecución (Lotonet)
         const modules = [
             { name: 'Asistencias', url: '/save-asistencias-lotonet' },
             { name: 'Faltantes', url: '/save-faltantes-lotonet' },
@@ -304,8 +304,8 @@
         document.getElementById('btnGenerarToken').addEventListener('click', () => {
             fetch('/iniciar-session')
                 .then(r => r.json())
-                .then(d => addLog('Iniciar sesiÃ³n: ' + (d.success || JSON.stringify(d))))
-                .catch(e => addLog('Error iniciar sesiÃ³n: ' + e.message, 'error'));
+                .then(d => addLog('Iniciar sesión: ' + (d.success || JSON.stringify(d))))
+                .catch(e => addLog('Error iniciar sesión: ' + e.message, 'error'));
         });
 
         async function processDate(date, options = { stopOnError: false }) {
@@ -341,7 +341,7 @@
                         results.push({ module: mod.name, ok: true, message: text });
                     }
                 } catch (err) {
-                    addLog(`EXCEPCIÃ“N ${mod.name}: ${err.message}`, 'error');
+                    addLog(`EXCEPCIÓN ${mod.name}: ${err.message}`, 'error');
                     setStatus(mod.name, 'Error', err.message);
                     results.push({ module: mod.name, ok: false, message: err.message });
                     if (options.stopOnError) break;
@@ -380,7 +380,7 @@
 
         // Eliminar data por fecha para LotoNet
         async function deleteDate(date, options = { stopOnError: false }) {
-            addLog(`Iniciando eliminaciÃ³n (LotoNet) para ${date}`);
+            addLog(`Iniciando eliminación (LotoNet) para ${date}`);
             const results = [];
             modules.forEach(m => setStatus(m.name, 'Pending', '-'));
             for (let i = 0; i < modules.length; i++) {
@@ -412,18 +412,18 @@
                         results.push({ module: mod.name, ok: true, message: text });
                     }
                 } catch (err) {
-                    addLog(`EXCEPCIÃ“N ${mod.name}: ${err.message}`, 'error');
+                    addLog(`EXCEPCIÓN ${mod.name}: ${err.message}`, 'error');
                     setStatus(mod.name, 'Error', err.message);
                     results.push({ module: mod.name, ok: false, message: err.message });
                     if (options.stopOnError) break;
                 }
             }
-            addLog(`Finalizado eliminaciÃ³n (LotoNet) para ${date}`);
+            addLog(`Finalizado eliminación (LotoNet) para ${date}`);
             const okCount = results.filter(r => r.ok).length;
             const errCount = results.filter(r => !r.ok).length;
-            addLog(`Resumen EliminaciÃ³n: OK=${okCount} Error=${errCount}`);
+            addLog(`Resumen Eliminación: OK=${okCount} Error=${errCount}`);
             Swal.fire({
-                title: 'Resumen EliminaciÃ³n',
+                title: 'Resumen Eliminación',
                 html: `Fecha: <strong>${date}</strong><br>OK: <strong>${okCount}</strong><br>Errores: <strong>${errCount}</strong>`,
                 icon: errCount > 0 ? 'warning' : 'success'
             });
@@ -438,10 +438,10 @@
             }
             const confirmed = await Swal.fire({
                 title: 'Confirmar',
-                text: `Â¿Eliminar toda la data para ${fecha}? Esta acciÃ³n no se puede deshacer.`,
+                text: `¿Eliminar toda la data para ${fecha}? Esta acción no se puede deshacer.`,
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: 'SÃ­, eliminar',
+                confirmButtonText: 'Sí, eliminar',
                 cancelButtonText: 'Cancelar'
             });
             if (!confirmed.isConfirmed) return;
@@ -450,13 +450,13 @@
             try {
                 await deleteDate(fecha, { stopOnError: false });
                 Swal.close();
-                Swal.fire({ title: 'Listo', text: 'EliminaciÃ³n finalizada. Revisa el log.', icon: 'success' });
+                Swal.fire({ title: 'Listo', text: 'Eliminación finalizada. Revisa el log.', icon: 'success' });
             } catch (e) {
                 Swal.fire({ title: 'Error', text: e.message || e, icon: 'error' });
             }
         });
 
-        // El botÃ³n "Procesar Todo" fue eliminado; usar "Procesar Fecha" que llama a processDate
+        // El botón "Procesar Todo" fue eliminado; usar "Procesar Fecha" que llama a processDate
 
         document.getElementById('btnProcesarRango').addEventListener('click', async () => {
             const inicio = document.getElementById('fechaInicio').value;
@@ -514,11 +514,11 @@
             }
 
             const confirmed = await Swal.fire({
-                title: 'Confirmar eliminaciÃ³n por rango',
-                html: `Â¿Eliminar la data desde <strong>${inicio}</strong> hasta <strong>${fin}</strong>? Esta acciÃ³n no se puede deshacer.`,
+                title: 'Confirmar eliminación por rango',
+                html: `¿Eliminar la data desde <strong>${inicio}</strong> hasta <strong>${fin}</strong>? Esta acción no se puede deshacer.`,
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: 'SÃ­, eliminar',
+                confirmButtonText: 'Sí, eliminar',
                 cancelButtonText: 'Cancelar'
             });
             if (!confirmed.isConfirmed) return;
@@ -539,7 +539,7 @@
                     await deleteDate(date, { stopOnError: false });
                 }
                 Swal.close();
-                addLog('EliminaciÃ³n de rango finalizada');
+                addLog('Eliminación de rango finalizada');
                 document.querySelector('#modalRango .btn-close')?.click();
                 Swal.fire({ title: 'Listo', text: 'Rango eliminado. Revisa el log.', icon: 'success' });
             } catch (e) {

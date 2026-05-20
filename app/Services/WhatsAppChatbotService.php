@@ -12,10 +12,11 @@ class WhatsAppChatbotService
     private const STEP_INICIO = 'inicio';
     private const STEP_MENU = 'consulta_hora_menu';
     private const STEP_TICKET_NUMERO = 'ticket_numero';
+    private const STEP_TICKET_IMAGEN = 'ticket_imagen';
 
     private const MENU_MESSAGE = "Hola como estas soy el chat bot y estoy para servirte.\n\nPor favor responde solo numericamente:\n\n1- consultar el horario de servicio\n2- consultar los servicios\n3- Pagar ticket\n4- Anular ticket";
 
-    public function handleIncoming(string $phone, string $message, ?string $account = null): array
+    public function handleIncoming(string $phone, string $message, ?string $account = null, array $incoming = []): array
     {
         $normalizedPhone = $this->normalizePhone($phone);
         $normalizedAccount = $this->normalizeAccount($account);
@@ -51,7 +52,7 @@ class WhatsAppChatbotService
         }
 
         $currentStep = $session->step ?: self::STEP_INICIO;
-        $reply = $this->resolveReply($session, $message);
+        $reply = $this->resolveReply($session, $message, $incoming);
 
         $session->last_message = $message;
         $session->last_interaction_at = now();
@@ -73,7 +74,7 @@ class WhatsAppChatbotService
         ];
     }
 
-    private function resolveReply(ChatbotSession $session, string $message): string
+    private function resolveReply(ChatbotSession $session, string $message, array $incoming): string
     {
         Log::debug('WhatsApp chatbot procesando step', [
             'phone' => $session->phone,
@@ -81,7 +82,11 @@ class WhatsAppChatbotService
         ]);
 
         if ($session->step === self::STEP_TICKET_NUMERO) {
-            return $this->registrarSolicitudTicket($session, $message);
+            return $this->guardarTicketYEsperarImagen($session, $message);
+        }
+
+        if ($session->step === self::STEP_TICKET_IMAGEN) {
+            return $this->registrarSolicitudTicketConImagen($session, $incoming);
         }
 
         if ($session->step === self::STEP_MENU) {
@@ -125,7 +130,7 @@ class WhatsAppChatbotService
         return self::MENU_MESSAGE;
     }
 
-    private function registrarSolicitudTicket(ChatbotSession $session, string $message): string
+    private function guardarTicketYEsperarImagen(ChatbotSession $session, string $message): string
     {
         $ticketNumero = trim($message);
 
@@ -134,8 +139,32 @@ class WhatsAppChatbotService
         }
 
         $context = is_array($session->context) ? $session->context : [];
+        $session->step = self::STEP_TICKET_IMAGEN;
+        $session->context = array_merge($context, [
+            'ticket_numero' => $ticketNumero,
+        ]);
+
+        return "Perfecto. Ticket {$ticketNumero} recibido.\n\nAhora envia la imagen del comprobante para registrar la solicitud.";
+    }
+
+    private function registrarSolicitudTicketConImagen(ChatbotSession $session, array $incoming): string
+    {
+        $context = is_array($session->context) ? $session->context : [];
+        $ticketNumero = trim((string) ($context['ticket_numero'] ?? ''));
         $categoria = $context['categoria'] ?? TicketSolicitud::CATEGORIA_PAGAR;
         $categoriaLabel = $context['categoria_label'] ?? 'Pagar ticket';
+        $attachmentUrl = $this->normalizeAttachmentUrl($incoming['attachment_url'] ?? null);
+        $attachmentMessageId = $this->normalizeMessageId($incoming['message_id'] ?? null);
+
+        if ($ticketNumero === '') {
+            $this->resetSession($session);
+
+            return 'Perdi el contexto de la solicitud. Por favor inicia de nuevo y elige la opcion 3 o 4.';
+        }
+
+        if ($attachmentUrl === null) {
+            return 'Necesito que envies una imagen para continuar con el registro del ticket.';
+        }
 
         try {
             $solicitud = TicketSolicitud::create([
@@ -144,25 +173,58 @@ class WhatsAppChatbotService
                 'ticket_numero' => $ticketNumero,
                 'estado' => TicketSolicitud::ESTADO_PENDIENTE,
                 'mensaje_original' => $categoriaLabel . ': ' . $ticketNumero,
+                'attachment_url' => $attachmentUrl,
+                'attachment_message_id' => $attachmentMessageId,
             ]);
         } catch (\Throwable $e) {
             Log::error('WhatsApp chatbot error registrando ticket', [
                 'phone' => $session->phone,
                 'categoria' => $categoria,
                 'ticket_numero' => $ticketNumero,
+                'attachment_url' => $attachmentUrl,
                 'message' => $e->getMessage(),
             ]);
 
-            $session->step = self::STEP_INICIO;
-            $session->context = [];
+            $this->resetSession($session);
 
             return 'No pude registrar la solicitud en este momento. Por favor intenta mas tarde.';
         }
 
+        $this->resetSession($session);
+
+        return "Solicitud registrada correctamente.\n\nCodigo: {$solicitud->codigo}\nCategoria: {$solicitud->categoria_label}\nTicket: {$solicitud->ticket_numero}\nImagen: Recibida\nEstado: Pendiente";
+    }
+
+    private function normalizeAttachmentUrl(mixed $attachment): ?string
+    {
+        if (!is_string($attachment)) {
+            return null;
+        }
+
+        $attachment = trim($attachment);
+
+        if ($attachment === '' || in_array(strtolower($attachment), ['false', 'null'], true)) {
+            return null;
+        }
+
+        return $attachment;
+    }
+
+    private function normalizeMessageId(mixed $messageId): ?string
+    {
+        if ($messageId === null || is_array($messageId)) {
+            return null;
+        }
+
+        $messageId = trim((string) $messageId);
+
+        return $messageId !== '' ? $messageId : null;
+    }
+
+    private function resetSession(ChatbotSession $session): void
+    {
         $session->step = self::STEP_INICIO;
         $session->context = [];
-
-        return "Solicitud registrada correctamente.\n\nCodigo: {$solicitud->codigo}\nCategoria: {$solicitud->categoria_label}\nTicket: {$solicitud->ticket_numero}\nEstado: Pendiente";
     }
 
     private function normalizePhone(string $phone): string

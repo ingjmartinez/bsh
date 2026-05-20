@@ -68,7 +68,7 @@
                     <div class="col-lg-12">
                         <div class="alert alert-warning d-flex align-items-center justify-content-between mb-3">
                             <div>
-                                <strong>Agencias con ventas sin cÃ©dula:</strong>
+                                <strong>Agencias con ventas sin cédula:</strong>
                                 <span id="sinCedulaCount" class="badge bg-danger ms-2">0</span>
                             </div>
                             <button type="button" class="btn btn-sm btn-outline-dark" id="btnVerSinCedula" data-bs-toggle="modal" data-bs-target="#modalSinCedula">
@@ -91,12 +91,12 @@
                                         style="width:100%">
                                         <thead>
                                             <tr>
-                                                <th>IdentificaciÃ³n</th>
+                                                <th>Identificación</th>
                                                 <th>Empleado ID</th>
                                                 <th>Nombre Completo</th>
                                                 <th>Detalle</th>
                                                 <th>Estatus</th>
-                                                <th>Ãšltima Fecha Venta</th>
+                                                <th>Última Fecha Venta</th>
                                             </tr>
                                         </thead>
                                         <tbody></tbody>
@@ -111,7 +111,7 @@
                     <div class="modal-dialog modal-lg modal-dialog-centered">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title">Agencias con ventas sin cÃ©dula</h5>
+                                <h5 class="modal-title">Agencias con ventas sin cédula</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
@@ -120,8 +120,8 @@
                                         <thead>
                                             <tr>
                                                 <th>Agencia</th>
-                                                <th>DÃ­as sin cÃ©dulas con ventas</th>
-                                                <th>AcciÃ³n</th>
+                                                <th>Días sin cédulas con ventas</th>
+                                                <th>Acción</th>
                                             </tr>
                                         </thead>
                                         <tbody id="tbodySinCedula"></tbody>
@@ -135,7 +135,7 @@
                                             <thead>
                                                 <tr>
                                                     <th>Fecha</th>
-                                                    <th>Cantidad de ventas sin cÃ©dula</th>
+                                                    <th>Cantidad de ventas sin cédula</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="tbodyFechasSinCedula"></tbody>
@@ -197,7 +197,7 @@
             const titulo = document.getElementById('detalleFechasTitulo');
             const tbody = document.getElementById('tbodyFechasSinCedula');
 
-            titulo.textContent = 'Fechas con ventas sin cÃ©dula - Agencia ' + agenciaId;
+            titulo.textContent = 'Fechas con ventas sin cédula - Agencia ' + agenciaId;
             tbody.innerHTML = '';
 
             if (!fechas.length) {
@@ -224,7 +224,7 @@
 
             const tbody = document.getElementById('tbodyFechasSinCedula');
             document.getElementById('detalleFechasContainer').style.display = 'block';
-            document.getElementById('detalleFechasTitulo').textContent = 'Fechas con ventas sin cÃ©dula - Agencia ' + agenciaId;
+            document.getElementById('detalleFechasTitulo').textContent = 'Fechas con ventas sin cédula - Agencia ' + agenciaId;
             tbody.innerHTML = '<tr><td colspan="2" class="text-center">Cargando...</td></tr>';
 
             $.ajax({

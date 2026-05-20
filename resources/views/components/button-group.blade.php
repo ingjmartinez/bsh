@@ -49,7 +49,7 @@
         }
     }
 
-    /* Touch targets mÃ­nimo */
+    /* Touch targets mínimo */
     .responsive-button-group .btn {
         min-height: 44px;
         min-width: 44px;

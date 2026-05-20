@@ -92,7 +92,7 @@
                                         <input type="date" id="ni_fecha_fin" class="form-control">
                                     </div>
                                     <div>
-                                        <label class="mb-0" for="ni_min_dias">MÃ­n. dÃ­as venta</label>
+                                        <label class="mb-0" for="ni_min_dias">Mín. días venta</label>
                                         <input type="number" id="ni_min_dias" class="form-control" value="10" min="1" step="1">
                                     </div>
                                     <div>
@@ -116,10 +116,10 @@
                                 <table id="tableNuevoIncentivo" class="table table-bordered dt-responsive nowrap table-striped align-middle" style="width:100%">
                                     <thead>
                                         <tr>
-                                            <th>CÃ©dula</th>
-                                            <th>Ventas Ãšltimo Mes</th>
+                                            <th>Cédula</th>
+                                            <th>Ventas Último Mes</th>
                                             <th>Ventas Mes Actual</th>
-                                            <th>DÃ­as Ventas Mes Actual</th>
+                                            <th>Días Ventas Mes Actual</th>
                                             <th>Cumple Regla</th>
                                             <th>Pago Escala</th>
                                             <th>Nuevo Incentivo</th>
@@ -274,7 +274,7 @@
                                 <tr>
                                     <th style="min-width: 280px;">Nombre</th>
                                     <th style="min-width: 100px;">Agencias</th>
-                                    <th style="min-width: 100px;">VÃ¡lidas</th>
+                                    <th style="min-width: 100px;">Válidas</th>
                                     <th style="min-width: 160px;">Monto</th>
                                     <th style="min-width: 120px;">Detalle</th>
                                     <th style="min-width: 120px;">% Total</th>
@@ -407,9 +407,9 @@
             ["1. Gtes. Y Encarg.", "Ciprian Rafael Beard Almonte", "BSH Support", 0.043],
             ["1. Gtes. Y Encarg.", "Renzo Figueroa", "BSH Support", 0.04],
             ["2. Monitoreo", "Geldhis Paola Acosta Carrion", "BSH Support", 0.016],
-            ["2. Monitoreo", "Joselania Olivo GarcÃ­a", "BSH Support", 0.016],
+            ["2. Monitoreo", "Joselania Olivo García", "BSH Support", 0.016],
             ["2. Monitoreo", "Kengripher Junior De Oleo Belen", "BSH Support", 0.016],
-            ["2. Monitoreo", "MarÃ­a Liriano", "BSH Support", 0.016],
+            ["2. Monitoreo", "María Liriano", "BSH Support", 0.016],
             ["2. Monitoreo", "Stefanny Onasi Webster", "BSH Support", 0.016],
             ["2. Monitoreo", "Reidy Reynoso Melendez", "BSH Support", 0.016],
             ["4. Operadores", "LUIS JAVIER MARTINEZ", "BSH Support", 0.0173540487874658],
@@ -421,20 +421,20 @@
             ["4. Operadores", "Feliz Alexander Mateo", "BSH Support", 0],
             ["4. Operadores", "Jonathan Peralta", "BSH Support", 0.0173540487874658],
             ["4. Operadores", "Gabriel Martinez De Jesus (2 meses)", "BSH Support", 0.0173540487874658],
-            ["4. Operadores", "Juan Luis MontaÃ±o", "BSH Support", 0.0173540487874658],
-            ["4. Operadores", "Wilmer Jose CorporÃ¡n\nColon", "BSH Support", 0.0173540487874658],
+            ["4. Operadores", "Juan Luis Montaño", "BSH Support", 0.0173540487874658],
+            ["4. Operadores", "Wilmer Jose Corporán\nColon", "BSH Support", 0.0173540487874658],
             ["4. Operadores", "Santo Tibrey Rosario (1 mes)", "BSH Support", 0.0173540487874658],
             ["4. Operadores", "Hector Manuel Medina", "BSH Support", 0.0173540487874658],
             ["4. Operadores", "Jose Luis Rodriguez", "BSH Support", 0.0173540487874658],
             ["4. Operadores", "Juan Geronimo Garcia", "BSH Support", 0.0173540487874658],
             ["4. Operadores", "Alexander Cepeda", "BSH Support", 0.0173540487874658],
-            ["4. Operadores", "Juan Francisco MejÃ­a", "BSH Support", 0.0194685692013614],
+            ["4. Operadores", "Juan Francisco Mejía", "BSH Support", 0.0194685692013614],
             ["4. Operadores", "Victor Manuel de la Cruz", "BSH Support", 0.0194685692013614],
             ["4. Operadores", "Sterling Miguel Bello Bello", "BSH Support", 0.0194685692013614],
             ["4. Operadores", "Starlin Arredondo Martinez", "BSH Support", 0.0194685692013614],
             ["4. Operadores", "Santico Julian Willian Fenelon", "BSH Support", 0.0194685692013614],
             ["4. Operadores", "Wilkin Cabral", "BSH Support", 0.0194685692013614],
-            ["4. Operadores", "Rosmery Celeste NÃº Ã± ez naranjo", "BSH Support", 0.0194685692013614],
+            ["4. Operadores", "Rosmery Celeste Nú ñ ez naranjo", "BSH Support", 0.0194685692013614],
             ["4. Operadores", "Osvaldo Antonio Moreno Perez", "BSH Support", 0.0194685692013614],
             ["5. Servs. Tecnicos", "Bryan Jose Rodriguez de Jesus", "BSH Support", 0.0150275415513765],
             ["5. Servs. Tecnicos", "Juan Francisco De La Cruz Aracena", "BSH Support", 0.0150275415513765],
@@ -444,11 +444,11 @@
             ["5. Servs. Tecnicos", "Dymitri Joseph", "BSH Support", 0.0150275415513765],
             ["5. Servs. Tecnicos", "Isidro Valdez Pascual", "BSH Support", 0.0150275415513765],
             ["5. Servs. Tecnicos", "Rudys Bernardo Cabrera", "BSH Support", 0.0150275415513765],
-            ["5. Servs. Tecnicos", "Socrates Osiris Morban PiÃ±a", "BSH Support", 0.0150275415513765],
-            ["5. Servs. Tecnicos", "Jose Antonio De PeÃ±a De La Cruz", "BSH Support", 0.0150275415513765],
+            ["5. Servs. Tecnicos", "Socrates Osiris Morban Piña", "BSH Support", 0.0150275415513765],
+            ["5. Servs. Tecnicos", "Jose Antonio De Peña De La Cruz", "BSH Support", 0.0150275415513765],
             ["5. Servs. Tecnicos", "Juan Perez Desena", "BSH Support", 0.0150275415513765],
             ["5. Servs. Tecnicos", "Jose Antonio Polanco Vasquez", "BSH Support", 0.0150275415513765],
-            ["5. Servs. Tecnicos", "JosuÃ© Johan Martinez Mancebo", "BSH Support", 0.0150275415513765],
+            ["5. Servs. Tecnicos", "Josué Johan Martinez Mancebo", "BSH Support", 0.0150275415513765],
             ["5. Servs. Tecnicos", "Pedro Hector Santana Mateo", "BSH Support", 0.0150275415513765],
             ["1. Gtes. Y Encarg.", "Erick junior Velasquez gomez", "Negosur", 0.124049587695015],
             ["1. Gtes. Y Encarg.", "Yukaine Echavarria", "Negosur", 0.035],
@@ -459,10 +459,10 @@
             ["2. Monitoreo", "Geldis Acosto", "Negosur", 0.01],
             ["2. Monitoreo", "Joselanea Reynoso", "Negosur", 0.01],
             ["2. Monitoreo", "Junior de Oleo", "Negosur", 0.01],
-            ["2. Monitoreo", "MarÃ­a Liriano", "Negosur", 0.01],
+            ["2. Monitoreo", "María Liriano", "Negosur", 0.01],
             ["2. Monitoreo", "Reidy Reynoso", "Negosur", 0.01],
             ["2. Monitoreo", "yolaidi Arias", "Negosur", 0.03],
-            ["4. Operadores", "Hector De Regla MariÃ±ez Diaz", "Negosur", 0.03],
+            ["4. Operadores", "Hector De Regla Mariñez Diaz", "Negosur", 0.03],
             ["4. Operadores", "Sherlyn Lexander Perdomo valdez", "Negosur", 0.03],
             ["4. Operadores", "Sayi Virginia Marmolejos", "Negosur", 0.00893353511893479],
             ["4. Operadores", "Leydi Guerrero", "Negosur", 0.0183070385116862],
@@ -487,14 +487,14 @@
             ["4. Operadores", "Nestor Antonio Terrero", "Negosur", 0.00780783001427268],
             ["4. Operadores", "Leivin Pina Feliz", "Negosur", 0.00780783001427268],
             ["4. Operadores", "Jeison Manuel Feliz Feliz", "Negosur", 0.00780783001427268],
-            ["4. Operadores", "JosÃ© vega", "Negosur", 0.00780783001427268],
+            ["4. Operadores", "José vega", "Negosur", 0.00780783001427268],
             ["4. Operadores", "Georges gabriel reyes cuevas", "Negosur", 0.00780783001427268],
             ["4. Operadores", "yeandrys dileissy Ortiz perez", "Negosur", 0.00780783001427268],
             ["4. Operadores", "Silvia patricia batista diaz", "Negosur", 0.00780783001427268],
             ["4. Operadores", "Fermin brito De leon", "Negosur", 0.00808769747562137],
-            ["4. Operadores", "Manuel Emilio PÃ©rez", "Negosur", 0.00808769747562137],
+            ["4. Operadores", "Manuel Emilio Pérez", "Negosur", 0.00808769747562137],
             ["4. Operadores", "Manuel Emilio Rivas", "Negosur", 0.00808769747562137],
-            ["4. Operadores", "Marco daniel MÃ©ndez gonzalez", "Negosur", 0.00808769747562137],
+            ["4. Operadores", "Marco daniel Méndez gonzalez", "Negosur", 0.00808769747562137],
             ["4. Operadores", "waner omar diaz sena", "Negosur", 0.00808769747562137],
             ["4. Operadores", "Zenaldo gregorio volquez perez", "Negosur", 0.006],
             ["4. Operadores", "Wilton feliz Alcantara pienda", "Negosur", 0.0127621930270497],
@@ -578,13 +578,13 @@
     },
     {
         "grupo": "4. Operadores",
-        "nombre": "Juan Luis MontaÃ±o",
+        "nombre": "Juan Luis Montaño",
         "empresa": "BSH Support",
         "pct": 0.017354048787466
     },
     {
         "grupo": "4. Operadores",
-        "nombre": "Wilmer Jose CorporÃ¡n Colon",
+        "nombre": "Wilmer Jose Corporán Colon",
         "empresa": "BSH Support",
         "pct": 0.017354048787466
     },
@@ -620,7 +620,7 @@
     },
     {
         "grupo": "4. Operadores",
-        "nombre": "Juan Francisco MejÃ­a",
+        "nombre": "Juan Francisco Mejía",
         "empresa": "BSH Support",
         "pct": 0.019468569201361
     },
@@ -656,7 +656,7 @@
     },
     {
         "grupo": "4. Operadores",
-        "nombre": "Rosmery Celeste NÃº Ã± ez naranjo",
+        "nombre": "Rosmery Celeste Nú ñ ez naranjo",
         "empresa": "BSH Support",
         "pct": 0.019468569201361
     },
@@ -818,7 +818,7 @@
     },
     {
         "grupo": "4. Operadores",
-        "nombre": "JosÃ©",
+        "nombre": "José",
         "empresa": "Negosur",
         "pct": 0.0078078300142727
     },
@@ -1432,7 +1432,7 @@
 
         data.forEach(item => {
             const cumpleBadge = item.cumple_minimo === 'SI'
-                ? '<span class="badge bg-success">CUMPLIÃ“</span>'
+                ? '<span class="badge bg-success">CUMPLIÓ</span>'
                 : '<span class="badge bg-danger">NO CUMPLE</span>';
 
             const row = document.createElement('tr');
@@ -1457,14 +1457,14 @@
             scrollY: '500px',
             scrollCollapse: true,
             language: {
-                lengthMenu: 'Mostrar _MENU_ registros por pÃ¡gina',
+                lengthMenu: 'Mostrar _MENU_ registros por página',
                 info: 'Mostrando _START_ a _END_ de _TOTAL_ registros',
                 infoEmpty: 'No hay registros disponibles',
                 infoFiltered: '(filtrado de _MAX_ registros totales)',
                 search: 'Buscar:',
                 paginate: {
                     first: 'Primero',
-                    last: 'Ãšltimo',
+                    last: 'Último',
                     next: 'Siguiente',
                     previous: 'Anterior'
                 }
@@ -1474,7 +1474,7 @@
 
     function applyLocalFilters(showFilterAlert = false) {
         if (!cachedRows.length) {
-            Swal.fire({ title: 'InformaciÃ³n', text: 'Primero debes generar el reporte.', icon: 'warning' });
+            Swal.fire({ title: 'Información', text: 'Primero debes generar el reporte.', icon: 'warning' });
             return;
         }
 
@@ -1702,12 +1702,12 @@
                 const tipoPago = document.getElementById('ni_tipo_pago').value;
                 payoutRangesByType[tipoPago] = readRangesFromTable();
             } catch (e) {
-                Swal.fire({ title: 'ValidaciÃ³n', text: e.message, icon: 'warning' });
+                Swal.fire({ title: 'Validación', text: e.message, icon: 'warning' });
                 return;
             }
 
             bootstrap.Modal.getInstance(document.getElementById('modalConfigPct'))?.hide();
-            Swal.fire({ title: 'ConfiguraciÃ³n guardada', text: 'Los tramos se aplicarÃ¡n al generar el reporte.', icon: 'success' });
+            Swal.fire({ title: 'Configuración guardada', text: 'Los tramos se aplicarán al generar el reporte.', icon: 'success' });
         });
 
         document.querySelector('#btnGuardarAdminPct').addEventListener('click', function() {
@@ -1732,7 +1732,7 @@
             }
 
             Swal.fire({
-                title: 'ConfiguraciÃ³n guardada',
+                title: 'Configuración guardada',
                 text: 'El % administrativo se aplica sobre el Total Incentivo a Pagar.',
                 icon: 'success'
             });
@@ -1747,12 +1747,12 @@
         const tipoPago = document.getElementById('ni_tipo_pago').value;
 
         if (!fechaIni || !fechaFin) {
-            Swal.fire({ title: 'InformaciÃ³n', text: 'Debe seleccionar fecha inicio y fecha fin.', icon: 'warning' });
+            Swal.fire({ title: 'Información', text: 'Debe seleccionar fecha inicio y fecha fin.', icon: 'warning' });
             return;
         }
 
         Swal.fire({
-            title: 'Procesando InformaciÃ³n ...',
+            title: 'Procesando Información ...',
             icon: 'info',
             allowOutsideClick: false,
             showConfirmButton: false,
@@ -1776,7 +1776,7 @@
             .then(response => response.json())
             .then(resp => {
                 if ('message' in resp) {
-                    Swal.fire({ title: 'InformaciÃ³n', text: resp.message, icon: 'warning' });
+                    Swal.fire({ title: 'Información', text: resp.message, icon: 'warning' });
                     return;
                 }
 

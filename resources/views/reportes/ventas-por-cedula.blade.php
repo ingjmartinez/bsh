@@ -7,12 +7,12 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                            <h4 class="mb-sm-0">Ventas por CÃ©dula</h4>
+                            <h4 class="mb-sm-0">Ventas por Cédula</h4>
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li class="breadcrumb-item"><a href="{{ route('inicio.index') }}">Inicio</a></li>
                                     <li class="breadcrumb-item"><a href="{{ route('reportes.index') }}">Reportes</a></li>
-                                    <li class="breadcrumb-item active">Ventas por CÃ©dula</li>
+                                    <li class="breadcrumb-item active">Ventas por Cédula</li>
                                 </ol>
                             </div>
                         </div>
@@ -28,7 +28,7 @@
                             <div class="card-body">
                                 <div class="row g-3 align-items-end">
                                     <div class="col-md-3">
-                                        <label for="cedula" class="form-label">CÃ©dula</label>
+                                        <label for="cedula" class="form-label">Cédula</label>
                                         <input type="text" id="cedula" class="form-control" placeholder="Ej: 40240461497">
                                     </div>
                                     <div class="col-md-2">
@@ -69,10 +69,10 @@
                                     <table id="tableVentasCedula" class="table table-bordered table-striped align-middle" style="width: 100%;">
                                         <thead>
                                             <tr>
-                                                <th>IdentificaciÃ³n</th>
-                                                <th>DÃ­a</th>
+                                                <th>Identificación</th>
+                                                <th>Día</th>
                                                 <th>Agencia</th>
-                                                <th class="text-end">Total DÃ­a Agencia</th>
+                                                <th class="text-end">Total Día Agencia</th>
                                             </tr>
                                         </thead>
                                         <tbody></tbody>
@@ -103,7 +103,7 @@
             if (!cedula) {
                 Swal.fire({
                     title: 'Error',
-                    text: 'Ingrese una cÃ©dula para consultar',
+                    text: 'Ingrese una cédula para consultar',
                     icon: 'error'
                 });
                 return;

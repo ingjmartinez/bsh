@@ -71,7 +71,7 @@
                                         @endforeach
                                     </tbody>
                                 </table>
-                                {{ $ventas->links() }} <!-- ðŸ”¥ Esto genera los botones de paginaciÃ³n -->
+                                {{ $ventas->links() }} <!-- 🔥 Esto genera los botones de paginación -->
                             </div>
                         </div>
                     </div>
@@ -87,7 +87,7 @@
                     <div class="col-sm-6">
                         <script>
                             document.write(new Date().getFullYear())
-                        </script> Â© Velzon.
+                        </script> © Velzon.
                     </div>
                     <div class="col-sm-6">
                         <div class="text-sm-end d-none d-sm-block">
@@ -153,7 +153,7 @@
 
         function list() {
             const tableBody = document.querySelector('#tableEmpleados tbody');
-            tableBody.innerHTML = `<td colspan=10>Cargando InformaciÃ³n ...</td>`; // Limpiar filas existentes
+            tableBody.innerHTML = `<td colspan=10>Cargando Información ...</td>`; // Limpiar filas existentes
 
             fetch("/ventas-sin-empleado/list")
                 .then(response => response.json())
@@ -203,7 +203,7 @@
             if (cedula.length < 11 || cedula.length > 11) {
                 Swal.fire({
                     title: "Error",
-                    text: "La cÃ©dula debe tener 11 dÃ­gitos",
+                    text: "La cédula debe tener 11 dígitos",
                     icon: "error"
                 });
                 return;
@@ -212,7 +212,7 @@
             if (!/^\d{11}$/.test(cedula)) {
                 Swal.fire({
                     title: "Error",
-                    text: "La cÃ©dula debe contener solo nÃºmeros",
+                    text: "La cédula debe contener solo números",
                     icon: "error"
                 });
                 return;
@@ -259,7 +259,7 @@
                 .then(data => {
                     Swal.fire({
                         title: "Listo",
-                        text: "Registrado con Ã©xito",
+                        text: "Registrado con éxito",
                         icon: "success"
                     });
                     // Cerrar el modal

@@ -131,7 +131,7 @@
             let agenciasNoValidasDiv = document.querySelector('#agenciasNoValidas');
             if (agenciasNoValidas.length > 0) {
                 agenciasNoValidasDiv.innerHTML =
-                    `<p class="text-danger">Agencias no vÃ¡lidas: ${agenciasNoValidas.join(', ')}</p>`;
+                    `<p class="text-danger">Agencias no válidas: ${agenciasNoValidas.join(', ')}</p>`;
             } else {
                 agenciasNoValidasDiv.innerHTML = '';
             }
@@ -145,7 +145,7 @@
             validarAgencias(this);
         });
 
-        // Al perder el foco: limpiar y dejar solo agencias vÃ¡lidas
+        // Al perder el foco: limpiar y dejar solo agencias válidas
         document.querySelector('#agencias').addEventListener('blur', function() {
             let validAgencias = validarAgencias(this);
             this.value = validAgencias.join('\n');
@@ -160,10 +160,10 @@
             // Preparar listas
             let existingAgencias = this.value.split('\n').map(line => line.trim()).filter(l => l !== '');
             let newAgencias = pasteData.split('\n').map(line => line.trim()).filter(l => l !== '');
-            // Solo nuevas que no estÃ©n ya en existing
+            // Solo nuevas que no estén ya en existing
             let uniqueAgencias = newAgencias.filter(ag => ag !== '' && !existingAgencias.includes(ag));
 
-            // Separar vÃ¡lidas e invÃ¡lidas
+            // Separar válidas e inválidas
             let agenciasNoValidas = uniqueAgencias.filter(ag => !AGENCIAS.includes(ag));
             let validUniqueAgencias = uniqueAgencias.filter(ag => AGENCIAS.includes(ag));
 
@@ -171,7 +171,7 @@
             let agenciasNoValidasDiv = document.querySelector('#agenciasNoValidas');
             if (agenciasNoValidas.length > 0) {
                 agenciasNoValidasDiv.innerHTML =
-                    `<p class="text-danger">Agencias no vÃ¡lidas: ${agenciasNoValidas.join(', ')}</p>`;
+                    `<p class="text-danger">Agencias no válidas: ${agenciasNoValidas.join(', ')}</p>`;
             } else {
                 agenciasNoValidasDiv.innerHTML = '';
             }
@@ -190,7 +190,7 @@
 
         document.querySelector("#btnGuardar").addEventListener("click", function() {
             Swal.fire({
-                title: "Guardndo InformaciÃ³n ...",
+                title: "Guardndo Información ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -208,7 +208,7 @@
                 if (agencias.length == 0) {
                     Swal.fire({
                         title: "Error",
-                        text: "Debe ingresar al menos una agencia vÃ¡lida para el tipo de empleado seleccionado.",
+                        text: "Debe ingresar al menos una agencia válida para el tipo de empleado seleccionado.",
                         icon: "warning"
                     });
                     return;
@@ -251,7 +251,7 @@
 
         function list() {
             Swal.fire({
-                title: "Procesando InformaciÃ³n ...",
+                title: "Procesando Información ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -301,7 +301,7 @@
                 .catch(error => console.error('Error fetching data:', error));
         }
 
-        // Cargar la lista al cargar la pÃ¡gina
+        // Cargar la lista al cargar la página
         document.addEventListener('DOMContentLoaded', function() {
             list();
         });
@@ -310,7 +310,7 @@
             modal.show();
 
             Swal.fire({
-                title: "Procesando InformaciÃ³n ...",
+                title: "Procesando Información ...",
                 icon: 'info',
                 allowOutsideClick: false,
                 showConfirmButton: false,
@@ -323,7 +323,7 @@
                 .then(data => {
                     if ('message' in data) {
                         Swal.fire({
-                            title: "InformaciÃ³n",
+                            title: "Información",
                             text: data.message,
                             icon: "warning"
                         });

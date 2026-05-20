@@ -64,6 +64,7 @@ class TicketSolicitudController extends Controller
             'ticket_numero' => 'required|string|max:80',
             'phone' => 'nullable|string|max:32',
             'mensaje_original' => 'nullable|string|max:1000',
+            'attachment_url' => 'nullable|url|max:1200',
         ]);
 
         TicketSolicitud::create([
@@ -72,6 +73,7 @@ class TicketSolicitudController extends Controller
             'ticket_numero' => trim($validated['ticket_numero']),
             'estado' => TicketSolicitud::ESTADO_PENDIENTE,
             'mensaje_original' => $validated['mensaje_original'] ?? 'Registro manual',
+            'attachment_url' => $validated['attachment_url'] ?? null,
         ]);
 
         return back()->with('success', 'Solicitud de ticket registrada correctamente.');

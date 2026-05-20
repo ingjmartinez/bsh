@@ -59,3 +59,16 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Encoding Guard
+
+This repository includes an encoding guard to prevent mojibake and broken source text.
+
+- Run manually: `composer check:encoding`
+- Enable pre-commit hook (Windows PowerShell): `.\tools\install-git-hooks.ps1`
+
+The guard verifies:
+
+- UTF-8 validity
+- UTF-8 BOM presence
+- Common mojibake tokens

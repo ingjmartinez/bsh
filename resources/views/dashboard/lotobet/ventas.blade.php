@@ -4,7 +4,7 @@
 
 @section('content')
     <style>
-        /* Mejorar tablas en mÃ³vil */
+        /* Mejorar tablas en móvil */
         @media (max-width: 767px) {
             .table {
                 font-size: 0.85rem;
@@ -20,7 +20,7 @@
                 word-break: break-word;
             }
             
-            /* Ocultar columnas menos importantes en mÃ³vil */
+            /* Ocultar columnas menos importantes en móvil */
             .table th:nth-child(3),
             .table td:nth-child(3),
             .table th:nth-child(4),
@@ -160,7 +160,7 @@
                                 <div class="small text-muted">Agencias en cero: <span id="kpi-agencias-cero">0</span></div>
                                 <div class="mt-2">
                                     <button id="btn-ver-agencias-cero" class="btn btn-sm btn-outline-secondary">Ver Agencias en Cero</button>
-                                    <button id="btn-export-agencias-cero-dia" class="btn btn-sm btn-outline-dark">Exportar por DÃ­a</button>
+                                    <button id="btn-export-agencias-cero-dia" class="btn btn-sm btn-outline-dark">Exportar por Día</button>
                                     <button id="btn-ver-agencias" class="btn btn-sm btn-outline-warning">Ver Detalle</button>
                                 </div>
                             </div>
@@ -174,7 +174,7 @@
                         <h5 class="mb-3">Ventas por Tipo de Producto</h5>
                     </div>
                     <div id="cards-container" class="row g-3 w-100 mx-0">
-                        <!-- Las cards se generarÃ¡n dinÃ¡micamente aquÃ­ -->
+                        <!-- Las cards se generarán dinámicamente aquí -->
                     </div>
                 </div>
 
@@ -183,7 +183,7 @@
                     <div class="col-md-12">
                         <div class="card shadow-sm">
                             <div class="card-header">
-                                <h5>Ventas por DÃ­a (LÃ­nea)</h5>
+                                <h5>Ventas por Día (Línea)</h5>
                             </div>
                             <div class="card-body">
                                 <canvas id="chart-diario" style="height: 250px; max-height: 250px;"></canvas>
@@ -193,7 +193,7 @@
                     <div class="col-md-12">
                         <div class="card shadow-sm">
                             <div class="card-header">
-                                <h5>Ventas por DÃ­a (Barras)</h5>
+                                <h5>Ventas por Día (Barras)</h5>
                             </div>
                             <div class="card-body">
                                 <canvas id="chart-diario-bar" style="height: 250px; max-height: 250px;"></canvas>
@@ -222,7 +222,7 @@
                             <tr>
                                 <th>ID Agencia</th>
                                 <th>Total Ventas</th>
-                                <th>AcciÃ³n</th>
+                                <th>Acción</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -252,7 +252,7 @@
                                 <th>ID Agencia</th>
                                 <th>Nombre</th>
                                 <th>Total Ventas</th>
-                                <th>AcciÃ³n</th>
+                                <th>Acción</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -285,13 +285,13 @@
         const tablaAgenciasColumns = [
             { title: 'ID Agencia' },
             { title: 'Total Ventas' },
-            { title: 'AcciÃ³n', orderable: false, searchable: false }
+            { title: 'Acción', orderable: false, searchable: false }
         ];
         const tablaAgenciasCeroColumns = [
             { title: 'ID Agencia' },
             { title: 'Nombre' },
             { title: 'Total Ventas' },
-            { title: 'AcciÃ³n', orderable: false, searchable: false }
+            { title: 'Acción', orderable: false, searchable: false }
         ];
 
         const agenciasTableInstance = $('#tabla-agencias').DataTable({
@@ -409,7 +409,7 @@
                         containerCards.appendChild(card);
                     });
 
-                    // Chart Diario (LÃ­nea - Totales)
+                    // Chart Diario (Línea - Totales)
                     if (chartDiarioInstance) {
                         chartDiarioInstance.destroy();
                         chartDiarioInstance = null;
@@ -523,7 +523,7 @@
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: 'Hubo un problema al cargar los datos. IntÃ©ntalo de nuevo.',
+                        text: 'Hubo un problema al cargar los datos. Inténtalo de nuevo.',
                     });
                     console.error('Error:', error);
                 });
@@ -562,7 +562,7 @@
             agenciasTableInstance.clear().rows.add(agenciasData.map(agencia => [
                 agencia.agencia_id,
                 formatCurrency(agencia.total),
-                `<button class="btn btn-sm btn-primary btn-filtrar-agencia" data-agencia-id="${agencia.agencia_id}">Ver GrÃ¡ficos</button>`
+                `<button class="btn btn-sm btn-primary btn-filtrar-agencia" data-agencia-id="${agencia.agencia_id}">Ver Gráficos</button>`
             ])).draw();
 
             // Mostrar modal
@@ -583,7 +583,7 @@
                 agencia.agencia_id,
                 agencia.nombre_agencia || agencia.agencia_id,
                 formatCurrency(agencia.total ?? 0),
-                `<button class="btn btn-sm btn-primary btn-filtrar-agencia" data-agencia-id="${agencia.agencia_id}">Ver GrÃ¡ficos</button>`
+                `<button class="btn btn-sm btn-primary btn-filtrar-agencia" data-agencia-id="${agencia.agencia_id}">Ver Gráficos</button>`
             ])).draw();
 
             const modalCero = new bootstrap.Modal(document.getElementById('modalAgenciasCero'));

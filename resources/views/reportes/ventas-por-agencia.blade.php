@@ -45,15 +45,15 @@
                                         <input type="date" id="fecha_fin" class="form-control" value="{{ date('Y-m-d') }}">
                                     </div>
                                     <div class="col-md-2">
-                                        <label for="periodo" class="form-label">PerÃ­odo</label>
+                                        <label for="periodo" class="form-label">Período</label>
                                         <select id="periodo" class="form-control">
-                                            <option value="dia">DÃ­a</option>
+                                            <option value="dia">Día</option>
                                             <option value="mes">Mes</option>
                                         </select>
                                     </div>
                                     <div class="col-md-2">
                                         <label for="terminal_codigo" class="form-label">Terminal</label>
-                                        <input type="text" id="terminal_codigo" class="form-control" placeholder="CÃ³digo">
+                                        <input type="text" id="terminal_codigo" class="form-control" placeholder="Código">
                                     </div>
                                     <div class="col-md-2">
                                         <label for="agencia_codigo" class="form-label">Agencia</label>
@@ -92,7 +92,7 @@
                                                 <th>Coordinador</th>
                                                 <th>Nombre Agencia</th>
                                                 <th>Ruta</th>
-                                                <th>PerÃ­odo</th>
+                                                <th>Período</th>
                                                 <th>Tradicional</th>
                                                 <th>No Tradicional</th>
                                                 <th>Recargas</th>
@@ -158,7 +158,7 @@
                         agenciaInput.value = '';
                         Swal.fire({
                             title: 'Agencia no encontrada',
-                            text: 'Verifique el cÃ³digo de la agencia',
+                            text: 'Verifique el código de la agencia',
                             icon: 'warning'
                         });
                     }
@@ -197,7 +197,7 @@
             if (!terminal) {
                 Swal.fire({
                     title: 'Error',
-                    text: 'Ingrese el cÃ³digo de la terminal',
+                    text: 'Ingrese el código de la terminal',
                     icon: 'error'
                 });
                 return;

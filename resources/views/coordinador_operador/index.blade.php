@@ -51,8 +51,8 @@
                                                 <th class="text-center" style="width:80px;">ID</th>
                                                 <th>Nombre</th>
                                                 <th>Correo</th>
-                                                <th>CÃ©dula</th>
-                                                <th>TelÃ©fono</th>
+                                                <th>Cédula</th>
+                                                <th>Teléfono</th>
                                                 <th class="text-center">Agencias Asignadas</th>
                                                 <th class="text-center" style="width:140px;">Acciones</th>
                                             </tr>
@@ -90,7 +90,7 @@
                                                             <a href="{{ route('coordinador-operador.edit', $item->id) }}" class="btn btn-success btn-sm" title="Editar">
                                                                 <i class="ri-pencil-line"></i>
                                                             </a>
-                                                            <form action="{{ route('coordinador-operador.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Â¿EstÃ¡ seguro de eliminar este registro?')">
+                                                            <form action="{{ route('coordinador-operador.destroy', $item->id) }}" method="POST" onsubmit="return confirm('¿Está seguro de eliminar este registro?')">
                                                                 @csrf
                                                                 @method('DELETE')
                                                                 <button type="submit" class="btn btn-danger btn-sm" title="Eliminar">
@@ -141,7 +141,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="terminalesMasivos" class="form-label mb-1">AsignaciÃ³n masiva por terminal</label>
+                            <label for="terminalesMasivos" class="form-label mb-1">Asignación masiva por terminal</label>
                             <textarea id="terminalesMasivos" class="form-control" rows="4" placeholder="Pega aqui los codigos de terminal desde Excel o TXT (uno por linea, columna o separados por coma)"></textarea>
                             <div class="d-flex flex-wrap gap-2 mt-2">
                                 <button type="button" class="btn btn-outline-primary btn-sm" id="btnAplicarTerminalesMasivos">Marcar terminales pegadas</button>
@@ -172,7 +172,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar asignaciÃ³n</button>
+                        <button type="submit" class="btn btn-primary">Guardar asignación</button>
                     </div>
                 </form>
             </div>

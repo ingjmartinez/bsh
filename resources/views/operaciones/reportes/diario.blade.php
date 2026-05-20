@@ -1426,7 +1426,7 @@
                 }
 
                 if (typeof Swal !== 'undefined') {
-                    Swal.fire('Comprobante actualizado', payload?.message || 'La imagen se cargÃ³ correctamente.', 'success');
+                    Swal.fire('Comprobante actualizado', payload?.message || 'La imagen se cargó correctamente.', 'success');
                 }
             } catch (error) {
                 if (typeof Swal !== 'undefined') {

@@ -312,16 +312,16 @@
             return;
         }
 
-        // Evento para generar PDF con confirmaciÃ³n
+        // Evento para generar PDF con confirmación
         const btnGenerarPDF = document.getElementById('btn-generar-pdf');
         btnGenerarPDF?.addEventListener('click', function () {
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
-                    title: 'Â¿Deseas generar el PDF?',
-                    text: 'Se descargarÃ¡ el reporte actual en formato PDF.',
+                    title: '¿Deseas generar el PDF?',
+                    text: 'Se descargará el reporte actual en formato PDF.',
                     icon: 'question',
                     showCancelButton: true,
-                    confirmButtonText: 'SÃ­, generar',
+                    confirmButtonText: 'Sí, generar',
                     cancelButtonText: 'Cancelar',
                 }).then((result) => {
                     if (result.isConfirmed) {
@@ -333,7 +333,7 @@
             }
         });
 
-        // NUEVA FUNCIÃ“N generarPDF()
+        // NUEVA FUNCIÓN generarPDF()
         function generarPDF() {
             let jsPDFConstructor = null;
 
@@ -344,7 +344,7 @@
             }
 
             if (!jsPDFConstructor) {
-                Swal.fire('Error', 'jsPDF no estÃ¡ cargado en la pÃ¡gina.', 'error');
+                Swal.fire('Error', 'jsPDF no está cargado en la página.', 'error');
                 return;
             }
 
@@ -463,7 +463,7 @@
                 periodo = `Periodo analizado: ${mesInicio} vs ${mesFin} de ${anio}`;
             }
             // =========================
-            // TÃ­tulo
+            // Título
             // =========================
             doc.setFontSize(22);
             doc.setTextColor(0, 0, 0);
@@ -553,7 +553,7 @@
                 y,
                 w: topCardW,
                 h: topCardH,
-                title: 'Agente de venta (CÃ©dula)',
+                title: 'Agente de venta (Cédula)',
                 titleColor: [41, 128, 185],
                 fillColor: [232, 240, 254],
                 borderColor: [41, 128, 185],
@@ -563,17 +563,17 @@
             y += topCardH + 28;
 
             // =========================
-            // TÃ­tulo secciÃ³n anÃ¡lisis
+            // Título sección análisis
             // =========================
             ensureVerticalSpace(30);
             doc.setFontSize(17);
             doc.setTextColor(41, 128, 185);
-            doc.text('AnÃ¡lisis de Movimiento de Agencias por CategorÃ­a', margin, y);
+            doc.text('Análisis de Movimiento de Agencias por Categoría', margin, y);
 
             y += 16;
 
             // =========================
-            // Tarjetas de anÃ¡lisis
+            // Tarjetas de análisis
             // =========================
             const analisis = [
                 {
@@ -628,7 +628,7 @@
                     y: cardY,
                     w: analisisCardW,
                     h: analisisCardH,
-                    title: `CategorÃ­a ${a.cat}`,
+                    title: `Categoría ${a.cat}`,
                     titleColor: a.color,
                     fillColor: [248, 249, 250],
                     borderColor: a.color,
@@ -675,7 +675,7 @@
             const table = document.getElementById('table-gerencial');
 
             if (!table) {
-                Swal.fire('Error', 'No se encontrÃ³ la tabla de datos.', 'error');
+                Swal.fire('Error', 'No se encontró la tabla de datos.', 'error');
                 return;
             }
 
@@ -777,7 +777,7 @@
                         doc.setFontSize(10);
                         doc.setTextColor(120, 120, 120);
                         doc.text('Reporte Gerencial', margin, pageHeight - 24);
-                        doc.text('Hora de generaciÃ³n: ' + hora, margin, pageHeight - 12);
+                        doc.text('Hora de generación: ' + hora, margin, pageHeight - 12);
                     }
                 });
             } else {

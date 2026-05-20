@@ -195,7 +195,7 @@
                                         <div class="col-12 col-md-6 mb-3">
                                             <label for="aplica_incentivo" class="form-label">Aplica incentivo <span class="text-danger">*</span></label>
                                             <select class="form-select @error('aplica_incentivo') is-invalid @enderror" id="aplica_incentivo" name="aplica_incentivo" required>
-                                                <option value="1" {{ old('aplica_incentivo', '1') == '1' ? 'selected' : '' }}>SÃ­</option>
+                                                <option value="1" {{ old('aplica_incentivo', '1') == '1' ? 'selected' : '' }}>Sí</option>
                                                 <option value="0" {{ old('aplica_incentivo') == '0' ? 'selected' : '' }}>No</option>
                                             </select>
                                             @error('aplica_incentivo')
@@ -228,7 +228,7 @@
                     <div class="col-sm-6">
                         <script>
                             document.write(new Date().getFullYear())
-                        </script> Â© ERP.
+                        </script> © ERP.
                     </div>
                 </div>
             </div>

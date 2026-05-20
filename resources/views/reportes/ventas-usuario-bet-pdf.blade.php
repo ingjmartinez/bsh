@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte de Ventas sin CÃ©dula Registradas en Empleados y Vacias</title>
+    <title>Reporte de Ventas sin Cédula Registradas en Empleados y Vacias</title>
     <style>
         body { font-family: DejaVu Sans, sans-serif; font-size: 12px; }
         h2 { text-align: center; color: #333; margin-bottom: 20px; }
@@ -13,7 +13,7 @@
     </style>
 </head>
 <body>
-    <h2>Reporte de Ventas sin CÃ©dula Registradas en Empleados y Vacias</h2>
+    <h2>Reporte de Ventas sin Cédula Registradas en Empleados y Vacias</h2>
     <p><strong>Generado:</strong> {{ now()->format('d/m/Y H:i') }}</p>
 
     <table>
@@ -22,7 +22,7 @@
                 <th>#</th>
                 <th>Consorcio</th>
                 <th>Agencia</th>
-                <th>CÃ©dula</th>
+                <th>Cédula</th>
                 <th>Tipo</th>
             </tr>
         </thead>

@@ -75,7 +75,7 @@
                                     <input type="hidden" id="filtroBaseMes" value="{{ $mes }}">
                                     <input type="hidden" id="filtroBaseSistema" value="{{ $sistema }}">
                                     <div class="col-12 col-md-6 col-xl-2">
-                                        <label class="form-label">AÃ±o</label>
+                                        <label class="form-label">Año</label>
                                         <input type="number" min="2000" max="2100" name="anio" class="form-control" value="{{ $anio }}" required>
                                     </div>
                                     <div class="col-12 col-md-6 col-xl-2">
@@ -152,7 +152,7 @@
                             @endif
                         @else
                             <div class="alert alert-warning py-2 mb-3" role="alert">
-                                <strong>Sin resultados cargados:</strong> selecciona los filtros y presiona <strong>Filtrar</strong> para consultar la informaciÃ³n.
+                                <strong>Sin resultados cargados:</strong> selecciona los filtros y presiona <strong>Filtrar</strong> para consultar la información.
                             </div>
                         @endif
                     </div>
@@ -209,7 +209,7 @@
                                         </select>
                                     </div>
                                     <div class="col-12 col-md-6 col-xl-3 d-grid">
-                                        <input type="text" class="form-control form-control-sm h-100" id="buscar-agencia-meta-incentivo" placeholder="Buscar por nombre o cÃ³digo">
+                                        <input type="text" class="form-control form-control-sm h-100" id="buscar-agencia-meta-incentivo" placeholder="Buscar por nombre o código">
                                     </div>
                                     <div class="col-12 col-md-6 col-xl-3 d-grid">
                                         <span class="badge bg-primary-subtle text-primary d-flex align-items-center justify-content-center w-100">{{ number_format(($reporte ?? collect())->count(), 0) }} registros</span>
@@ -283,7 +283,7 @@
                                                 <tr data-cumplimiento="{{ $cumpleMeta ? 'cumple' : 'no-cumple' }}" data-agencia-id="{{ $row->agencia_id }}" data-meta="{{ (float) ($row->meta_incremental ?? 0) }}" data-venta="{{ (float) ($row->total_venta_mes_posterior ?? 0) }}" data-coordinador="{{ strtolower(trim((string) ($row->coordinador ?? ''))) }}">
                                                     <td>
                                                         <div class="fw-medium">{{ $row->nombre_agencia }}</div>
-                                                        <small class="text-muted">CÃ³digo: {{ $row->agencia_id }}</small>
+                                                        <small class="text-muted">Código: {{ $row->agencia_id }}</small>
                                                     </td>
                                                     <td>{{ $row->coordinador ?: '-' }}</td>
                                                     <td class="text-capitalize">{{ $row->tipo ?: '-' }}</td>
@@ -305,7 +305,7 @@
                                             @empty
                                                 <tr>
                                                     <td colspan="11" class="text-center text-muted">
-                                                        {{ ($filtrosAplicados ?? false) ? 'No hay datos para los filtros seleccionados.' : 'Aplique los filtros y presione Filtrar para cargar la informaciÃ³n.' }}
+                                                        {{ ($filtrosAplicados ?? false) ? 'No hay datos para los filtros seleccionados.' : 'Aplique los filtros y presione Filtrar para cargar la información.' }}
                                                     </td>
                                                 </tr>
                                             @endforelse
@@ -495,11 +495,11 @@
                 }
 
                 Swal.fire({
-                    title: 'Â¿Enviar mini reporte por correo?',
-                    text: 'Se enviarÃ¡ al correo del coordinador filtrado.',
+                    title: '¿Enviar mini reporte por correo?',
+                    text: 'Se enviará al correo del coordinador filtrado.',
                     icon: 'question',
                     showCancelButton: true,
-                    confirmButtonText: 'SÃ­, enviar',
+                    confirmButtonText: 'Sí, enviar',
                     cancelButtonText: 'Cancelar',
                     reverseButtons: true,
                 }).then(function (result) {
@@ -545,13 +545,13 @@
 
         if (btnExportarBloqueado) {
             btnExportarBloqueado.addEventListener('click', function () {
-                Swal.fire('ExportaciÃ³n no disponible', 'Primero aplica filtros para cargar datos y luego podrÃ¡s exportar a Excel.', 'info');
+                Swal.fire('Exportación no disponible', 'Primero aplica filtros para cargar datos y luego podrás exportar a Excel.', 'info');
             });
         }
 
         if (btnEnviarBloqueado) {
             btnEnviarBloqueado.addEventListener('click', function () {
-                Swal.fire('EnvÃ­o no disponible', 'Primero aplica filtros para cargar datos y luego podrÃ¡s enviar el mini reporte.', 'info');
+                Swal.fire('Envío no disponible', 'Primero aplica filtros para cargar datos y luego podrás enviar el mini reporte.', 'info');
             });
         }
 
@@ -564,7 +564,7 @@
                     search: 'Buscar:',
                     lengthMenu: 'Mostrar _MENU_ registros',
                     info: 'Mostrando _START_ a _END_ de _TOTAL_ registros',
-                    paginate: { first: 'Primera', last: 'Ãšltima', next: 'Siguiente', previous: 'Anterior' }
+                    paginate: { first: 'Primera', last: 'Última', next: 'Siguiente', previous: 'Anterior' }
                 },
                 dom: 'lrtip',
                 order: [[3, 'desc']],

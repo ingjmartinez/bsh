@@ -74,7 +74,7 @@
                                         </span>
                                     </div>
                                 </div>
-                                <div class="text-muted small">Conteo total segÃºn empresa filtrada.</div>
+                                <div class="text-muted small">Conteo total según empresa filtrada.</div>
                             </div>
                         </div>
                     </div>
@@ -92,7 +92,7 @@
                                         </span>
                                     </div>
                                 </div>
-                                <div class="text-muted small">Fecha de salida vacÃ­a = empleado activo.</div>
+                                <div class="text-muted small">Fecha de salida vacía = empleado activo.</div>
                             </div>
                         </div>
                     </div>
@@ -240,7 +240,7 @@
                     <div class="col-sm-6">
                         <script>
                             document.write(new Date().getFullYear())
-                        </script> Â© Velzon.
+                        </script> © Velzon.
                     </div>
                     <div class="col-sm-6">
                         <div class="text-sm-end d-none d-sm-block">

@@ -14,7 +14,7 @@
                         <td style="padding:18px 20px; background:#0b5ed7; color:#ffffff;">
                             <h2 style="margin:0; font-size:18px;">Mini reporte Meta Incentivo</h2>
                             <p style="margin:6px 0 0; font-size:13px; opacity:.95;">
-                                Coordinador: <strong>{{ $data['coordinador'] ?? '-' }}</strong> | PerÃ­odo: <strong>{{ str_pad((string) ($data['periodo_mes'] ?? $data['mes'] ?? ''), 2, '0', STR_PAD_LEFT) }}/{{ $data['periodo_anio'] ?? $data['anio'] ?? '-' }}</strong>
+                                Coordinador: <strong>{{ $data['coordinador'] ?? '-' }}</strong> | Período: <strong>{{ str_pad((string) ($data['periodo_mes'] ?? $data['mes'] ?? ''), 2, '0', STR_PAD_LEFT) }}/{{ $data['periodo_anio'] ?? $data['anio'] ?? '-' }}</strong>
                             </p>
                         </td>
                     </tr>
@@ -39,7 +39,7 @@
                                             <td style="border:1px solid #e5e7eb; padding:10px;">
                                                 <div style="font-weight:600;">{{ $fila['agencia'] ?? '-' }}</div>
                                                 @if(!empty($fila['codigo']))
-                                                    <div style="font-size:12px; color:#6b7280; margin-top:4px;">CÃ³digo: {{ $fila['codigo'] }}</div>
+                                                    <div style="font-size:12px; color:#6b7280; margin-top:4px;">Código: {{ $fila['codigo'] }}</div>
                                                 @endif
                                             </td>
                                             <td style="border:1px solid #e5e7eb; padding:10px;">{{ $fila['coordinador'] ?? '-' }}</td>

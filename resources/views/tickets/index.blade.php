@@ -137,6 +137,7 @@
                                                 <th>Ticket</th>
                                                 <th>Telefono</th>
                                                 <th>Estado</th>
+                                                <th>Imagen</th>
                                                 <th>Entrada</th>
                                                 <th>Gestion</th>
                                             </tr>
@@ -150,6 +151,21 @@
                                                     <td>{{ $solicitud->phone }}</td>
                                                     <td>
                                                         <span class="badge bg-{{ $solicitud->estado_badge }}">{{ $solicitud->estado_label }}</span>
+                                                    </td>
+                                                    <td>
+                                                        @if ($solicitud->attachment_url)
+                                                            <button
+                                                                type="button"
+                                                                class="btn btn-sm btn-info"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#ticketImageModal"
+                                                                data-attachment-url="{{ $solicitud->attachment_url }}"
+                                                                data-ticket-codigo="{{ $solicitud->codigo }}">
+                                                                <i class="ri-image-2-line me-1"></i>Ver
+                                                            </button>
+                                                        @else
+                                                            <span class="text-muted">Sin imagen</span>
+                                                        @endif
                                                     </td>
                                                     <td>{{ optional($solicitud->created_at)->format('d/m/Y h:i A') }}</td>
                                                     <td style="min-width: 260px;">
@@ -174,7 +190,7 @@
                                                 </tr>
                                             @empty
                                                 <tr>
-                                                    <td colspan="7" class="text-center text-muted py-4">
+                                                    <td colspan="8" class="text-center text-muted py-4">
                                                         No hay solicitudes con los filtros seleccionados.
                                                     </td>
                                                 </tr>
@@ -239,4 +255,51 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="ticketImageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ticketImageModalTitle">Imagen de ticket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <a id="ticketImageLink" href="#" target="_blank" rel="noopener noreferrer">
+                        <img id="ticketImagePreview" src="" alt="Imagen de ticket" class="img-fluid rounded border">
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
+
+@section('script')
+    <script>
+        (function () {
+            const modal = document.getElementById('ticketImageModal');
+            const image = document.getElementById('ticketImagePreview');
+            const link = document.getElementById('ticketImageLink');
+            const title = document.getElementById('ticketImageModalTitle');
+
+            if (!modal || !image || !link || !title) {
+                return;
+            }
+
+            modal.addEventListener('show.bs.modal', function (event) {
+                const trigger = event.relatedTarget;
+                const url = trigger?.getAttribute('data-attachment-url') || '';
+                const codigo = trigger?.getAttribute('data-ticket-codigo') || 'Ticket';
+
+                image.src = url;
+                link.href = url;
+                title.textContent = `Imagen de ${codigo}`;
+            });
+
+            modal.addEventListener('hidden.bs.modal', function () {
+                image.src = '';
+                link.href = '#';
+                title.textContent = 'Imagen de ticket';
+            });
+        })();
+    </script>
 @endsection

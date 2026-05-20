@@ -41,6 +41,7 @@ return [
         'link_endpoint' => env('WA_API_URL_LINK'),
         'relink_endpoint' => env('WA_API_URL_RELINK'),
         'accounts_endpoint' => env('WA_API_URL_GET_ACCOUNTS'),
+        'message_endpoint' => env('WA_API_URL_GET_MESSAGE'),
         'api_key' => env('WA_API_KEY'),
         'sid' => env('WA_API_SID'),
         'default_account' => env('WA_DEFAULT_ACCOUNT'),

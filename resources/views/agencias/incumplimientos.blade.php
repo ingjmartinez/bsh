@@ -107,7 +107,7 @@
                                     <input type="hidden" id="inc-row-data">
                                     <div class="row g-3">
                                         <div class="col-12">
-                                            <label class="form-label">TÃ­tulo <span class="text-danger">*</span></label>
+                                            <label class="form-label">Título <span class="text-danger">*</span></label>
                                             <input type="text" class="form-control" id="inc-tarea-titulo" required>
                                         </div>
                                         <div class="col-md-6">
@@ -119,10 +119,10 @@
                                         <div class="col-md-6">
                                             <label class="form-label">Prioridad <span class="text-danger">*</span></label>
                                             <select class="form-select" id="inc-tarea-prioridad">
-                                                <option value="baja">ðŸŸ¢ Baja</option>
-                                                <option value="media" selected>ðŸ”µ Media</option>
-                                                <option value="alta">ðŸŸ¡ Alta</option>
-                                                <option value="critica">ðŸ”´ CrÃ­tica</option>
+                                                <option value="baja">Baja</option>
+                                                <option value="media" selected>Media</option>
+                                                <option value="alta">Alta</option>
+                                                <option value="critica">🔴 Crítica</option>
                                             </select>
                                         </div>
                                         <div class="col-md-6">
@@ -132,7 +132,7 @@
                                             </select>
                                         </div>
                                         <div class="col-12">
-                                            <label class="form-label">DescripciÃ³n</label>
+                                            <label class="form-label">Descripción</label>
                                             <textarea class="form-control" id="inc-tarea-descripcion" rows="3"></textarea>
                                         </div>
                                         <div class="col-md-6">
@@ -225,7 +225,7 @@
                                             <tr>
                                                 <td><input type="text" class="form-control" id="cfg-label-3"></td>
                                                 <td><input type="number" min="0" class="form-control" id="cfg-min-3"></td>
-                                                <td><input type="number" min="0" class="form-control" id="cfg-max-3" placeholder="VacÃ­o = sin lÃ­mite"></td>
+                                                <td><input type="number" min="0" class="form-control" id="cfg-max-3" placeholder="Vacío = sin límite"></td>
                                                 <td>
                                                     <select class="form-select" id="cfg-color-3">
                                                         <option value="success">Verde</option>
@@ -245,7 +245,7 @@
                                 <button type="button" class="btn btn-light" id="btnRestablecerConfigEstados">Restablecer</button>
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                                 <button type="button" class="btn btn-info" id="btnGuardarConfigEstados">
-                                    <i class="ri-save-line me-1"></i> Guardar configuraciÃ³n
+                                    <i class="ri-save-line me-1"></i> Guardar configuración
                                 </button>
                             </div>
                         </div>
@@ -259,7 +259,7 @@
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-sm-6">
-                        <script>document.write(new Date().getFullYear())</script> Â© ERP.
+                        <script>document.write(new Date().getFullYear())</script> © ERP.
                     </div>
                 </div>
             </div>
@@ -282,7 +282,7 @@
             { key: 'cumple', label: 'Cumplen dentro de 5 minutos', min: 0, max: 5, color: 'success' },
             { key: 'aviso', label: 'Aviso dentro de 6-8 minutos', min: 6, max: 8, color: 'primary' },
             { key: 'incumple', label: 'Incumple dentro de 9-15 minutos', min: 9, max: 15, color: 'warning' },
-            { key: 'requiere_visita', label: 'Requiere visita dentro de 16 minutos y mÃ¡s', min: 16, max: null, color: 'danger' },
+            { key: 'requiere_visita', label: 'Requiere visita dentro de 16 minutos y más', min: 16, max: null, color: 'danger' },
         ]
     };
 
@@ -338,7 +338,7 @@
 
     function validarConfigEstados(cfg) {
         if (!cfg || !Array.isArray(cfg.niveles) || cfg.niveles.length !== 4) {
-            return 'La configuraciÃ³n debe tener 4 niveles.';
+            return 'La configuración debe tener 4 niveles.';
         }
 
         for (let i = 0; i < cfg.niveles.length; i++) {
@@ -349,11 +349,11 @@
             }
 
             if (n.min == null || Number.isNaN(n.min) || n.min < 0) {
-                return `El "Desde" del nivel ${i + 1} debe ser un nÃºmero mayor o igual a 0.`;
+                return `El "Desde" del nivel ${i + 1} debe ser un número mayor o igual a 0.`;
             }
 
             if (n.max != null && (Number.isNaN(n.max) || n.max < 0)) {
-                return `El "Hasta" del nivel ${i + 1} debe ser un nÃºmero mayor o igual a 0 o vacÃ­o.`;
+                return `El "Hasta" del nivel ${i + 1} debe ser un número mayor o igual a 0 o vacío.`;
             }
 
             if (n.max != null && n.max < n.min) {
@@ -543,7 +543,7 @@
         };
 
         if (!payload.titulo || !payload.departamento_id || !payload.fecha_inicio || !payload.fecha_fin) {
-            Swal.fire('Campos requeridos', 'Completa tÃ­tulo, departamento y fechas para crear la tarea.', 'warning');
+            Swal.fire('Campos requeridos', 'Completa título, departamento y fechas para crear la tarea.', 'warning');
             return;
         }
 
@@ -568,7 +568,7 @@
                 const errors = xhr?.responseJSON?.errors;
                 if (errors) {
                     const msg = Object.values(errors).flat().join('<br>');
-                    Swal.fire({ icon: 'error', title: 'Error de validaciÃ³n', html: msg });
+                    Swal.fire({ icon: 'error', title: 'Error de validación', html: msg });
                     return;
                 }
                 const errorMsg = xhr?.responseJSON?.message || 'No se pudo crear la tarea.';
@@ -642,7 +642,7 @@
                 renderizarTablaConConfig(ultimaRespuesta);
             },
             error: function() {
-                Swal.fire('Error', 'No se pudo cargar la informaciÃ³n.', 'error');
+                Swal.fire('Error', 'No se pudo cargar la información.', 'error');
             }
         });
     }
@@ -712,7 +712,7 @@
             const encoded = $(this).attr('data-row');
 
             if (!encoded) {
-                Swal.fire('Error', 'No se encontrÃ³ informaciÃ³n para enviar.', 'error');
+                Swal.fire('Error', 'No se encontró información para enviar.', 'error');
                 return;
             }
 
@@ -728,7 +728,7 @@
             const encoded = $(this).attr('data-row');
 
             if (!encoded) {
-                Swal.fire('Error', 'No se encontrÃ³ informaciÃ³n para crear la tarea.', 'error');
+                Swal.fire('Error', 'No se encontró información para crear la tarea.', 'error');
                 return;
             }
 
@@ -752,7 +752,7 @@
             const error = validarConfigEstados(cfg);
 
             if (error) {
-                Swal.fire('ConfiguraciÃ³n invÃ¡lida', error, 'warning');
+                Swal.fire('Configuración inválida', error, 'warning');
                 return;
             }
 
@@ -764,7 +764,7 @@
                 renderizarTablaConConfig(ultimaRespuesta);
             }
 
-            Swal.fire('ConfiguraciÃ³n guardada', 'Los estados fueron actualizados correctamente.', 'success');
+            Swal.fire('Configuración guardada', 'Los estados fueron actualizados correctamente.', 'success');
         });
 
         $('#btnRestablecerConfigEstados').on('click', function() {
