@@ -3,14 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\TicketSolicitud;
+use App\Services\WhatsAppService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class TicketSolicitudController extends Controller
 {
+    public function __construct(private readonly WhatsAppService $whatsAppService)
+    {
+    }
+
     public function index(Request $request): View
     {
         $filtros = $request->only(['categoria', 'estado', 'desde', 'hasta', 'buscar']);
@@ -90,6 +96,8 @@ class TicketSolicitudController extends Controller
             'notas' => 'nullable|string|max:1000',
         ]);
 
+        $estadoAnterior = (string) $ticket->estado;
+
         $ticket->fill([
             'estado' => $validated['estado'],
             'notas' => $validated['notas'] ?? $ticket->notas,
@@ -104,8 +112,64 @@ class TicketSolicitudController extends Controller
         }
 
         $ticket->save();
+        $this->notifyResolutionByWhatsApp($ticket, $estadoAnterior);
 
         return back()->with('success', 'Estado del ticket actualizado.');
+    }
+
+    private function notifyResolutionByWhatsApp(TicketSolicitud $ticket, string $estadoAnterior): void
+    {
+        if ($estadoAnterior === (string) $ticket->estado) {
+            return;
+        }
+
+        if (!in_array($ticket->estado, [TicketSolicitud::ESTADO_PAGADO, TicketSolicitud::ESTADO_NULO], true)) {
+            return;
+        }
+
+        $recipient = $this->formatRecipient((string) $ticket->phone);
+
+        if ($recipient === null) {
+            return;
+        }
+
+        $message = "Hola, tu solicitud {$ticket->codigo} ya fue resuelta.\n\n"
+            . "Categoria: {$ticket->categoria_label}\n"
+            . "Codigo terminal: {$ticket->ticket_numero}\n"
+            . "Estado final: {$ticket->estado_label}\n\n"
+            . "Gracias por comunicarte con nosotros.";
+
+        try {
+            $result = $this->whatsAppService->sendText($recipient, $message);
+
+            if (!($result['success'] ?? false)) {
+                Log::warning('No se pudo enviar notificacion de resolucion de ticket', [
+                    'ticket_id' => $ticket->id,
+                    'phone' => $ticket->phone,
+                    'estado' => $ticket->estado,
+                    'provider_status' => $result['status'] ?? null,
+                    'provider_message' => $result['message'] ?? null,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::error('Error enviando notificacion de resolucion de ticket', [
+                'ticket_id' => $ticket->id,
+                'phone' => $ticket->phone,
+                'estado' => $ticket->estado,
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function formatRecipient(string $phone): ?string
+    {
+        $digits = preg_replace('/\D+/', '', $phone) ?? '';
+
+        if ($digits === '' || strlen($digits) < 8) {
+            return null;
+        }
+
+        return str_starts_with($phone, '+') ? $phone : '+' . $digits;
     }
 
     private function emptyStats(): array
