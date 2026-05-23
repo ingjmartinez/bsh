@@ -860,6 +860,7 @@
                     <div id="two-column-menu"></div>
                     @php
                         $showAllModulesForAdmin = auth()->check() && auth()->user()->hasAnyRole(['superadmin', 'admin']);
+                        $canModule = fn (string $module): bool => $showAllModulesForAdmin || (bool) auth()->user()?->can("module.{$module}.view");
                     @endphp
                     <ul class="navbar-nav" id="navbar-nav">
                         <li class="sidebar-brand-title">
@@ -875,38 +876,48 @@
                             </a>
                         </li>
 
-                        <li class="nav-item">
-                            <a href="{{ route('dashboard.index') }}"
-                                class="nav-link menu-link {{ request()->routeIs('inicio.index') || request()->is('dashboard*') || request()->is('ventas-lotobet-dashboard*') || request()->is('ventas-lotonet-dashboard*') || request()->is('ventas-lotobet-flash-dashboard*') || request()->is('ventas-mar-dashboard*') || request()->is('kpi-lotobet*') ? 'active' : '' }}">
-                                <i class="ri-apps-2-line"></i> <span data-key="t-apps">Dashboard</span>
-                            </a>
-                        </li>
+                        @if ($canModule('dashboard'))
+                            <li class="nav-item">
+                                <a href="{{ route('dashboard.index') }}"
+                                    class="nav-link menu-link {{ request()->routeIs('inicio.index') || request()->is('dashboard*') || request()->is('ventas-lotobet-dashboard*') || request()->is('ventas-lotonet-dashboard*') || request()->is('ventas-lotobet-flash-dashboard*') || request()->is('ventas-mar-dashboard*') || request()->is('kpi-lotobet*') ? 'active' : '' }}">
+                                    <i class="ri-apps-2-line"></i> <span data-key="t-apps">Dashboard</span>
+                                </a>
+                            </li>
+                        @endif
 
-                        <li class="nav-item">
-                            <a href="{{ route('procesos.index') }}"
-                                class="nav-link menu-link {{ request()->is('procesos*') ? 'active' : '' }}">
-                                <i class="ri-flow-chart"></i> <span data-key="t-procesos">Procesos</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('recursos-humanos.index') }}"
-                                class="nav-link menu-link {{ request()->is('recursos-humanos*') || request()->is('empleados*') || request()->is('registro-empleados*') || request()->is('entrevistas-online*') || request()->is('ventas-sin-empleado*') ? 'active' : '' }}">
-                                <i class="ri-team-line"></i> <span data-key="t-recursos-humanos">Recursos Humanos</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('contabilidad.index') }}"
-                                class="nav-link menu-link {{ request()->is('contabilidad*') ? 'active' : '' }}">
-                                <i class="ri-dashboard-2-line"></i> <span data-key="t-contabilidad">Contabilidad</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('tareas.index') }}"
-                                class="nav-link menu-link {{ request()->is('tareas') || request()->is('tareas-list*') || (request()->is('tareas/*') && !request()->routeIs('tareas.proyecto')) ? 'active' : '' }}">
-                                <i class="ri-task-line"></i> <span data-key="t-tareas">Tareas</span>
-                            </a>
-                        </li>
-                        @if ($showAllModulesForAdmin || auth()->user()?->can('tickets.view'))
+                        @if ($canModule('procesos'))
+                            <li class="nav-item">
+                                <a href="{{ route('procesos.index') }}"
+                                    class="nav-link menu-link {{ request()->is('procesos*') ? 'active' : '' }}">
+                                    <i class="ri-flow-chart"></i> <span data-key="t-procesos">Procesos</span>
+                                </a>
+                            </li>
+                        @endif
+                        @if ($canModule('recursos_humanos'))
+                            <li class="nav-item">
+                                <a href="{{ route('recursos-humanos.index') }}"
+                                    class="nav-link menu-link {{ request()->is('recursos-humanos*') || request()->is('empleados*') || request()->is('registro-empleados*') || request()->is('entrevistas-online*') || request()->is('ventas-sin-empleado*') ? 'active' : '' }}">
+                                    <i class="ri-team-line"></i> <span data-key="t-recursos-humanos">Recursos Humanos</span>
+                                </a>
+                            </li>
+                        @endif
+                        @if ($canModule('contabilidad'))
+                            <li class="nav-item">
+                                <a href="{{ route('contabilidad.index') }}"
+                                    class="nav-link menu-link {{ request()->is('contabilidad*') ? 'active' : '' }}">
+                                    <i class="ri-dashboard-2-line"></i> <span data-key="t-contabilidad">Contabilidad</span>
+                                </a>
+                            </li>
+                        @endif
+                        @if ($canModule('tareas'))
+                            <li class="nav-item">
+                                <a href="{{ route('tareas.index') }}"
+                                    class="nav-link menu-link {{ request()->is('tareas') || request()->is('tareas-list*') || (request()->is('tareas/*') && !request()->routeIs('tareas.proyecto')) ? 'active' : '' }}">
+                                    <i class="ri-task-line"></i> <span data-key="t-tareas">Tareas</span>
+                                </a>
+                            </li>
+                        @endif
+                        @if ($canModule('ticket') || auth()->user()?->can('tickets.view'))
                             <li class="nav-item">
                                 <a href="{{ route('tickets.index') }}"
                                     class="nav-link menu-link {{ request()->is('tickets*') ? 'active' : '' }}">
@@ -914,12 +925,14 @@
                                 </a>
                             </li>
                         @endif
-                        <li class="nav-item">
-                            <a href="{{ route('tareas.proyecto') }}"
-                                class="nav-link menu-link {{ request()->routeIs('tareas.proyecto') ? 'active' : '' }}">
-                                <i class="ri-stack-line"></i> <span data-key="t-proyecto">Proyecto</span>
-                            </a>
-                        </li>
+                        @if ($canModule('proyecto'))
+                            <li class="nav-item">
+                                <a href="{{ route('tareas.proyecto') }}"
+                                    class="nav-link menu-link {{ request()->routeIs('tareas.proyecto') ? 'active' : '' }}">
+                                    <i class="ri-stack-line"></i> <span data-key="t-proyecto">Proyecto</span>
+                                </a>
+                            </li>
+                        @endif
                         @if ($showAllModulesForAdmin || auth()->user()?->can('servicios_generales.view'))
                             <li class="nav-item">
                                 <a href="{{ route('servicios-generales.index') }}"
@@ -928,20 +941,25 @@
                                 </a>
                             </li>
                         @endif
-                        <li class="nav-item">
-                            <a href="{{ route('tecnologia.index') }}"
-                                class="nav-link menu-link {{ request()->is('tecnologia*') ? 'active' : '' }}">
-                                <i class="ri-computer-line"></i> <span data-key="t-tecnologia">Tecnologia</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('mantenimiento.index') }}"
-                                class="nav-link menu-link {{ request()->is('mantenimiento*') || request()->is('agencias*') || request()->is('usuarios*') || request()->is('coordinador-operador*') || request()->is('roles*') || request()->is('permissions*') ? 'active' : '' }}">
-                                <i class="ri-settings-2-line"></i> <span data-key="t-apps">Mantenimientos</span>
-                            </a>
-                        </li>
+                        @if ($canModule('tecnologia'))
+                            <li class="nav-item">
+                                <a href="{{ route('tecnologia.index') }}"
+                                    class="nav-link menu-link {{ request()->is('tecnologia*') ? 'active' : '' }}">
+                                    <i class="ri-computer-line"></i> <span data-key="t-tecnologia">Tecnologia</span>
+                                </a>
+                            </li>
+                        @endif
+                        @if ($canModule('mantenimiento'))
+                            <li class="nav-item">
+                                <a href="{{ route('mantenimiento.index') }}"
+                                    class="nav-link menu-link {{ request()->is('mantenimiento*') || request()->is('agencias*') || request()->is('usuarios*') || request()->is('coordinador-operador*') || request()->is('roles*') || request()->is('permissions*') ? 'active' : '' }}">
+                                    <i class="ri-settings-2-line"></i> <span data-key="t-apps">Mantenimientos</span>
+                                </a>
+                            </li>
+                        @endif
 
-                        <li class="nav-item">
+                        @if ($canModule('dashboard'))
+                            <li class="nav-item">
                             <a class="nav-link menu-link collapsed" href="#sidebarApps" data-bs-toggle="collapse"
                                 role="button" aria-expanded="true" aria-controls="sidebarApps">
                                 <i class="ri-apps-2-line"></i> <span data-key="t-apps">Apis de ventas</span>
@@ -1095,39 +1113,50 @@
                                     </li>
                                 </ul>
                             </div>
-                        </li>
+                            </li>
+                        @endif
 
-                        <li class="nav-item">
-                            <a href="{{ route('reportes.index') }}"
-                                class="nav-link menu-link {{ request()->is('reportes') || request()->is('reportes-*') ? 'active' : '' }}">
-                                <i class="ri-apps-2-line"></i> <span data-key="t-apps">Reportes</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('incentivos.index') }}"
-                                class="nav-link menu-link {{ request()->is('incentivos*') ? 'active' : '' }}">
-                                <i class="ri-award-line"></i> <span data-key="t-apps">Incentivos</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('operaciones.index') }}"
-                                class="nav-link menu-link {{ request()->is('operaciones*') ? 'active' : '' }}">
-                                <i class="ri-settings-3-line"></i> <span data-key="t-apps">Operaciones</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('comercial.index') }}"
-                                class="nav-link menu-link {{ request()->is('comercial*') ? 'active' : '' }}">
-                                <i class="ri-line-chart-line"></i> <span data-key="t-apps">Comercial</span>
-                            </a>
-                        </li>
+                        @if ($canModule('reportes'))
+                            <li class="nav-item">
+                                <a href="{{ route('reportes.index') }}"
+                                    class="nav-link menu-link {{ request()->is('reportes') || request()->is('reportes-*') ? 'active' : '' }}">
+                                    <i class="ri-apps-2-line"></i> <span data-key="t-apps">Reportes</span>
+                                </a>
+                            </li>
+                        @endif
+                        @if ($canModule('incentivos'))
+                            <li class="nav-item">
+                                <a href="{{ route('incentivos.index') }}"
+                                    class="nav-link menu-link {{ request()->is('incentivos*') ? 'active' : '' }}">
+                                    <i class="ri-award-line"></i> <span data-key="t-apps">Incentivos</span>
+                                </a>
+                            </li>
+                        @endif
+                        @if ($canModule('operaciones'))
+                            <li class="nav-item">
+                                <a href="{{ route('operaciones.index') }}"
+                                    class="nav-link menu-link {{ request()->is('operaciones*') ? 'active' : '' }}">
+                                    <i class="ri-settings-3-line"></i> <span data-key="t-apps">Operaciones</span>
+                                </a>
+                            </li>
+                        @endif
+                        @if ($canModule('comercial'))
+                            <li class="nav-item">
+                                <a href="{{ route('comercial.index') }}"
+                                    class="nav-link menu-link {{ request()->is('comercial*') ? 'active' : '' }}">
+                                    <i class="ri-line-chart-line"></i> <span data-key="t-apps">Comercial</span>
+                                </a>
+                            </li>
+                        @endif
 
-                        <li class="nav-item">
-                            <a href="{{ route('gerencia.index') }}"
-                                class="nav-link menu-link {{ request()->is('gerencia*') ? 'active' : '' }}">
-                                <i class="ri-briefcase-line"></i> <span data-key="t-gerencia">Gerencia</span>
-                            </a>
-                        </li>
+                        @if ($canModule('gerencia'))
+                            <li class="nav-item">
+                                <a href="{{ route('gerencia.index') }}"
+                                    class="nav-link menu-link {{ request()->is('gerencia*') ? 'active' : '' }}">
+                                    <i class="ri-briefcase-line"></i> <span data-key="t-gerencia">Gerencia</span>
+                                </a>
+                            </li>
+                        @endif
                     </ul>
                 </div>
                 <!-- Sidebar -->

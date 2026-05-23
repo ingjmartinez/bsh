@@ -123,9 +123,15 @@ class TicketSolicitudController extends Controller
 
         $validated = $request->validate([
             'estado' => ['required', Rule::in($estadosPermitidos)],
-            'notas' => 'nullable|string|max:1000',
+            'notas' => [
+                Rule::requiredIf($request->input('estado') === TicketSolicitud::ESTADO_TICKET_PAGADO),
+                'nullable',
+                'string',
+                'max:1000',
+            ],
         ], [
             'estado.in' => 'El estado seleccionado no es valido para esta categoria de ticket.',
+            'notas.required' => 'Debes indicar la terminal que pago.',
         ]);
 
         $estadoAnterior = (string) $ticket->estado;
@@ -165,10 +171,13 @@ class TicketSolicitudController extends Controller
             return;
         }
 
+        $terminalPago = $this->terminalPagoLine($ticket);
+
         $message = "Hola, tu solicitud {$ticket->codigo} ya fue resuelta.\n\n"
             . "Categoria: {$ticket->categoria_label}\n"
             . "Codigo terminal: {$ticket->ticket_numero}\n"
             . "Estado final: {$ticket->estado_label}\n\n"
+            . ($terminalPago !== null ? $terminalPago . "\n\n" : '')
             . "Gracias por comunicarte con nosotros.";
 
         try {
@@ -202,6 +211,17 @@ class TicketSolicitudController extends Controller
         }
 
         return str_starts_with($phone, '+') ? $phone : '+' . $digits;
+    }
+
+    private function terminalPagoLine(TicketSolicitud $ticket): ?string
+    {
+        if ($ticket->estado !== TicketSolicitud::ESTADO_TICKET_PAGADO) {
+            return null;
+        }
+
+        $notas = trim((string) $ticket->notas);
+
+        return $notas !== '' ? $notas : null;
     }
 
     private function emptyStats(): array

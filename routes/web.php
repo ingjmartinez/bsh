@@ -89,7 +89,9 @@ Route::post('/procesos/crear', [ProcesoController::class, 'crearProceso'])->name
 Route::put('/procesos/{id}', [ProcesoController::class, 'actualizarProceso'])->name('procesos.actualizarProceso');
 Route::delete('/procesos/{id}', [ProcesoController::class, 'eliminarProceso'])->name('procesos.eliminarProceso');
 
-Route::prefix('contabilidad')->name('contabilidad.')->group(function () {
+Route::prefix('contabilidad')->name('contabilidad.')
+    ->middleware('role_or_permission:superadmin|admin|module.contabilidad.view')
+    ->group(function () {
     Route::get('/', [ModuleHubController::class, 'contabilidad'])->name('index');
     Route::view('/inicio', 'contabilidad.index')->name('inicio');
     Route::get('/electricidad', [ContabilidadElectricidadController::class, 'index'])->name('electricidad');
@@ -242,70 +244,74 @@ Route::get('/delete-mar-ventas', [MarController::class, 'deleteVentas']);
 Route::get('/ventas-mar-dashboard', [MarController::class, 'dashboardVentasMar']);
 Route::get('/ventas-mar-dashboard/data', [MarController::class, 'dashboardVentasMarData']);
 
-Route::get('/recursos-humanos', [RecursosHumanosController::class, 'index'])->name('recursos-humanos.index');
-Route::get('/empleados', [EmpleadoController::class, 'index']);
-Route::get('/empleados/list', [EmpleadoController::class, 'list']);
-Route::get('/empleados/dashboard', [EmpleadoController::class, 'dashboard']);
-Route::get('/empleados/show/{id}', [EmpleadoController::class, 'show']);
-Route::post('/empleados/store', [EmpleadoController::class, 'store']);
-Route::get('/empleados/destroy/{id}', [EmpleadoController::class, 'destroy']);
-Route::get('/empleados/sincronizar', [EmpleadoController::class, 'sincronizar']);
-Route::get('/recursos-humanos/novedades-horario', [NovedadHorarioController::class, 'index'])
-    ->name('recursos-humanos.novedades-horario.index');
-Route::get('/recursos-humanos/novedades-horario/list', [NovedadHorarioController::class, 'list'])
-    ->name('recursos-humanos.novedades-horario.list');
+Route::middleware('role_or_permission:superadmin|admin|module.recursos_humanos.view')->group(function () {
+    Route::get('/recursos-humanos', [RecursosHumanosController::class, 'index'])->name('recursos-humanos.index');
+    Route::get('/empleados', [EmpleadoController::class, 'index']);
+    Route::get('/empleados/list', [EmpleadoController::class, 'list']);
+    Route::get('/empleados/dashboard', [EmpleadoController::class, 'dashboard']);
+    Route::get('/empleados/show/{id}', [EmpleadoController::class, 'show']);
+    Route::post('/empleados/store', [EmpleadoController::class, 'store']);
+    Route::get('/empleados/destroy/{id}', [EmpleadoController::class, 'destroy']);
+    Route::get('/empleados/sincronizar', [EmpleadoController::class, 'sincronizar']);
+    Route::get('/recursos-humanos/novedades-horario', [NovedadHorarioController::class, 'index'])
+        ->name('recursos-humanos.novedades-horario.index');
+    Route::get('/recursos-humanos/novedades-horario/list', [NovedadHorarioController::class, 'list'])
+        ->name('recursos-humanos.novedades-horario.list');
 
-Route::prefix('entrevistas-online')->name('entrevistas-online.')->group(function () {
-    Route::get('/', [EntrevistaOnlineController::class, 'index'])->name('index');
-    Route::get('/list', [EntrevistaOnlineController::class, 'list'])->name('list');
-    Route::get('/{id}', [EntrevistaOnlineController::class, 'show'])->name('show')->whereNumber('id');
-    Route::post('/', [EntrevistaOnlineController::class, 'store'])->name('store');
-    Route::put('/{id}', [EntrevistaOnlineController::class, 'update'])->name('update')->whereNumber('id');
-    Route::delete('/{id}', [EntrevistaOnlineController::class, 'destroy'])->name('destroy')->whereNumber('id');
+    Route::prefix('entrevistas-online')->name('entrevistas-online.')->group(function () {
+        Route::get('/', [EntrevistaOnlineController::class, 'index'])->name('index');
+        Route::get('/list', [EntrevistaOnlineController::class, 'list'])->name('list');
+        Route::get('/{id}', [EntrevistaOnlineController::class, 'show'])->name('show')->whereNumber('id');
+        Route::post('/', [EntrevistaOnlineController::class, 'store'])->name('store');
+        Route::put('/{id}', [EntrevistaOnlineController::class, 'update'])->name('update')->whereNumber('id');
+        Route::delete('/{id}', [EntrevistaOnlineController::class, 'destroy'])->name('destroy')->whereNumber('id');
+    });
+
+    Route::get('/empleados-no-regularizados', [EmpleadoController::class, 'noRegularizados']);
+    Route::get('/empleados-no-regularizados/list', [EmpleadoController::class, 'listNoRegularizados']);
+    Route::get('/ventas-sin-empleado', [EmpleadoController::class, 'ventasSinEmpleado']);
+    Route::get('/ventas-sin-empleado/list', [EmpleadoController::class, 'listVentasSinEmpleado']);
+
+    Route::resource('registro-empleados', RegistroEmpleadoController::class);
 });
 
-Route::get('/empleados-no-regularizados', [EmpleadoController::class, 'noRegularizados']);
-Route::get('/empleados-no-regularizados/list', [EmpleadoController::class, 'listNoRegularizados']);
-Route::get('/ventas-sin-empleado', [EmpleadoController::class, 'ventasSinEmpleado']);
-Route::get('/ventas-sin-empleado/list', [EmpleadoController::class, 'listVentasSinEmpleado']);
+Route::middleware('role_or_permission:superadmin|admin|module.reportes.view')->group(function () {
+    Route::get('/reportes', [ReporteController::class, 'indexReportes'])->name('reportes.index');
 
-Route::get('/reportes', [ReporteController::class, 'indexReportes'])->name('reportes.index');
+    Route::get('/reportes-ventas-usuario-bet', [ReporteController::class, 'ventasUsuarioBet']);
+    Route::get('/reportes-ventas-usuario-bet/list', [ReporteController::class, 'listVentasUsuarioBet']);
+    Route::get('/reportes-ventas-usuario-bet/excel', [ReporteController::class, 'excelVentasUsuarioBet']);
+    Route::get('/reportes-ventas-usuario-bet/pdf', [ReporteController::class, 'pdfVentasUsuarioBet']);
 
-Route::get('/reportes-ventas-usuario-bet', [ReporteController::class, 'ventasUsuarioBet']);
-Route::get('/reportes-ventas-usuario-bet/list', [ReporteController::class, 'listVentasUsuarioBet']);
-Route::get('/reportes-ventas-usuario-bet/excel', [ReporteController::class, 'excelVentasUsuarioBet']);
-Route::get('/reportes-ventas-usuario-bet/pdf', [ReporteController::class, 'pdfVentasUsuarioBet']);
+    Route::get('/reportes-faltantes-bet', [ReporteController::class, 'faltantesBet']);
+    Route::get('/reportes-faltantes-bet/list', [ReporteController::class, 'listFaltantesBet']);
+    Route::get('/reportes-faltantes-bet/excel', [ReporteController::class, 'excelFaltantesBet']);
+    Route::get('/reportes-faltantes-bet/pdf', [ReporteController::class, 'pdfFaltantesBet']);
 
-Route::get('/reportes-faltantes-bet', [ReporteController::class, 'faltantesBet']);
-Route::get('/reportes-faltantes-bet/list', [ReporteController::class, 'listFaltantesBet']);
-Route::get('/reportes-faltantes-bet/excel', [ReporteController::class, 'excelFaltantesBet']);
-Route::get('/reportes-faltantes-bet/pdf', [ReporteController::class, 'pdfFaltantesBet']);
+    Route::get('/reportes-cuadre-ventas', [ReporteController::class, 'cuadreVentas']);
+    Route::get('/reportes-cuadre-ventas/list', [ReporteController::class, 'listCuadreVentas']);
 
-Route::get('/reportes-cuadre-ventas', [ReporteController::class, 'cuadreVentas']);
-Route::get('/reportes-cuadre-ventas/list', [ReporteController::class, 'listCuadreVentas']);
+    Route::get('/reportes-ventas-agencia-periodo', [ReporteController::class, 'ventasAgenciaPeriodo']);
+    Route::get('/reportes-ventas-agencia-periodo/list', [ReporteController::class, 'listVentasAgenciaPeriodo']);
 
-Route::get('/reportes-ventas-agencia-periodo', [ReporteController::class, 'ventasAgenciaPeriodo']);
-Route::get('/reportes-ventas-agencia-periodo/list', [ReporteController::class, 'listVentasAgenciaPeriodo']);
+    Route::get('/reportes-ventas-por-agencia', [ReporteController::class, 'ventasPorAgencia']);
+    Route::get('/reportes-ventas-por-agencia/list', [ReporteController::class, 'listVentasPorAgencia']);
+    Route::get('/reportes-ventas-por-agencia/agencia', [ReporteController::class, 'buscarAgencia']);
 
-Route::get('/reportes-ventas-por-agencia', [ReporteController::class, 'ventasPorAgencia']);
-Route::get('/reportes-ventas-por-agencia/list', [ReporteController::class, 'listVentasPorAgencia']);
-Route::get('/reportes-ventas-por-agencia/agencia', [ReporteController::class, 'buscarAgencia']);
+    Route::get('/reportes-ventas-por-cedula', [ReporteController::class, 'ventasPorCedula']);
+    Route::get('/reportes-ventas-por-cedula/list', [ReporteController::class, 'listVentasPorCedula']);
 
-Route::get('/reportes-ventas-por-cedula', [ReporteController::class, 'ventasPorCedula']);
-Route::get('/reportes-ventas-por-cedula/list', [ReporteController::class, 'listVentasPorCedula']);
+    Route::get('/reportes-cruce-usuarios', [ReporteController::class, 'cruceUsuarios']);
+    Route::get('/reportes-cruce-usuarios/list', [ReporteController::class, 'listCruceUsuarios']);
+    Route::get('/reportes-cruce-usuarios/sin-cedula-fechas', [ReporteController::class, 'listCruceUsuariosSinCedulaFechas']);
 
-Route::get('/reportes-cruce-usuarios', [ReporteController::class, 'cruceUsuarios']);
-Route::get('/reportes-cruce-usuarios/list', [ReporteController::class, 'listCruceUsuarios']);
-Route::get('/reportes-cruce-usuarios/sin-cedula-fechas', [ReporteController::class, 'listCruceUsuariosSinCedulaFechas']);
+    Route::get('/reportes-compensacion', [ReporteController::class, 'compensacion']);
+    Route::get('/reportes-compensacion/list', [ReporteController::class, 'listCompensacion']);
 
-Route::get('/reportes-compensacion', [ReporteController::class, 'compensacion']);
-Route::get('/reportes-compensacion/list', [ReporteController::class, 'listCompensacion']);
-
-Route::get('/reportes-verificador-usuarios', [ReporteController::class, 'verificadorUsuarios']);
-Route::get('/reportes-verificador-usuarios/list', [ReporteController::class, 'listVerificadorUsuarios']);
-Route::get('/reportes-verificador-usuarios/excel', [ReporteController::class, 'excelVerificadorUsuarios']);
-
-Route::resource('registro-empleados', RegistroEmpleadoController::class);
+    Route::get('/reportes-verificador-usuarios', [ReporteController::class, 'verificadorUsuarios']);
+    Route::get('/reportes-verificador-usuarios/list', [ReporteController::class, 'listVerificadorUsuarios']);
+    Route::get('/reportes-verificador-usuarios/excel', [ReporteController::class, 'excelVerificadorUsuarios']);
+});
 
 Route::resource('agencias', AgenciaController::class);
 Route::get('agencias-list', [AgenciaController::class, 'list'])->name('agencias.list');
@@ -511,8 +517,13 @@ Route::get('/kpi-lotobet/data', [KpiLotobetController::class, 'getData']);
 Route::get('/kpi-lotobet/productos-agencia', [KpiLotobetController::class, 'getProductosAgencia']);
 
 // ═══ Módulo de Tareas ═══
+Route::middleware('role_or_permission:superadmin|admin|module.tareas.view')->group(function () {
 Route::get('/tareas', [TareaController::class, 'index'])->name('tareas.index');
-Route::view('/tareas/proyecto', 'tareas.proyecto')->name('tareas.proyecto');
+});
+Route::view('/tareas/proyecto', 'tareas.proyecto')
+    ->middleware('role_or_permission:superadmin|admin|module.proyecto.view')
+    ->name('tareas.proyecto');
+Route::middleware('role_or_permission:superadmin|admin|module.tareas.view')->group(function () {
 Route::get('/tareas/gantt-data', [TareaController::class, 'ganttData'])->name('tareas.gantt');
 Route::get('/tareas/stats', [TareaController::class, 'stats'])->name('tareas.stats');
 Route::get('/tareas-list', [TareaController::class, 'list'])->name('tareas.list');
@@ -535,5 +546,6 @@ Route::get('/tareas/{tarea}', [TareaController::class, 'show'])->name('tareas.sh
 Route::put('/tareas/{tarea}', [TareaController::class, 'update'])->name('tareas.update');
 Route::delete('/tareas/{tarea}', [TareaController::class, 'destroy'])->name('tareas.destroy');
 Route::post('/tareas/{tarea}/comentario', [TareaController::class, 'addComentario'])->name('tareas.comentario');
+});
 
 }); // Fin middleware auth

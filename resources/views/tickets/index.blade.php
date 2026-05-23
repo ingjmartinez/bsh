@@ -175,7 +175,7 @@
                                                                 ? ['pendiente' => 'Pendiente', 'nulo' => 'Nulo']
                                                                 : ['pendiente' => 'Pendiente', 'pagado' => 'Pagado', 'ticket_pagado' => 'Ticket pagado Por otra Terminal'];
                                                         @endphp
-                                                        <form method="POST" action="{{ route('tickets.estado', $solicitud) }}" class="d-flex gap-2">
+                                                        <form method="POST" action="{{ route('tickets.estado', $solicitud) }}" class="d-flex gap-2 ticket-estado-form">
                                                             @csrf
                                                             @method('PUT')
                                                             <select class="form-select form-select-sm" name="estado">
@@ -183,6 +183,7 @@
                                                                     <option value="{{ $estadoValue }}" @selected($solicitud->estado === $estadoValue)>{{ $estadoLabel }}</option>
                                                                 @endforeach
                                                             </select>
+                                                            <input type="hidden" name="notas" value="">
                                                             <button class="btn btn-sm btn-success" type="submit">
                                                                 <i class="ri-save-3-line"></i>
                                                             </button>
@@ -277,10 +278,101 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="ticketTerminalPagoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="ticketTerminalPagoForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Ticket pagado Por otra Terminal</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label" for="terminal_pago_numero">Terminal que pago</label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="terminal_pago_numero"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            placeholder="Ej: 0705888"
+                            required>
+                        <div class="invalid-feedback">Indica el numero de terminal que pago.</div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="ri-save-3-line me-1"></i>Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('script')
     <script>
+        (function () {
+            const modalEl = document.getElementById('ticketTerminalPagoModal');
+            const modalForm = document.getElementById('ticketTerminalPagoForm');
+            const terminalInput = document.getElementById('terminal_pago_numero');
+            let pendingForm = null;
+
+            if (!modalEl || !modalForm || !terminalInput || !window.bootstrap) {
+                return;
+            }
+
+            const modal = new bootstrap.Modal(modalEl);
+
+            document.querySelectorAll('.ticket-estado-form').forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    const estado = form.querySelector('[name="estado"]')?.value || '';
+
+                    if (estado !== 'ticket_pagado' || form.dataset.confirmedTerminalPago === '1') {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    pendingForm = form;
+                    terminalInput.value = '';
+                    terminalInput.classList.remove('is-invalid');
+                    modal.show();
+                });
+            });
+
+            modalEl.addEventListener('shown.bs.modal', function () {
+                terminalInput.focus();
+            });
+
+            modalEl.addEventListener('hidden.bs.modal', function () {
+                pendingForm = null;
+                terminalInput.value = '';
+                terminalInput.classList.remove('is-invalid');
+            });
+
+            modalForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const terminal = terminalInput.value.trim();
+                if (terminal === '') {
+                    terminalInput.classList.add('is-invalid');
+                    terminalInput.focus();
+                    return;
+                }
+
+                if (!pendingForm) {
+                    modal.hide();
+                    return;
+                }
+
+                pendingForm.querySelector('[name="notas"]').value = `Terminal que pago ${terminal}`;
+                pendingForm.dataset.confirmedTerminalPago = '1';
+                modal.hide();
+                pendingForm.requestSubmit();
+            });
+        })();
+
         (function () {
             const modal = document.getElementById('ticketImageModal');
             const image = document.getElementById('ticketImagePreview');

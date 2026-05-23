@@ -61,6 +61,9 @@ class ModuleHubController extends Controller
         abort_unless(is_array($hub), 404);
 
         $user = auth()->user();
+        $isAdmin = $user && method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['superadmin', 'admin']);
+
+        abort_unless($isAdmin || ($user && $user->can("module.{$module}.view")), 403);
 
         $items = collect($hub['items'] ?? [])
             ->filter(function ($item) use ($user) {
