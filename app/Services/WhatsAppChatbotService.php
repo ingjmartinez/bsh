@@ -14,7 +14,7 @@ class WhatsAppChatbotService
     private const STEP_TICKET_NUMERO = 'ticket_numero';
     private const STEP_TICKET_IMAGEN = 'ticket_imagen';
 
-    private const MENU_MESSAGE = "Hola como estas soy el chat bot y estoy para servirte.\n\nPor favor responde solo numericamente:\n\n1- consultar el horario de servicio\n2- consultar los servicios\n3- Pagar ticket\n4- Anular ticket";
+    private const MENU_MESSAGE = "Hola. Soy el asistente virtual de BSH, comprometido contigo siempre.\n\nPara continuar, escribe solo el numero de la opcion que necesitas:\n\n1-Consultar horario de servicio\n2-Consultar servicios disponibles\n3-Pagar ticket\n4-Anular ticket\n5-Recursos Humanos\n6-Reportar averia\n\nEstoy listo para ayudarte.";
 
     public function handleIncoming(string $phone, string $message, ?string $account = null, array $incoming = []): array
     {
@@ -99,7 +99,7 @@ class WhatsAppChatbotService
             if ($message === '2') {
                 $session->step = self::STEP_INICIO;
 
-                return 'desarrollo de software';
+                return '';
             }
 
             if ($message === '3') {
@@ -120,6 +120,22 @@ class WhatsAppChatbotService
                 ];
 
                 return 'Indica el codigo del terminal que deseas anular.';
+            }
+
+            if ($message === '5') {
+                $session->step = self::STEP_INICIO;
+
+                return 'Recursos Humanos: escribe tu consulta y un representante te asistira.';
+            }
+
+            if ($message === '6') {
+                $session->step = self::STEP_TICKET_NUMERO;
+                $session->context = [
+                    'categoria' => 'reportar_averia',
+                    'categoria_label' => 'Reportar averia',
+                ];
+
+                return 'Indica el codigo del terminal con averia.';
             }
 
             return self::MENU_MESSAGE;
@@ -159,7 +175,7 @@ class WhatsAppChatbotService
         if ($ticketNumero === '') {
             $this->resetSession($session);
 
-            return 'Perdi el contexto de la solicitud. Por favor inicia de nuevo y elige la opcion 3 o 4.';
+            return 'Perdi el contexto de la solicitud. Por favor inicia de nuevo y elige la opcion 3, 4 o 6.';
         }
 
         if ($attachmentUrl === null) {
