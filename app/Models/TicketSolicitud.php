@@ -15,6 +15,7 @@ class TicketSolicitud extends Model
 
     public const ESTADO_PENDIENTE = 'pendiente';
     public const ESTADO_PAGADO = 'pagado';
+    public const ESTADO_TICKET_PAGADO = 'ticket_pagado';
     public const ESTADO_NULO = 'nulo';
 
     protected $fillable = [
@@ -78,6 +79,7 @@ class TicketSolicitud extends Model
     {
         return match ($this->estado) {
             self::ESTADO_PAGADO => 'Pagado',
+            self::ESTADO_TICKET_PAGADO => 'Ticket pagado',
             self::ESTADO_NULO => 'Nulo',
             default => 'Pendiente',
         };
@@ -87,6 +89,7 @@ class TicketSolicitud extends Model
     {
         return match ($this->estado) {
             self::ESTADO_PAGADO => 'success',
+            self::ESTADO_TICKET_PAGADO => 'success',
             self::ESTADO_NULO => 'danger',
             default => 'warning',
         };

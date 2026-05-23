@@ -105,6 +105,7 @@
                                             <option value="">Todos</option>
                                             <option value="pendiente" @selected(($filtros['estado'] ?? '') === 'pendiente')>Pendiente</option>
                                             <option value="pagado" @selected(($filtros['estado'] ?? '') === 'pagado')>Pagado</option>
+                                            <option value="ticket_pagado" @selected(($filtros['estado'] ?? '') === 'ticket_pagado')>Ticket pagado</option>
                                             <option value="nulo" @selected(($filtros['estado'] ?? '') === 'nulo')>Nulo</option>
                                         </select>
                                     </div>
@@ -172,7 +173,7 @@
                                                         @php
                                                             $estadosGestion = $solicitud->categoria === 'anular_ticket'
                                                                 ? ['pendiente' => 'Pendiente', 'nulo' => 'Nulo']
-                                                                : ['pendiente' => 'Pendiente', 'pagado' => 'Pagado'];
+                                                                : ['pendiente' => 'Pendiente', 'pagado' => 'Pagado', 'ticket_pagado' => 'Ticket pagado'];
                                                         @endphp
                                                         <form method="POST" action="{{ route('tickets.estado', $solicitud) }}" class="d-flex gap-2">
                                                             @csrf

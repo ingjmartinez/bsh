@@ -44,7 +44,7 @@ class TicketSolicitudController extends Controller
         $stats = [
             'total' => (clone $baseQuery)->count(),
             'pendientes' => (clone $baseQuery)->where('estado', TicketSolicitud::ESTADO_PENDIENTE)->count(),
-            'pagados' => (clone $baseQuery)->where('estado', TicketSolicitud::ESTADO_PAGADO)->count(),
+            'pagados' => (clone $baseQuery)->whereIn('estado', [TicketSolicitud::ESTADO_PAGADO, TicketSolicitud::ESTADO_TICKET_PAGADO])->count(),
             'nulos' => (clone $baseQuery)->where('estado', TicketSolicitud::ESTADO_NULO)->count(),
             'pagar' => (clone $baseQuery)->where('categoria', TicketSolicitud::CATEGORIA_PAGAR)->count(),
             'anular' => (clone $baseQuery)->where('categoria', TicketSolicitud::CATEGORIA_ANULAR)->count(),
@@ -155,7 +155,7 @@ class TicketSolicitudController extends Controller
             return;
         }
 
-        if (!in_array($ticket->estado, [TicketSolicitud::ESTADO_PAGADO, TicketSolicitud::ESTADO_NULO], true)) {
+        if (!in_array($ticket->estado, [TicketSolicitud::ESTADO_PAGADO, TicketSolicitud::ESTADO_TICKET_PAGADO, TicketSolicitud::ESTADO_NULO], true)) {
             return;
         }
 
@@ -226,10 +226,12 @@ class TicketSolicitudController extends Controller
             TicketSolicitud::CATEGORIA_PAGAR => [
                 TicketSolicitud::ESTADO_PENDIENTE,
                 TicketSolicitud::ESTADO_PAGADO,
+                TicketSolicitud::ESTADO_TICKET_PAGADO,
             ],
             default => [
                 TicketSolicitud::ESTADO_PENDIENTE,
                 TicketSolicitud::ESTADO_PAGADO,
+                TicketSolicitud::ESTADO_TICKET_PAGADO,
                 TicketSolicitud::ESTADO_NULO,
             ],
         };
