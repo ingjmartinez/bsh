@@ -79,7 +79,7 @@ class TicketSolicitud extends Model
     {
         return match ($this->estado) {
             self::ESTADO_PAGADO => 'Pagado',
-            self::ESTADO_TICKET_PAGADO => 'Ticket pagado',
+            self::ESTADO_TICKET_PAGADO => 'Ticket pagado Por otra Terminal',
             self::ESTADO_NULO => 'Nulo',
             default => 'Pendiente',
         };
