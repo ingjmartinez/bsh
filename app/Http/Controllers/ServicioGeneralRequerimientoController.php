@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use App\Services\WhatsAppService;
 
 class ServicioGeneralRequerimientoController extends Controller
 {
@@ -36,6 +37,10 @@ class ServicioGeneralRequerimientoController extends Controller
         'sistema_frizado',
         'inversor',
     ];
+
+    public function __construct(private readonly WhatsAppService $whatsAppService)
+    {
+    }
 
     public function index()
     {
@@ -205,6 +210,8 @@ class ServicioGeneralRequerimientoController extends Controller
         $requerimiento->save();
         $requerimiento->load(['creador:id,name,email', 'asignado:id,name,email', 'cierreSolicitadoPor:id,name']);
 
+        $this->notifyRequesterByWhatsApp($requerimiento, 'Se solicito el cierre de tu requerimiento.');
+
         if ($requerimiento->creador && (int) $requerimiento->creador->id !== (int) auth()->id()) {
             $requerimiento->creador->notify(
                 new ServicioGeneralRequerimientoCierreSolicitadoNotification($requerimiento, auth()->user())
@@ -245,6 +252,8 @@ class ServicioGeneralRequerimientoController extends Controller
         }
         $requerimiento->save();
         $requerimiento->load(['creador:id,name,email', 'asignado:id,name,email', 'cierreSolicitadoPor:id,name']);
+
+        $this->notifyRequesterByWhatsApp($requerimiento, 'Tu requerimiento fue finalizado.');
 
         $destinatarios = collect([
             $requerimiento->creador,
@@ -353,6 +362,10 @@ class ServicioGeneralRequerimientoController extends Controller
             });
         }
 
+        if ($estadoCambio || $asignadoCambio || $detalleCambio || $progresoCambio) {
+            $this->notifyRequesterByWhatsApp($requerimiento, 'Tu requerimiento fue actualizado.');
+        }
+
         if ($requerimiento->estado === 'solicitud_cierre' && $requerimiento->creador && (int) $requerimiento->creador->id !== (int) auth()->id()) {
             $requerimiento->creador->notify(
                 new ServicioGeneralRequerimientoCierreSolicitadoNotification($requerimiento, auth()->user())
@@ -382,6 +395,8 @@ class ServicioGeneralRequerimientoController extends Controller
             'badge_estado' => $r->badge_estado,
             'progreso' => (int) $r->progreso,
             'detalle_solucion' => $r->detalle_solucion,
+            'attachment_url' => $r->attachment_url,
+            'attachment_message_id' => $r->attachment_message_id,
             'solicitante' => $r->creador->name ?? 'N/D',
             'solicitante_email' => $r->creador->email ?? '',
             'asignado_id' => $r->asignado_id,
@@ -527,5 +542,55 @@ class ServicioGeneralRequerimientoController extends Controller
 
             return false;
         });
+    }
+
+    private function notifyRequesterByWhatsApp(ServicioGeneralRequerimiento $requerimiento, string $intro): void
+    {
+        $recipient = $this->formatWhatsappRecipient((string) $requerimiento->whatsapp_phone);
+
+        if ($recipient === null) {
+            return;
+        }
+
+        $message = "{$intro}\n\n"
+            . "Codigo: {$requerimiento->ticket_codigo}\n"
+            . "Tipo: {$requerimiento->tipo_label}\n"
+            . "Estado: " . $this->estadoLabel((string) $requerimiento->estado) . "\n"
+            . "Progreso: {$requerimiento->progreso}%\n"
+            . "Asignado: " . ($requerimiento->asignado->name ?? 'Sin asignar');
+
+        if (trim((string) $requerimiento->detalle_solucion) !== '') {
+            $message .= "\nDetalle: " . trim((string) $requerimiento->detalle_solucion);
+        }
+
+        try {
+            $this->whatsAppService->sendText($recipient, $message);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    private function formatWhatsappRecipient(string $phone): ?string
+    {
+        $digits = preg_replace('/\D+/', '', $phone) ?? '';
+
+        if ($digits === '' || strlen($digits) < 8) {
+            return null;
+        }
+
+        return str_starts_with($phone, '+') ? $phone : '+' . $digits;
+    }
+
+    private function estadoLabel(string $estado): string
+    {
+        return match ($estado) {
+            'asignada' => 'Asignada',
+            'en_progreso' => 'En progreso',
+            'en_espera' => 'En espera',
+            'solicitud_cierre' => 'Solicitud de cierre',
+            'resuelta' => 'Resuelta',
+            'cancelada' => 'Cancelada',
+            default => 'Pendiente',
+        };
     }
 }

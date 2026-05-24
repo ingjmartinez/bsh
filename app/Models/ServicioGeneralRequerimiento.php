@@ -11,6 +11,7 @@ class ServicioGeneralRequerimiento extends Model
 
     protected $fillable = [
         'user_id',
+        'whatsapp_phone',
         'asignado_id',
         'tipo',
         'titulo',
@@ -19,6 +20,8 @@ class ServicioGeneralRequerimiento extends Model
         'estado',
         'progreso',
         'detalle_solucion',
+        'attachment_url',
+        'attachment_message_id',
         'cierre_solicitado_at',
         'cierre_solicitado_por',
         'asignado_at',

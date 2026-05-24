@@ -303,6 +303,7 @@
                                                 <th style="width: 180px;">Tipo</th>
                                                 <th style="width: 120px;">Prioridad</th>
                                                 <th style="width: 140px;">Estado</th>
+                                                <th style="width: 110px;">Imagen</th>
                                                 <th style="width: 190px;">Progreso</th>
                                                 <th style="width: 180px;">Solicitante</th>
                                                 <th style="width: 180px;">Asignado</th>
@@ -312,7 +313,7 @@
                                         </thead>
                                         <tbody id="solicitudesTableBody">
                                             <tr>
-                                                <td colspan="10" class="text-center text-muted py-4">Cargando requerimientos...</td>
+                                                <td colspan="11" class="text-center text-muted py-4">Cargando requerimientos...</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -320,6 +321,22 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalImagenRequerimiento" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalImagenRequerimientoTitulo">Imagen del requerimiento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <a id="modalImagenRequerimientoLink" href="#" target="_blank" rel="noopener noreferrer">
+                        <img id="modalImagenRequerimientoPreview" src="" alt="Imagen del requerimiento" class="img-fluid rounded border">
+                    </a>
                 </div>
             </div>
         </div>
@@ -427,6 +444,7 @@
         const TEC_SOLICITUDES_FINALIZE_BASE_URL = '{{ url('/servicios-generales/requerimientos') }}';
         const TEC_CSRF = '{{ csrf_token() }}';
         const modalSolicitud = new bootstrap.Modal(document.getElementById('modalSolicitudTecnologia'));
+        const modalImagenRequerimiento = new bootstrap.Modal(document.getElementById('modalImagenRequerimiento'));
 
         document.addEventListener('DOMContentLoaded', function() {
             bindTecnologiaEvents();
@@ -538,7 +556,7 @@
             const tableBody = document.getElementById('solicitudesTableBody');
 
             if (!items.length) {
-                tableBody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-4">No hay requerimientos para los filtros seleccionados.</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-4">No hay requerimientos para los filtros seleccionados.</td></tr>';
                 return;
             }
 
@@ -553,6 +571,7 @@
                         <td><span class="badge bg-${escapeHtml(item.badge_tipo)}-subtle text-${escapeHtml(item.badge_tipo)}">${escapeHtml(item.tipo_label || formatLabel(item.tipo))}</span></td>
                         <td><span class="badge bg-${escapeHtml(item.badge_prioridad)}-subtle text-${escapeHtml(item.badge_prioridad)}">${escapeHtml(formatLabel(item.prioridad))}</span></td>
                         <td><span class="badge bg-${escapeHtml(item.badge_estado)}-subtle text-${escapeHtml(item.badge_estado)}">${escapeHtml(formatLabel(item.estado))}</span></td>
+                        <td>${renderAttachmentCell(item)}</td>
                         <td>${renderProgressCell(item)}</td>
                         <td>
                             <div>${escapeHtml(item.solicitante)}</div>
@@ -571,6 +590,13 @@
                     </tr>
                 `;
             }).join('');
+        }
+
+        function abrirImagenRequerimiento(url, codigo) {
+            document.getElementById('modalImagenRequerimientoPreview').src = url;
+            document.getElementById('modalImagenRequerimientoLink').href = url;
+            document.getElementById('modalImagenRequerimientoTitulo').textContent = `Imagen de ${codigo}`;
+            modalImagenRequerimiento.show();
         }
 
         function abrirModalEdicion(id) {
@@ -784,6 +810,18 @@
             return `${text.slice(0, maxLength - 3)}...`;
         }
 
+        function renderAttachmentCell(item) {
+            if (!item.attachment_url) {
+                return '<span class="text-muted">Sin imagen</span>';
+            }
+
+            return `
+                <button type="button" class="btn btn-sm btn-info" onclick="abrirImagenRequerimiento('${escapeJs(item.attachment_url)}', '${escapeJs(item.ticket_codigo)}')">
+                    <i class="ri-image-2-line me-1"></i>Ver
+                </button>
+            `;
+        }
+
         function renderProgressCell(item) {
             const progreso = Number(item.progreso || 0);
 
@@ -798,6 +836,14 @@
                     </div>
                 </div>
             `;
+        }
+
+        function escapeJs(value) {
+            return String(value ?? '')
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'")
+                .replace(/\n/g, '\\n')
+                .replace(/\r/g, '\\r');
         }
     </script>
 @endsection
