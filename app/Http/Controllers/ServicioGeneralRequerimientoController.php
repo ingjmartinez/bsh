@@ -64,54 +64,8 @@ class ServicioGeneralRequerimientoController extends Controller
             ]);
         }
 
-        $query = $this->visibleQueryFor(auth()->user())
+        $query = $this->filteredVisibleQuery($request)
             ->with(['creador:id,name,email', 'asignado:id,name,email', 'cierreSolicitadoPor:id,name']);
-
-        if ($request->filled('requerimiento_id') && is_numeric($request->requerimiento_id)) {
-            $query->where('id', (int) $request->requerimiento_id);
-        }
-
-        if ($request->filled('tipo')) {
-            $query->where('tipo', $request->tipo);
-        }
-
-        if ($request->filled('estado')) {
-            $query->where('estado', $request->estado);
-        }
-
-        if ($request->filled('prioridad')) {
-            $query->where('prioridad', $request->prioridad);
-        }
-
-        if ($request->filled('asignado_id')) {
-            $query->where('asignado_id', $request->asignado_id);
-        }
-
-        if ($request->boolean('solo_mias')) {
-            $query->where(function ($subQuery) {
-                $subQuery->where('user_id', auth()->id())
-                    ->orWhere('asignado_id', auth()->id());
-            });
-        }
-
-        if ($request->filled('search')) {
-            $search = trim((string) $request->search);
-
-            $query->where(function ($subQuery) use ($search) {
-                if (preg_match('/^REQ-(\d+)$/i', $search, $matches)) {
-                    $subQuery->orWhere('id', (int) $matches[1]);
-                }
-
-                if (is_numeric($search)) {
-                    $subQuery->orWhere('id', (int) $search);
-                }
-
-                $subQuery->orWhere('titulo', 'like', '%' . $search . '%')
-                    ->orWhere('descripcion', 'like', '%' . $search . '%')
-                    ->orWhereHas('creador', fn($userQuery) => $userQuery->where('name', 'like', '%' . $search . '%'))
-                    ->orWhereHas('asignado', fn($userQuery) => $userQuery->where('name', 'like', '%' . $search . '%'));
-            });
-        }
 
         $requerimientos = $query
             ->orderByDesc('created_at')
@@ -121,6 +75,23 @@ class ServicioGeneralRequerimientoController extends Controller
         return response()->json([
             'data' => $requerimientos,
             'stats' => $this->statsFor(auth()->user()),
+            'signature' => $this->buildFeedSignature($this->filteredVisibleQuery($request)),
+        ]);
+    }
+
+    public function activity(Request $request): JsonResponse
+    {
+        if (!$this->tablaExiste()) {
+            return response()->json([
+                'setup_pending' => true,
+                'signature' => 'setup-pending',
+            ]);
+        }
+
+        return response()->json([
+            'setup_pending' => false,
+            'signature' => $this->buildFeedSignature($this->filteredVisibleQuery($request)),
+            'server_time' => now()->toIso8601String(),
         ]);
     }
 
@@ -433,6 +404,72 @@ class ServicioGeneralRequerimientoController extends Controller
             $subQuery->where('user_id', $user->id)
                 ->orWhere('asignado_id', $user->id);
         });
+    }
+
+    private function filteredVisibleQuery(Request $request)
+    {
+        $query = $this->visibleQueryFor(auth()->user());
+
+        if ($request->filled('requerimiento_id') && is_numeric($request->requerimiento_id)) {
+            $query->where('id', (int) $request->requerimiento_id);
+        }
+
+        if ($request->filled('tipo')) {
+            $query->where('tipo', $request->tipo);
+        }
+
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado);
+        }
+
+        if ($request->filled('prioridad')) {
+            $query->where('prioridad', $request->prioridad);
+        }
+
+        if ($request->filled('asignado_id')) {
+            $query->where('asignado_id', $request->asignado_id);
+        }
+
+        if ($request->boolean('solo_mias')) {
+            $query->where(function ($subQuery) {
+                $subQuery->where('user_id', auth()->id())
+                    ->orWhere('asignado_id', auth()->id());
+            });
+        }
+
+        if ($request->filled('search')) {
+            $search = trim((string) $request->search);
+
+            $query->where(function ($subQuery) use ($search) {
+                if (preg_match('/^REQ-(\d+)$/i', $search, $matches)) {
+                    $subQuery->orWhere('id', (int) $matches[1]);
+                }
+
+                if (is_numeric($search)) {
+                    $subQuery->orWhere('id', (int) $search);
+                }
+
+                $subQuery->orWhere('titulo', 'like', '%' . $search . '%')
+                    ->orWhere('descripcion', 'like', '%' . $search . '%')
+                    ->orWhereHas('creador', fn($userQuery) => $userQuery->where('name', 'like', '%' . $search . '%'))
+                    ->orWhereHas('asignado', fn($userQuery) => $userQuery->where('name', 'like', '%' . $search . '%'));
+            });
+        }
+
+        return $query;
+    }
+
+    private function buildFeedSignature($query): string
+    {
+        $snapshot = (clone $query)
+            ->selectRaw('COUNT(*) as total, MAX(updated_at) as last_activity_at, MAX(id) as max_id')
+            ->first();
+
+        $total = (int) ($snapshot->total ?? 0);
+        $lastActivity = (string) ($snapshot->last_activity_at ?? '');
+        $maxId = (int) ($snapshot->max_id ?? 0);
+
+        return sha1($total . '|' . $lastActivity . '|' . $maxId);
     }
 
     private function statsFor(User $user): array

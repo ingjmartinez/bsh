@@ -471,6 +471,7 @@ Route::prefix('servicios-generales')->name('servicios-generales.')
         Route::get('/', [ModuleHubController::class, 'serviciosGenerales'])->name('index');
         Route::get('/requerimientos', [ServicioGeneralRequerimientoController::class, 'index'])->name('requerimientos.index');
         Route::get('/requerimientos/list', [ServicioGeneralRequerimientoController::class, 'list'])->name('requerimientos.list');
+        Route::get('/requerimientos/activity', [ServicioGeneralRequerimientoController::class, 'activity'])->name('requerimientos.activity');
         Route::post('/requerimientos', [ServicioGeneralRequerimientoController::class, 'store'])
             ->middleware('permission:servicios_generales.create')
             ->name('requerimientos.store');

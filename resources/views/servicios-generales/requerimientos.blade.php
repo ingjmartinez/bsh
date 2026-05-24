@@ -440,15 +440,19 @@
     <script>
         const TEC_SOLICITUDES_BASE_URL = '{{ url('/servicios-generales/requerimientos') }}';
         const TEC_SOLICITUDES_LIST_URL = '{{ route('servicios-generales.requerimientos.list') }}';
+        const TEC_SOLICITUDES_ACTIVITY_URL = '{{ route('servicios-generales.requerimientos.activity') }}';
         const TEC_SOLICITUDES_REQUEST_CLOSE_BASE_URL = '{{ url('/servicios-generales/requerimientos') }}';
         const TEC_SOLICITUDES_FINALIZE_BASE_URL = '{{ url('/servicios-generales/requerimientos') }}';
         const TEC_CSRF = '{{ csrf_token() }}';
         const modalSolicitud = new bootstrap.Modal(document.getElementById('modalSolicitudTecnologia'));
         const modalImagenRequerimiento = new bootstrap.Modal(document.getElementById('modalImagenRequerimiento'));
+        let currentFeedSignature = null;
+        let activityPollTimer = null;
 
         document.addEventListener('DOMContentLoaded', function() {
             bindTecnologiaEvents();
             cargarSolicitudes(getSolicitudIdFromUrl());
+            startActivityPolling();
         });
 
         function bindTecnologiaEvents() {
@@ -507,8 +511,33 @@
         }
 
         function cargarSolicitudes(openSolicitudId = null) {
-            const params = new URLSearchParams();
+            const params = buildSolicitudParams();
+            if (openSolicitudId) params.append('requerimiento_id', String(openSolicitudId));
 
+            fetch(`${TEC_SOLICITUDES_LIST_URL}?${params.toString()}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(handleJsonResponse)
+                .then(response => {
+                    currentFeedSignature = response.signature || currentFeedSignature;
+                    renderStats(response.stats || {});
+                    renderSolicitudes(response.data || []);
+
+                    if (openSolicitudId) {
+                        const requerimiento = (response.data || []).find(item => item.id === openSolicitudId);
+                        if (requerimiento) {
+                            abrirModalEdicion(openSolicitudId);
+                        }
+                    }
+                })
+                .catch(showRequestError);
+        }
+
+        function buildSolicitudParams() {
+            const params = new URLSearchParams();
             const tipo = document.getElementById('filtro-tipo').value;
             const estado = document.getElementById('filtro-estado').value;
             const prioridad = document.getElementById('filtro-prioridad').value;
@@ -522,27 +551,64 @@
             if (asignadoId) params.append('asignado_id', asignadoId);
             if (search) params.append('search', search);
             if (soloMias) params.append('solo_mias', '1');
-            if (openSolicitudId) params.append('requerimiento_id', String(openSolicitudId));
 
-            fetch(`${TEC_SOLICITUDES_LIST_URL}?${params.toString()}`, {
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+            return params;
+        }
+
+        function startActivityPolling() {
+            activityPollTimer = window.setInterval(checkSolicitudActivity, 5000);
+
+            window.addEventListener('beforeunload', function () {
+                if (activityPollTimer) {
+                    window.clearInterval(activityPollTimer);
                 }
-            })
-                .then(handleJsonResponse)
-                .then(response => {
-                    renderStats(response.stats || {});
-                    renderSolicitudes(response.data || []);
+            });
+        }
 
-                    if (openSolicitudId) {
-                        const requerimiento = (response.data || []).find(item => item.id === openSolicitudId);
-                        if (requerimiento) {
-                            abrirModalEdicion(openSolicitudId);
-                        }
-                    }
-                })
-                .catch(showRequestError);
+        async function checkSolicitudActivity() {
+            if (document.hidden) {
+                return;
+            }
+
+            const modalAbierto = document.body.classList.contains('modal-open');
+            if (modalAbierto) {
+                return;
+            }
+
+            try {
+                const params = buildSolicitudParams();
+                const response = await fetch(`${TEC_SOLICITUDES_ACTIVITY_URL}?${params.toString()}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    cache: 'no-store',
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                const signature = data?.signature || null;
+
+                if (!signature) {
+                    return;
+                }
+
+                if (currentFeedSignature === null) {
+                    currentFeedSignature = signature;
+                    return;
+                }
+
+                if (signature !== currentFeedSignature) {
+                    currentFeedSignature = signature;
+                    cargarSolicitudes();
+                }
+            } catch (error) {
+                // Polling silencioso para no interrumpir al usuario.
+            }
         }
 
         function renderStats(stats) {
