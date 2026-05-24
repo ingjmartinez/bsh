@@ -119,6 +119,10 @@ class TicketSolicitudController extends Controller
             return back()->withErrors(['tickets' => 'La tabla del modulo aun no existe. Ejecuta las migraciones.']);
         }
 
+        if ($ticket->estado !== TicketSolicitud::ESTADO_PENDIENTE) {
+            return back()->withErrors(['tickets' => 'Este ticket ya fue gestionado y no puede cambiar de estado.']);
+        }
+
         $estadosPermitidos = $this->allowedEstadosForCategoria((string) $ticket->categoria);
 
         $validated = $request->validate([

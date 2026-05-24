@@ -170,24 +170,28 @@
                                                     </td>
                                                     <td>{{ optional($solicitud->created_at)->format('d/m/Y h:i A') }}</td>
                                                     <td style="min-width: 260px;">
-                                                        @php
-                                                            $estadosGestion = $solicitud->categoria === 'anular_ticket'
-                                                                ? ['pendiente' => 'Pendiente', 'nulo' => 'Nulo']
-                                                                : ['pendiente' => 'Pendiente', 'pagado' => 'Pagado', 'ticket_pagado' => 'Ticket pagado Por otra Terminal'];
-                                                        @endphp
-                                                        <form method="POST" action="{{ route('tickets.estado', $solicitud) }}" class="d-flex gap-2 ticket-estado-form">
-                                                            @csrf
-                                                            @method('PUT')
-                                                            <select class="form-select form-select-sm" name="estado">
-                                                                @foreach ($estadosGestion as $estadoValue => $estadoLabel)
-                                                                    <option value="{{ $estadoValue }}" @selected($solicitud->estado === $estadoValue)>{{ $estadoLabel }}</option>
-                                                                @endforeach
-                                                            </select>
-                                                            <input type="hidden" name="notas" value="">
-                                                            <button class="btn btn-sm btn-success" type="submit">
-                                                                <i class="ri-save-3-line"></i>
-                                                            </button>
-                                                        </form>
+                                                        @if ($solicitud->estado === 'pendiente')
+                                                            @php
+                                                                $estadosGestion = $solicitud->categoria === 'anular_ticket'
+                                                                    ? ['pendiente' => 'Pendiente', 'nulo' => 'Nulo']
+                                                                    : ['pendiente' => 'Pendiente', 'pagado' => 'Pagado', 'ticket_pagado' => 'Ticket pagado Por otra Terminal'];
+                                                            @endphp
+                                                            <form method="POST" action="{{ route('tickets.estado', $solicitud) }}" class="d-flex gap-2 ticket-estado-form">
+                                                                @csrf
+                                                                @method('PUT')
+                                                                <select class="form-select form-select-sm" name="estado">
+                                                                    @foreach ($estadosGestion as $estadoValue => $estadoLabel)
+                                                                        <option value="{{ $estadoValue }}" @selected($solicitud->estado === $estadoValue)>{{ $estadoLabel }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                                <input type="hidden" name="notas" value="">
+                                                                <button class="btn btn-sm btn-success" type="submit">
+                                                                    <i class="ri-save-3-line"></i>
+                                                                </button>
+                                                            </form>
+                                                        @else
+                                                            <span class="text-muted">Gestion cerrada</span>
+                                                        @endif
                                                         @if ($solicitud->procesadoPor)
                                                             <small class="text-muted d-block mt-1">
                                                                 Por {{ $solicitud->procesadoPor->name }} - {{ optional($solicitud->procesado_at)->format('d/m/Y h:i A') }}
