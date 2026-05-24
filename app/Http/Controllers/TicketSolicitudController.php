@@ -48,6 +48,7 @@ class TicketSolicitudController extends Controller
             'nulos' => (clone $baseQuery)->where('estado', TicketSolicitud::ESTADO_NULO)->count(),
             'pagar' => (clone $baseQuery)->where('categoria', TicketSolicitud::CATEGORIA_PAGAR)->count(),
             'anular' => (clone $baseQuery)->where('categoria', TicketSolicitud::CATEGORIA_ANULAR)->count(),
+            'averia' => (clone $baseQuery)->where('categoria', TicketSolicitud::CATEGORIA_AVERIA)->count(),
         ];
 
         $solicitudes = (clone $baseQuery)
@@ -119,10 +120,6 @@ class TicketSolicitudController extends Controller
             return back()->withErrors(['tickets' => 'La tabla del modulo aun no existe. Ejecuta las migraciones.']);
         }
 
-        if ($ticket->estado !== TicketSolicitud::ESTADO_PENDIENTE) {
-            return back()->withErrors(['tickets' => 'Este ticket ya fue gestionado y no puede cambiar de estado.']);
-        }
-
         $estadosPermitidos = $this->allowedEstadosForCategoria((string) $ticket->categoria);
 
         $validated = $request->validate([
@@ -137,6 +134,10 @@ class TicketSolicitudController extends Controller
             'estado.in' => 'El estado seleccionado no es valido para esta categoria de ticket.',
             'notas.required' => 'Debes indicar la terminal que pago.',
         ]);
+
+        if ($this->isEstadoCerrado($ticket)) {
+            return back()->withErrors(['tickets' => 'Este ticket ya fue gestionado y no puede cambiar de estado.']);
+        }
 
         $estadoAnterior = (string) $ticket->estado;
 
@@ -165,7 +166,21 @@ class TicketSolicitudController extends Controller
             return;
         }
 
-        if (!in_array($ticket->estado, [TicketSolicitud::ESTADO_PAGADO, TicketSolicitud::ESTADO_TICKET_PAGADO, TicketSolicitud::ESTADO_NULO], true)) {
+        if (!in_array($ticket->estado, [
+            TicketSolicitud::ESTADO_PENDIENTE,
+            TicketSolicitud::ESTADO_PAGADO,
+            TicketSolicitud::ESTADO_TICKET_PAGADO,
+            TicketSolicitud::ESTADO_NULO,
+            TicketSolicitud::ESTADO_EN_PROCESO,
+            TicketSolicitud::ESTADO_AVERIA_CERRADA,
+        ], true)) {
+            return;
+        }
+
+        if (
+            in_array($ticket->estado, [TicketSolicitud::ESTADO_PENDIENTE, TicketSolicitud::ESTADO_EN_PROCESO, TicketSolicitud::ESTADO_AVERIA_CERRADA], true)
+            && $ticket->categoria !== TicketSolicitud::CATEGORIA_AVERIA
+        ) {
             return;
         }
 
@@ -177,10 +192,10 @@ class TicketSolicitudController extends Controller
 
         $terminalDetail = $this->terminalDetailLine($ticket);
 
-        $message = "Hola, tu solicitud {$ticket->codigo} ya fue resuelta.\n\n"
+        $message = "Hola, tu solicitud {$ticket->codigo} fue actualizada.\n\n"
             . "Categoria: {$ticket->categoria_label}\n"
             . "Codigo terminal: {$ticket->ticket_numero}\n"
-            . "Estado final: {$ticket->estado_label}\n\n"
+            . "Estado actual: {$ticket->estado_label}\n\n"
             . ($terminalDetail !== null ? $terminalDetail . "\n\n" : '')
             . "Gracias por comunicarte con nosotros.";
 
@@ -248,6 +263,7 @@ class TicketSolicitudController extends Controller
             'nulos' => 0,
             'pagar' => 0,
             'anular' => 0,
+            'averia' => 0,
         ];
     }
 
@@ -257,6 +273,11 @@ class TicketSolicitudController extends Controller
             TicketSolicitud::CATEGORIA_ANULAR => [
                 TicketSolicitud::ESTADO_PENDIENTE,
                 TicketSolicitud::ESTADO_NULO,
+            ],
+            TicketSolicitud::CATEGORIA_AVERIA => [
+                TicketSolicitud::ESTADO_PENDIENTE,
+                TicketSolicitud::ESTADO_EN_PROCESO,
+                TicketSolicitud::ESTADO_AVERIA_CERRADA,
             ],
             TicketSolicitud::CATEGORIA_PAGAR => [
                 TicketSolicitud::ESTADO_PENDIENTE,
@@ -283,5 +304,15 @@ class TicketSolicitudController extends Controller
         $maxId = (int) ($snapshot->max_id ?? 0);
 
         return sha1($total . '|' . $lastActivity . '|' . $maxId);
+    }
+
+    private function isEstadoCerrado(TicketSolicitud $ticket): bool
+    {
+        return in_array($ticket->estado, [
+            TicketSolicitud::ESTADO_PAGADO,
+            TicketSolicitud::ESTADO_TICKET_PAGADO,
+            TicketSolicitud::ESTADO_NULO,
+            TicketSolicitud::ESTADO_AVERIA_CERRADA,
+        ], true);
     }
 }

@@ -12,11 +12,14 @@ class TicketSolicitud extends Model
 
     public const CATEGORIA_PAGAR = 'pagar_ticket';
     public const CATEGORIA_ANULAR = 'anular_ticket';
+    public const CATEGORIA_AVERIA = 'reportar_averia';
 
     public const ESTADO_PENDIENTE = 'pendiente';
+    public const ESTADO_EN_PROCESO = 'en_proceso';
     public const ESTADO_PAGADO = 'pagado';
     public const ESTADO_TICKET_PAGADO = 'ticket_pagado';
     public const ESTADO_NULO = 'nulo';
+    public const ESTADO_AVERIA_CERRADA = 'averia_cerrada';
 
     protected $fillable = [
         'phone',
@@ -71,6 +74,7 @@ class TicketSolicitud extends Model
         return match ($this->categoria) {
             self::CATEGORIA_PAGAR => 'Pagar ticket',
             self::CATEGORIA_ANULAR => 'Anular ticket',
+            self::CATEGORIA_AVERIA => 'Reportar averia',
             default => ucfirst(str_replace('_', ' ', (string) $this->categoria)),
         };
     }
@@ -78,9 +82,11 @@ class TicketSolicitud extends Model
     public function getEstadoLabelAttribute(): string
     {
         return match ($this->estado) {
+            self::ESTADO_EN_PROCESO => 'En Proceso',
             self::ESTADO_PAGADO => 'Pagado',
             self::ESTADO_TICKET_PAGADO => 'Ticket pagado Por otra Terminal',
             self::ESTADO_NULO => 'Nulo',
+            self::ESTADO_AVERIA_CERRADA => 'Averia Cerrada',
             default => 'Pendiente',
         };
     }
@@ -88,9 +94,11 @@ class TicketSolicitud extends Model
     public function getEstadoBadgeAttribute(): string
     {
         return match ($this->estado) {
+            self::ESTADO_EN_PROCESO => 'info',
             self::ESTADO_PAGADO => 'success',
             self::ESTADO_TICKET_PAGADO => 'success',
             self::ESTADO_NULO => 'danger',
+            self::ESTADO_AVERIA_CERRADA => 'success',
             default => 'warning',
         };
     }

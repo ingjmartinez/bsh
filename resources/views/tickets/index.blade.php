@@ -97,6 +97,7 @@
                                             <option value="">Todas</option>
                                             <option value="pagar_ticket" @selected(($filtros['categoria'] ?? '') === 'pagar_ticket')>Pagar ticket</option>
                                             <option value="anular_ticket" @selected(($filtros['categoria'] ?? '') === 'anular_ticket')>Anular ticket</option>
+                                            <option value="reportar_averia" @selected(($filtros['categoria'] ?? '') === 'reportar_averia')>Reportar averia</option>
                                         </select>
                                     </div>
                                     <div class="col-md-2">
@@ -107,6 +108,8 @@
                                             <option value="pagado" @selected(($filtros['estado'] ?? '') === 'pagado')>Pagado</option>
                                             <option value="ticket_pagado" @selected(($filtros['estado'] ?? '') === 'ticket_pagado')>Ticket pagado Por otra Terminal</option>
                                             <option value="nulo" @selected(($filtros['estado'] ?? '') === 'nulo')>Nulo</option>
+                                            <option value="en_proceso" @selected(($filtros['estado'] ?? '') === 'en_proceso')>En Proceso</option>
+                                            <option value="averia_cerrada" @selected(($filtros['estado'] ?? '') === 'averia_cerrada')>Averia Cerrada</option>
                                         </select>
                                     </div>
                                     <div class="col-md-2">
@@ -170,11 +173,13 @@
                                                     </td>
                                                     <td>{{ optional($solicitud->created_at)->format('d/m/Y h:i A') }}</td>
                                                     <td style="min-width: 260px;">
-                                                        @if ($solicitud->estado === 'pendiente')
+                                                        @if (!in_array($solicitud->estado, ['pagado', 'ticket_pagado', 'nulo', 'averia_cerrada'], true))
                                                             @php
-                                                                $estadosGestion = $solicitud->categoria === 'anular_ticket'
-                                                                    ? ['pendiente' => 'Pendiente', 'nulo' => 'Nulo']
-                                                                    : ['pendiente' => 'Pendiente', 'pagado' => 'Pagado', 'ticket_pagado' => 'Ticket pagado Por otra Terminal'];
+                                                                $estadosGestion = match ($solicitud->categoria) {
+                                                                    'anular_ticket' => ['pendiente' => 'Pendiente', 'nulo' => 'Nulo'],
+                                                                    'reportar_averia' => ['pendiente' => 'Pendiente', 'en_proceso' => 'En Proceso', 'averia_cerrada' => 'Averia Cerrada'],
+                                                                    default => ['pendiente' => 'Pendiente', 'pagado' => 'Pagado', 'ticket_pagado' => 'Ticket pagado Por otra Terminal'],
+                                                                };
                                                             @endphp
                                                             <form method="POST" action="{{ route('tickets.estado', $solicitud) }}" class="d-flex gap-2 ticket-estado-form">
                                                                 @csrf
@@ -258,6 +263,10 @@
                                 <div class="d-flex justify-content-between mt-2">
                                     <span class="text-muted">Anular ticket</span>
                                     <strong>{{ number_format($stats['anular']) }}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mt-2">
+                                    <span class="text-muted">Reportar averia</span>
+                                    <strong>{{ number_format($stats['averia'] ?? 0) }}</strong>
                                 </div>
                             </div>
                         </div>

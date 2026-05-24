@@ -131,7 +131,7 @@ class WhatsAppChatbotService
             if ($message === '6') {
                 $session->step = self::STEP_TICKET_NUMERO;
                 $session->context = [
-                    'categoria' => 'reportar_averia',
+                    'categoria' => TicketSolicitud::CATEGORIA_AVERIA,
                     'categoria_label' => 'Reportar averia',
                 ];
 
