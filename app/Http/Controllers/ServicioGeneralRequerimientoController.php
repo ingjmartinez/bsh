@@ -244,6 +244,7 @@ class ServicioGeneralRequerimientoController extends Controller
         }
 
         $requerimiento->estado = 'resuelta';
+        $requerimiento->progreso = 100;
         $requerimiento->resuelto_at = now();
         $requerimiento->cerrado_por = auth()->id();
         if (empty($requerimiento->cierre_solicitado_at)) {
@@ -296,6 +297,9 @@ class ServicioGeneralRequerimientoController extends Controller
         ]);
 
         $validated['progreso'] = (int) ($validated['progreso'] ?? $requerimiento->progreso ?? 0);
+        if (($validated['estado'] ?? null) === 'resuelta') {
+            $validated['progreso'] = 100;
+        }
 
         if (!$this->puedeGestionarProgreso(auth()->user(), $requerimiento) && (int) $validated['progreso'] !== (int) $requerimiento->progreso) {
             return response()->json([
