@@ -124,7 +124,7 @@ class TicketSolicitudController extends Controller
         $validated = $request->validate([
             'estado' => ['required', Rule::in($estadosPermitidos)],
             'notas' => [
-                Rule::requiredIf($request->input('estado') === TicketSolicitud::ESTADO_TICKET_PAGADO),
+                Rule::requiredIf($this->requiresTerminalDetail($request, $ticket)),
                 'nullable',
                 'string',
                 'max:1000',
@@ -171,13 +171,13 @@ class TicketSolicitudController extends Controller
             return;
         }
 
-        $terminalPago = $this->terminalPagoLine($ticket);
+        $terminalDetail = $this->terminalDetailLine($ticket);
 
         $message = "Hola, tu solicitud {$ticket->codigo} ya fue resuelta.\n\n"
             . "Categoria: {$ticket->categoria_label}\n"
             . "Codigo terminal: {$ticket->ticket_numero}\n"
             . "Estado final: {$ticket->estado_label}\n\n"
-            . ($terminalPago !== null ? $terminalPago . "\n\n" : '')
+            . ($terminalDetail !== null ? $terminalDetail . "\n\n" : '')
             . "Gracias por comunicarte con nosotros.";
 
         try {
@@ -213,15 +213,26 @@ class TicketSolicitudController extends Controller
         return str_starts_with($phone, '+') ? $phone : '+' . $digits;
     }
 
-    private function terminalPagoLine(TicketSolicitud $ticket): ?string
+    private function terminalDetailLine(TicketSolicitud $ticket): ?string
     {
-        if ($ticket->estado !== TicketSolicitud::ESTADO_TICKET_PAGADO) {
+        $requiresDetail = $ticket->estado === TicketSolicitud::ESTADO_TICKET_PAGADO
+            || ($ticket->categoria === TicketSolicitud::CATEGORIA_ANULAR && $ticket->estado === TicketSolicitud::ESTADO_NULO);
+
+        if (!$requiresDetail) {
             return null;
         }
 
         $notas = trim((string) $ticket->notas);
 
         return $notas !== '' ? $notas : null;
+    }
+
+    private function requiresTerminalDetail(Request $request, TicketSolicitud $ticket): bool
+    {
+        $estado = (string) $request->input('estado');
+
+        return $estado === TicketSolicitud::ESTADO_TICKET_PAGADO
+            || ($ticket->categoria === TicketSolicitud::CATEGORIA_ANULAR && $estado === TicketSolicitud::ESTADO_NULO);
     }
 
     private function emptyStats(): array

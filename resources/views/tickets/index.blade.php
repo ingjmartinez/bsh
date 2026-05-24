@@ -284,11 +284,11 @@
             <div class="modal-content">
                 <form id="ticketTerminalPagoForm">
                     <div class="modal-header">
-                        <h5 class="modal-title">Ticket pagado Por otra Terminal</h5>
+                        <h5 class="modal-title" id="ticketTerminalPagoModalTitle">Ticket pagado Por otra Terminal</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <label class="form-label" for="terminal_pago_numero">Terminal que pago</label>
+                        <label class="form-label" for="terminal_pago_numero" id="terminalPagoLabel">Terminal que pago</label>
                         <input
                             type="text"
                             class="form-control"
@@ -297,7 +297,7 @@
                             autocomplete="off"
                             placeholder="Ej: 0705888"
                             required>
-                        <div class="invalid-feedback">Indica el numero de terminal que pago.</div>
+                        <div class="invalid-feedback" id="terminalPagoFeedback">Indica el numero de terminal que pago.</div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
@@ -317,24 +317,56 @@
             const modalEl = document.getElementById('ticketTerminalPagoModal');
             const modalForm = document.getElementById('ticketTerminalPagoForm');
             const terminalInput = document.getElementById('terminal_pago_numero');
+            const modalTitle = document.getElementById('ticketTerminalPagoModalTitle');
+            const terminalLabel = document.getElementById('terminalPagoLabel');
+            const terminalFeedback = document.getElementById('terminalPagoFeedback');
             let pendingForm = null;
+            let pendingLabel = 'Terminal que pago';
 
-            if (!modalEl || !modalForm || !terminalInput || !window.bootstrap) {
+            if (!modalEl || !modalForm || !terminalInput || !modalTitle || !terminalLabel || !terminalFeedback || !window.bootstrap) {
                 return;
             }
 
             const modal = new bootstrap.Modal(modalEl);
 
+            function modalContextFor(form) {
+                const estado = form.querySelector('[name="estado"]')?.value || '';
+                const options = Array.from(form.querySelectorAll('[name="estado"] option'));
+                const hasTicketPagado = options.some((option) => option.value === 'ticket_pagado');
+
+                if (estado === 'ticket_pagado') {
+                    return {
+                        label: 'Terminal que pago',
+                        title: 'Ticket pagado Por otra Terminal',
+                        feedback: 'Indica el numero de terminal que pago.',
+                    };
+                }
+
+                if (estado === 'nulo' && !hasTicketPagado) {
+                    return {
+                        label: 'Terminal anulado',
+                        title: 'Anular ticket',
+                        feedback: 'Indica el codigo de terminal anulado.',
+                    };
+                }
+
+                return null;
+            }
+
             document.querySelectorAll('.ticket-estado-form').forEach(function (form) {
                 form.addEventListener('submit', function (event) {
-                    const estado = form.querySelector('[name="estado"]')?.value || '';
+                    const context = modalContextFor(form);
 
-                    if (estado !== 'ticket_pagado' || form.dataset.confirmedTerminalPago === '1') {
+                    if (!context || form.dataset.confirmedTerminalPago === '1') {
                         return;
                     }
 
                     event.preventDefault();
                     pendingForm = form;
+                    pendingLabel = context.label;
+                    modalTitle.textContent = context.title;
+                    terminalLabel.textContent = context.label;
+                    terminalFeedback.textContent = context.feedback;
                     terminalInput.value = '';
                     terminalInput.classList.remove('is-invalid');
                     modal.show();
@@ -366,7 +398,7 @@
                     return;
                 }
 
-                pendingForm.querySelector('[name="notas"]').value = `Terminal que pago ${terminal}`;
+                pendingForm.querySelector('[name="notas"]').value = `${pendingLabel} ${terminal}`;
                 pendingForm.dataset.confirmedTerminalPago = '1';
                 modal.hide();
                 pendingForm.requestSubmit();
