@@ -125,22 +125,55 @@
 
 @section('script')
     <script>
+        async function parseJsonResponse(response, contexto) {
+            const body = await response.text();
+            let data = null;
+
+            if (body) {
+                try {
+                    data = JSON.parse(body);
+                } catch (_error) {
+                    data = null;
+                }
+            }
+
+            if (!response.ok) {
+                const rawMessage = data?.message || data?.error || body || `HTTP ${response.status}`;
+                const message = String(rawMessage).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 500);
+                throw new Error(`${contexto} (${response.status}): ${message}`);
+            }
+
+            if (!data) {
+                throw new Error(`${contexto}: respuesta invalida del servidor.`);
+            }
+
+            return data;
+        }
+
         const btnGenerarToken = document.getElementById('btnGenerarToken');
-        btnGenerarToken.addEventListener('click', () => {
-            fetch("/generar-token")
-                .then(response => response.json())
-                .then(data => {
-                    Swal.fire({
-                        title: "Listo",
-                        text: data.success,
-                        icon: "success"
-                    });
-                })
-                .catch(error => console.error('Error fetching data:', error));
+        btnGenerarToken.addEventListener('click', async () => {
+            try {
+                const response = await fetch("/generar-token", {
+                    headers: { 'Accept': 'application/json' }
+                });
+                const data = await parseJsonResponse(response, 'Error generando token');
+
+                Swal.fire({
+                    title: "Listo",
+                    text: data.success,
+                    icon: "success"
+                });
+            } catch (error) {
+                Swal.fire({
+                    title: "Error",
+                    text: error.message || "No se pudo generar el token.",
+                    icon: "error"
+                });
+            }
         });
 
         const btnGenerarData = document.getElementById('btnGenerarData');
-        btnGenerarData.addEventListener('click', () => {
+        btnGenerarData.addEventListener('click', async () => {
             const fecha = document.getElementById('inputFecha').value;
             if (!fecha) {
                 Swal.fire({
@@ -164,54 +197,58 @@
             const tableBody = document.querySelector('#tableVentas tbody');
             tableBody.innerHTML = '';
 
-            fetch(`/ventas-producto-lotobet?fecha=${fecha}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.code != 0) {
-                        Swal.fire({
-                            title: "Error",
-                            text: data.message,
-                            icon: "error"
-                        });
-                    } else {
-                        Swal.fire({
-                            title: "Listo",
-                            text: "Datos obtenidos correctamente",
-                            icon: "success"
-                        });
+            try {
+                const response = await fetch(`/ventas-producto-lotobet?fecha=${encodeURIComponent(fecha)}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                const data = await parseJsonResponse(response, 'Error consultando ventas por producto');
 
-                        tableBody.innerHTML = '';
-                        data.ventas.forEach(item => {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td>${item.consorcio_id}</td>
-                                <td>${item.agencia_id}</td>
-                                <td>${item.producto_id}</td>
-                                <td>${item.descripcion}</td>
-                                <td>${item.monto}</td>
-                                <td>${fecha}</td>
-                                <td>${item.comision}</td>
-                                <td>${item.comision_supervisor}</td>
-                                <td>${item.numero_sorteo}</td>
-                            `;
-                            tableBody.appendChild(row);
-                        });
+                if (data.code != 0) {
+                    throw new Error(data.message || 'La API devolvio un error.');
+                }
 
-                        $('#tableVentas').DataTable({
-                            destroy: true,
-                            responsive: true,
-                            dom: 'Bfrtip',
-                            buttons: [
-                                'copy', 'csv', 'excel', 'pdf', 'print'
-                            ]
-                        });
-                    }
-                })
-                .catch(error => console.error('Error fetching data:', error));
+                Swal.fire({
+                    title: "Listo",
+                    text: "Datos obtenidos correctamente",
+                    icon: "success"
+                });
+
+                tableBody.innerHTML = '';
+                data.ventas.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.consorcio_id}</td>
+                        <td>${item.agencia_id}</td>
+                        <td>${item.producto_id}</td>
+                        <td>${item.descripcion}</td>
+                        <td>${item.monto}</td>
+                        <td>${fecha}</td>
+                        <td>${item.comision}</td>
+                        <td>${item.comision_supervisor}</td>
+                        <td>${item.numero_sorteo}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+
+                $('#tableVentas').DataTable({
+                    destroy: true,
+                    responsive: true,
+                    dom: 'Bfrtip',
+                    buttons: [
+                        'copy', 'csv', 'excel', 'pdf', 'print'
+                    ]
+                });
+            } catch (error) {
+                Swal.fire({
+                    title: "Error",
+                    text: error.message || "No se pudo consultar la data.",
+                    icon: "error"
+                });
+            }
         });
 
         const btnGuardarData = document.getElementById('btnGuardarData');
-        btnGuardarData.addEventListener('click', () => {
+        btnGuardarData.addEventListener('click', async () => {
             const fecha = document.getElementById('inputFecha').value;
             if (!fecha) {
                 Swal.fire({
@@ -230,20 +267,29 @@
                 timerProgressBar: true,
                 didOpen: () => Swal.showLoading()
             });
-            fetch(`/save-ventas-producto-lotobet?fecha=${fecha}`)
-                .then(response => response.json())
-                .then(data => {
-                    Swal.fire({
-                        title: "Listo",
-                        text: data.message,
-                        icon: "success"
-                    });
-                })
-                .catch(error => console.error('Error fetching data:', error));
+
+            try {
+                const response = await fetch(`/save-ventas-producto-lotobet?fecha=${encodeURIComponent(fecha)}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                const data = await parseJsonResponse(response, 'Error guardando ventas por producto');
+
+                Swal.fire({
+                    title: "Listo",
+                    text: data.message,
+                    icon: "success"
+                });
+            } catch (error) {
+                Swal.fire({
+                    title: "Error",
+                    text: error.message || "No se pudo guardar la data.",
+                    icon: "error"
+                });
+            }
         });
 
         const btnEliminarData = document.getElementById('btnEliminarData');
-        btnEliminarData.addEventListener('click', () => {
+        btnEliminarData.addEventListener('click', async () => {
             const fecha = document.getElementById('inputFecha').value;
             if (!fecha) {
                 Swal.fire({
@@ -262,16 +308,25 @@
                 timerProgressBar: true,
                 didOpen: () => Swal.showLoading()
             });
-            fetch(`/delete-ventas-producto-lotobet?fecha=${fecha}`)
-                .then(response => response.json())
-                .then(data => {
-                    Swal.fire({
-                        title: "Listo",
-                        text: data.message,
-                        icon: "success"
-                    });
-                })
-                .catch(error => console.error('Error fetching data:', error));
+
+            try {
+                const response = await fetch(`/delete-ventas-producto-lotobet?fecha=${encodeURIComponent(fecha)}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                const data = await parseJsonResponse(response, 'Error eliminando ventas por producto');
+
+                Swal.fire({
+                    title: "Listo",
+                    text: data.message,
+                    icon: "success"
+                });
+            } catch (error) {
+                Swal.fire({
+                    title: "Error",
+                    text: error.message || "No se pudo eliminar la data.",
+                    icon: "error"
+                });
+            }
         });
 
         const btnGuardarDataFecha = document.getElementById('btnGuardarDataFecha');
@@ -328,12 +383,10 @@
                         html: `Procesando ${date} (${i + 1} / ${dates.length})`
                     });
 
-                    const response = await fetch(`/save-ventas-producto-lotobet?fecha=${date}`);
-                    if (!response.ok) {
-                        const text = await response.text().catch(() => null);
-                        throw new Error(text || `Error HTTP ${response.status}`);
-                    }
-                    const data = await response.json().catch(() => null);
+                    const response = await fetch(`/save-ventas-producto-lotobet?fecha=${encodeURIComponent(date)}`, {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    const data = await parseJsonResponse(response, `Error guardando fecha ${date}`);
 
                     // Si tu API devuelve un código de error, puedes manejarlo aquí
                     if (data && data.code !== undefined && data.code !== 0) {
@@ -427,12 +480,10 @@
                         html: `Eliminando ${date} (${i + 1} / ${dates.length})`
                     });
 
-                    const response = await fetch(`/delete-ventas-producto-lotobet?fecha=${date}`);
-                    if (!response.ok) {
-                        const text = await response.text().catch(() => null);
-                        throw new Error(text || `Error HTTP ${response.status}`);
-                    }
-                    const data = await response.json().catch(() => null);
+                    const response = await fetch(`/delete-ventas-producto-lotobet?fecha=${encodeURIComponent(date)}`, {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    const data = await parseJsonResponse(response, `Error eliminando fecha ${date}`);
 
                     if (data && data.code !== undefined && data.code !== 0) {
                         throw new Error(data.message || `Error eliminando fecha ${date}`);
