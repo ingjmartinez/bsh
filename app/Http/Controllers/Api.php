@@ -7,6 +7,7 @@ use App\Models\CuentaContable;
 use App\Models\DetalleCuenta;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class Api extends Controller
@@ -205,6 +206,10 @@ class Api extends Controller
 
     public function syncCentrosCosto(Request $request)
     {
+        @set_time_limit(240);
+        ini_set('max_execution_time', '240');
+        ini_set('memory_limit', '512M');
+
         $empresa = trim((string) $request->input('empresa', ''));
 
         if (! in_array($empresa, ['126', '100'], true)) {
@@ -213,7 +218,19 @@ class Api extends Controller
             ], 422);
         }
 
-        $result = $this->syncCentrosCostoFromExternal($empresa);
+        try {
+            $result = $this->syncCentrosCostoFromExternal($empresa);
+        } catch (\Throwable $e) {
+            Log::error('Error sincronizando centros de costo', [
+                'empresa' => $empresa,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Error interno sincronizando centros de costo.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
 
         if (! $result['ok']) {
             return response()->json([
@@ -428,11 +445,11 @@ class Api extends Controller
     {
         $companyId = trim((string) ($value ?? ''));
 
-        if (str_starts_with($companyId, '126')) {
+        if (substr($companyId, 0, 3) === '126') {
             return '126';
         }
 
-        if (str_starts_with($companyId, '100')) {
+        if (substr($companyId, 0, 3) === '100') {
             return '100';
         }
 
@@ -570,7 +587,7 @@ class Api extends Controller
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 60,
+            CURLOPT_TIMEOUT => 120,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'POST',
             CURLOPT_HTTPHEADER => [
