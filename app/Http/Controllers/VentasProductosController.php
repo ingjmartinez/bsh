@@ -9,6 +9,7 @@ use App\Services\Etl\LotobetVentasProductoEtlService;
 use App\Services\Lotobet\LotobetSessionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class VentasProductosController extends Controller
@@ -32,15 +33,21 @@ class VentasProductosController extends Controller
 
         try {
             $ventas = app(LotobetSessionService::class)->getVentasProducto($fecha);
+            $contenido = $ventas['Content'] ?? [];
+            if (!is_array($contenido)) {
+                $contenido = [];
+            }
         } catch (\Throwable $e) {
-            return response()->json([
+            Log::error('Error consultando API ventas producto Lotobet', [
+                'fecha' => $fecha,
                 'error' => $e->getMessage(),
-            ], 502);
-        }
+            ]);
 
-        $contenido = $ventas['Content'] ?? [];
-        if (!is_array($contenido)) {
-            $contenido = [];
+            return response()->json([
+                'ventas' => [],
+                'code' => 1,
+                'message' => $e->getMessage(),
+            ], 502);
         }
 
         $normalizarClave = static function ($value): string {
@@ -53,25 +60,34 @@ class VentasProductosController extends Controller
             return $sinCeros === '' ? '0' : $sinCeros;
         };
 
-        $agencias = Agencia::query()
-            ->leftJoin('ciudades as c', 'c.id', '=', 'agencias.ciudad_id')
-            ->leftJoin('ruta_agencia as ra', 'ra.agencia_id', '=', 'agencias.id')
-            ->leftJoin('rutas as r', 'r.id', '=', 'ra.ruta_id')
-            ->leftJoin('coordinador_operador_agencia as coa', 'coa.agencia_id', '=', 'agencias.id')
-            ->leftJoin('coordinadores_operador as co', 'co.id', '=', 'coa.coordinador_operador_id')
-            ->select([
-                'agencias.codigo as agencia',
-                'agencias.nombre as nombre_agencia',
-                'agencias.terminal',
-                'agencias.estatus',
-                DB::raw('MAX(c.nombre) as ciudad'),
-                DB::raw('MAX(COALESCE(r.nombre, r.serial)) as ruta'),
-                DB::raw('NULL as operador'),
-                DB::raw('MAX(co.nombre) as coordinador'),
-            ])
-            ->whereNotNull('agencias.terminal')
-            ->groupBy('agencias.id', 'agencias.codigo', 'agencias.nombre', 'agencias.terminal', 'agencias.estatus')
-            ->get();
+        try {
+            $agencias = Agencia::query()
+                ->leftJoin('ciudades as c', 'c.id', '=', 'agencias.ciudad_id')
+                ->leftJoin('ruta_agencia as ra', 'ra.agencia_id', '=', 'agencias.id')
+                ->leftJoin('rutas as r', 'r.id', '=', 'ra.ruta_id')
+                ->leftJoin('coordinador_operador_agencia as coa', 'coa.agencia_id', '=', 'agencias.id')
+                ->leftJoin('coordinadores_operador as co', 'co.id', '=', 'coa.coordinador_operador_id')
+                ->select([
+                    'agencias.codigo as agencia',
+                    'agencias.nombre as nombre_agencia',
+                    'agencias.terminal',
+                    'agencias.estatus',
+                    DB::raw('MAX(c.nombre) as ciudad'),
+                    DB::raw('MAX(COALESCE(r.nombre, r.serial)) as ruta'),
+                    DB::raw('NULL as operador'),
+                    DB::raw('MAX(co.nombre) as coordinador'),
+                ])
+                ->whereNotNull('agencias.terminal')
+                ->groupBy('agencias.id', 'agencias.codigo', 'agencias.nombre', 'agencias.terminal', 'agencias.estatus')
+                ->get();
+        } catch (\Throwable $e) {
+            Log::error('Error enriqueciendo ventas producto Lotobet con agencias locales', [
+                'fecha' => $fecha,
+                'error' => $e->getMessage(),
+            ]);
+
+            $agencias = collect();
+        }
 
         $agenciasByTerminal = [];
         $agenciasActivasByTerminal = [];
