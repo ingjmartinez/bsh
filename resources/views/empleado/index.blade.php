@@ -542,8 +542,10 @@
                 });
         }
 
-        document.querySelector("#btnSincronizar").addEventListener("click", function () {
+        document.querySelector("#btnSincronizar").addEventListener("click", async function () {
             const empresa = document.getElementById('empresa').value;
+            const boton = this;
+            const textoOriginal = boton.innerText;
 
             if (!empresa) {
                 Swal.fire({
@@ -554,6 +556,9 @@
                 });
                 return;
             }
+
+            boton.disabled = true;
+            boton.innerText = 'Sincronizando...';
 
             Swal.fire({
                 title: "Sincronizando: 0% ...",
@@ -573,32 +578,36 @@
                 textSwal.innerHTML = "Sincronizando: " + percent + "%";
             }, 1000);
 
-            fetch('/empleados/sincronizar?empresa=' + empresa, {
-                headers: {
-                    'Accept': 'application/json',
-                },
-            })
-                .then(response => parsearRespuestaJson(response, 'Error durante la sincronizacion de empleados'))
-                .then((payload) => {
-                    textSwal.innerHTML = "Sincronizando: 100%";
-                    clearInterval(interval);
-                    Swal.fire({
-                        title: "Listo",
-                        text: "Sincronizacion completada con exito para " + (payload.empresa_nombre || empresaTexto(empresa)),
-                        icon: "success"
-                    });
-                    cargarDashboard();
-                    list();
-                })
-                .catch(error => {
-                    textSwal.innerHTML = "Sincronizando: 100%";
-                    clearInterval(interval);
-                    Swal.fire({
-                        title: "Error",
-                        text: error?.message || 'No fue posible sincronizar empleados.',
-                        icon: "warning"
-                    });
+            try {
+                const response = await fetch('/empleados/sincronizar?empresa=' + encodeURIComponent(empresa), {
+                    headers: {
+                        'Accept': 'application/json',
+                    },
                 });
+                const payload = await parsearRespuestaJson(response, 'Error durante la sincronizacion de empleados');
+
+                textSwal.innerHTML = "Sincronizando: 100%";
+                clearInterval(interval);
+                await cargarDashboard();
+                setTimeout(list, 0);
+
+                Swal.fire({
+                    title: "Listo",
+                    text: "Sincronizacion completada con exito para " + (payload.empresa_nombre || empresaTexto(empresa)),
+                    icon: "success"
+                });
+            } catch (error) {
+                textSwal.innerHTML = "Sincronizando: 100%";
+                clearInterval(interval);
+                Swal.fire({
+                    title: "Error",
+                    text: error?.message || 'No fue posible sincronizar empleados.',
+                    icon: "warning"
+                });
+            } finally {
+                boton.disabled = false;
+                boton.innerText = textoOriginal;
+            }
         });
 
         document.getElementById('empresa').addEventListener('change', function () {

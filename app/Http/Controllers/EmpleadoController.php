@@ -158,7 +158,8 @@ class EmpleadoController extends Controller
 
     public function sincronizar(Request $request)
     {
-        ini_set('max_execution_time', 600);
+        @set_time_limit(300);
+        ini_set('max_execution_time', '300');
         ini_set('memory_limit', '512M');
         $empresa = trim((string) $request->query('empresa', ''));
 
@@ -169,9 +170,9 @@ class EmpleadoController extends Controller
         try {
             $response = Http::withoutVerifying()
                 ->connectTimeout(20)
-                ->timeout(180)
+                ->timeout(240)
                 ->withHeaders([
-                    'Accept' => 'application/text',
+                    'Accept' => 'application/json, application/text',
                 ])
                 ->get('https://apisj.azurewebsites.net/ApiSJ/RRHH/Empleados/Listar', [
                     'strToken' => '78177a3a-3679-4899-bf9f-22d3badeb737',
@@ -213,6 +214,7 @@ class EmpleadoController extends Controller
         $lote = [];
         $procesados = 0;
         $omitidos = 0;
+        $tamanoLote = 500;
 
         try {
             foreach ($empleados as $e) {
@@ -225,7 +227,7 @@ class EmpleadoController extends Controller
                 $lote[] = $this->mapearEmpleadoApi($e, $empresa);
                 $procesados++;
 
-                if (count($lote) >= 50) {
+                if (count($lote) >= $tamanoLote) {
                     Empleado::upsert($lote, ['companyid', 'empleadoid'], $columnasActualizables);
                     $lote = [];
                 }
