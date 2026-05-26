@@ -131,7 +131,10 @@ class Api extends Controller
         $query = CentroDeCosto::query();
 
         if (in_array($empresa, ['126', '100'], true)) {
-            $query->where('company_id', $empresa);
+            $query->where(function ($q) use ($empresa) {
+                $q->where('company_id', $empresa)
+                    ->orWhere('company_id', 'like', $empresa . '-%');
+            });
         }
 
         $centros = $query
@@ -141,7 +144,7 @@ class Api extends Controller
                 return [
                     'id' => $c->id,
                     'IdCentroCosto' => $c->id_centro_costo,
-                    'CompanyID' => $c->company_id,
+                    'CompanyID' => $this->normalizeCentroCostoCompanyId($c->company_id),
                     'Descripcion' => $c->descripcion,
                     'Cuenta' => $c->cuenta,
                     'Inactivo' => $c->inactivo,
@@ -392,6 +395,50 @@ class Api extends Controller
         return $value === '' ? null : $value;
     }
 
+    private function externalValue(array $item, string $key, $default = null)
+    {
+        if (array_key_exists($key, $item)) {
+            return $item[$key];
+        }
+
+        $upperKey = strtoupper($key);
+        if (array_key_exists($upperKey, $item)) {
+            return $item[$upperKey];
+        }
+
+        return $default;
+    }
+
+    private function parseBoolean($value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return (int) $value === 1;
+        }
+
+        $normalized = strtolower(trim((string) $value));
+
+        return in_array($normalized, ['1', 'true', 'si', 'sí', 'yes', 'on'], true);
+    }
+
+    private function normalizeCentroCostoCompanyId($value, string $fallback = ''): string
+    {
+        $companyId = trim((string) ($value ?? ''));
+
+        if (str_starts_with($companyId, '126')) {
+            return '126';
+        }
+
+        if (str_starts_with($companyId, '100')) {
+            return '100';
+        }
+
+        return in_array($fallback, self::CONTABILIDAD_EMPRESAS, true) ? $fallback : $companyId;
+    }
+
     private function syncCuentasFromExternal(string $empresa): array
     {
         $empresas = $this->empresasContabilidad($empresa);
@@ -537,6 +584,7 @@ class Api extends Controller
 
         if ($response === false) {
             $error = curl_error($curl);
+            curl_close($curl);
 
             return [
                 'ok' => false,
@@ -547,6 +595,7 @@ class Api extends Controller
         }
 
         $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        curl_close($curl);
 
         if ($httpCode < 200 || $httpCode >= 300) {
             return [
@@ -578,7 +627,8 @@ class Api extends Controller
                 continue;
             }
 
-            $idCentroCosto = isset($item['IdCentroCosto']) ? (int) $item['IdCentroCosto'] : null;
+            $item = $this->normalizeKeys($item);
+            $idCentroCosto = (int) ($this->externalValue($item, 'IdCentroCosto', 0) ?? 0);
 
             if (! $idCentroCosto) {
                 $skipped++;
@@ -590,25 +640,25 @@ class Api extends Controller
             $registro = CentroDeCosto::updateOrCreate(
                 ['id_centro_costo' => $idCentroCosto],
                 [
-                    'company_id' => $this->nullableString($item['CompanyID'] ?? $empresa),
-                    'descripcion' => (string) ($item['Descripcion'] ?? ''),
-                    'cuenta' => $this->nullableString($item['Cuenta'] ?? null),
-                    'inactivo' => (bool) ($item['Inactivo'] ?? false),
-                    'id_grupo' => $this->nullableString($item['IdGrupo'] ?? null),
-                    'id_sub_grupo' => $this->nullableString($item['IdSubGrupo'] ?? null),
-                    'id_division' => $this->nullableString($item['IdDivision'] ?? null),
-                    'id_sociedad' => $this->nullableString($item['IdSociedad'] ?? null),
-                    'id_viejo' => $this->nullableString($item['IdViejo'] ?? null),
-                    'id_centro_costo_resumir_en' => $this->nullableString($item['IdCentroCostoResumirEn'] ?? null),
-                    'com_recarga' => (bool) ($item['ComRecarga'] ?? false),
-                    'gasto_vta_tradicional' => (bool) ($item['GastoVtaTradicional'] ?? false),
-                    'varios_locales' => (bool) ($item['VariosLocales'] ?? false),
-                    'aplica_para_ponderar' => (bool) ($item['AplicaParaPonderar'] ?? false),
-                    'valor_ponderar' => $this->parseDecimal($item['ValorPonderar'] ?? 0) ?? 0,
-                    'creado_por' => $this->nullableString($item['CreadoPor'] ?? null),
-                    'fecha_grabado' => $this->parseDateTime($item['FechaGrabado'] ?? null),
-                    'modificado_por' => $this->nullableString($item['ModificadoPor'] ?? null),
-                    'fecha_modificado' => $this->parseDateTime($item['FechaModificado'] ?? null),
+                    'company_id' => $empresa,
+                    'descripcion' => (string) ($this->externalValue($item, 'Descripcion', '') ?? ''),
+                    'cuenta' => $this->nullableString($this->externalValue($item, 'Cuenta')),
+                    'inactivo' => $this->parseBoolean($this->externalValue($item, 'Inactivo', false)),
+                    'id_grupo' => $this->nullableString($this->externalValue($item, 'IdGrupo')),
+                    'id_sub_grupo' => $this->nullableString($this->externalValue($item, 'IdSubGrupo')),
+                    'id_division' => $this->nullableString($this->externalValue($item, 'IdDivision')),
+                    'id_sociedad' => $this->nullableString($this->externalValue($item, 'IdSociedad')),
+                    'id_viejo' => $this->nullableString($this->externalValue($item, 'IdViejo')),
+                    'id_centro_costo_resumir_en' => $this->nullableString($this->externalValue($item, 'IdCentroCostoResumirEn')),
+                    'com_recarga' => $this->parseBoolean($this->externalValue($item, 'ComRecarga', false)),
+                    'gasto_vta_tradicional' => $this->parseBoolean($this->externalValue($item, 'GastoVtaTradicional', false)),
+                    'varios_locales' => $this->parseBoolean($this->externalValue($item, 'VariosLocales', false)),
+                    'aplica_para_ponderar' => $this->parseBoolean($this->externalValue($item, 'AplicaParaPonderar', false)),
+                    'valor_ponderar' => $this->parseDecimal($this->externalValue($item, 'ValorPonderar', 0)) ?? 0,
+                    'creado_por' => $this->nullableString($this->externalValue($item, 'CreadoPor')),
+                    'fecha_grabado' => $this->parseDateTime($this->externalValue($item, 'FechaGrabado')),
+                    'modificado_por' => $this->nullableString($this->externalValue($item, 'ModificadoPor')),
+                    'fecha_modificado' => $this->parseDateTime($this->externalValue($item, 'FechaModificado')),
                     'atributos' => empty($atributos) ? null : $atributos,
                 ]
             );
@@ -657,8 +707,9 @@ class Api extends Controller
         $atributos = [];
         for ($i = 1; $i <= 73; $i++) {
             $key = 'Atr' . $i;
-            if (array_key_exists($key, $item) && $item[$key] !== null && $item[$key] !== '') {
-                $atributos[$key] = $item[$key];
+            $value = $this->externalValue($item, $key);
+            if ($value !== null && $value !== '') {
+                $atributos[$key] = $value;
             }
         }
         return $atributos;

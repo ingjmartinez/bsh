@@ -75,7 +75,7 @@
                                                 <th>Terminal</th>
                                                 <th>Nombre Agencia</th>
                                                 <th>Estado</th>
-                                                <th>Ruta Empresa</th>
+                                                <th>Grupo</th>
                                                 <th>Id SubGrupo</th>
                                                 <th>Ciudad</th>
                                                 <th>Empresa</th>
@@ -477,36 +477,36 @@
             boton.innerText = 'Sincronizando...';
             iniciarProgresoSincronizacion();
 
-            fetch('/api-centros-costo/sync', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({ empresa })
-            })
-                .then(response => parsearRespuestaJson(response, 'Error durante la sincronizacion de centros de costo'))
-                .then(data => {
-                    finalizarProgresoSincronizacion();
-                    mostrarAlertaExito(
-                        'Sincronizacion completada',
-                        `Empresa: ${data.empresa ?? empresa}<br>` +
-                        `Recibidos: ${data.total_recibidos ?? 0}<br>` +
-                        `Creados: ${data.creados ?? 0}<br>` +
-                        `Actualizados: ${data.actualizados ?? 0}<br>` +
-                        `Omitidos: ${data.omitidos ?? 0}`
-                    );
-                    cargarCentrosCosto(false);
-                })
-                .catch(error => {
-                    detenerProgresoSincronizacion();
-                    mostrarAlertaError(error.message || 'Error sincronizando centros de costo.');
-                })
-                .finally(() => {
-                    boton.disabled = false;
-                    boton.innerText = textoOriginal;
+            try {
+                const response = await fetch('/api-centros-costo/sync', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ empresa })
                 });
+                const data = await parsearRespuestaJson(response, 'Error durante la sincronizacion de centros de costo');
+
+                finalizarProgresoSincronizacion();
+                await cargarCentrosCosto(false);
+
+                mostrarAlertaExito(
+                    'Sincronizacion completada',
+                    `Empresa: ${data.empresa ?? empresa}<br>` +
+                    `Recibidos: ${data.total_recibidos ?? 0}<br>` +
+                    `Creados: ${data.creados ?? 0}<br>` +
+                    `Actualizados: ${data.actualizados ?? 0}<br>` +
+                    `Omitidos: ${data.omitidos ?? 0}`
+                );
+            } catch (error) {
+                detenerProgresoSincronizacion();
+                mostrarAlertaError(error.message || 'Error sincronizando centros de costo.');
+            } finally {
+                boton.disabled = false;
+                boton.innerText = textoOriginal;
+            }
         }
 
         function mostrarAlertaCarga(titulo, texto) {

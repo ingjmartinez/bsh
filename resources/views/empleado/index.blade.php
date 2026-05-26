@@ -477,7 +477,7 @@
             const empresa = obtenerEmpresaActual();
             actualizarBadgeEmpresa();
 
-            fetch('/empleados/dashboard?empresa=' + encodeURIComponent(empresa), {
+            return fetch('/empleados/dashboard?empresa=' + encodeURIComponent(empresa), {
                 headers: {
                     'Accept': 'application/json',
                 },
@@ -497,7 +497,7 @@
         function list() {
             const empresa = obtenerEmpresaActual();
 
-            fetch("/empleados/list?empresa=" + encodeURIComponent(empresa), {
+            return fetch("/empleados/list?empresa=" + encodeURIComponent(empresa), {
                 headers: {
                     'Accept': 'application/json',
                 },
@@ -602,18 +602,21 @@
         });
 
         document.getElementById('empresa').addEventListener('change', function () {
-            cargarDashboard();
-            list();
+            cargarDashboard().finally(function () {
+                setTimeout(list, 0);
+            });
         });
 
         document.getElementById('btnRefrescarDashboard').addEventListener('click', function () {
-            cargarDashboard();
-            list();
+            cargarDashboard().finally(function () {
+                setTimeout(list, 0);
+            });
         });
 
         document.addEventListener('DOMContentLoaded', function () {
-            cargarDashboard();
-            list();
+            cargarDashboard().finally(function () {
+                setTimeout(list, 0);
+            });
         });
     </script>
 @endsection

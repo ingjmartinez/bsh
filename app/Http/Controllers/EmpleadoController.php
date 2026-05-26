@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Empleado;
 use Illuminate\Http\Request;
 use App\Models\VwUsuariosUnion;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -52,96 +53,107 @@ class EmpleadoController extends Controller
     public function dashboard(Request $request)
     {
         $empresa = trim((string) $request->query('empresa', ''));
+        $empresaCache = array_key_exists($empresa, self::EMPRESAS_RRHH) ? $empresa : 'all';
+        $cacheKey = 'empleados_dashboard:' . $empresaCache;
 
-        $query = Empleado::query();
-        if (array_key_exists($empresa, self::EMPRESAS_RRHH)) {
-            $query->where('companyid', $empresa);
-        }
+        $payload = Cache::remember($cacheKey, now()->addSeconds(60), function () use ($empresa) {
+            $aplicarEmpresa = function ($query) use ($empresa) {
+                if (array_key_exists($empresa, self::EMPRESAS_RRHH)) {
+                    $query->where('companyid', $empresa);
+                }
 
-        $empleados = $query->get([
-            'companyid',
-            'empleadoid',
-            'nombres',
-            'apellidos',
-            'fecha_ingreso',
-            'fecha_egreso',
-            'salario',
-        ]);
+                return $query;
+            };
 
-        $normalizados = $empleados->map(function ($empleado) {
-            $fechaSalida = trim((string) ($empleado->fecha_egreso ?? ''));
-            $salario = is_numeric($empleado->salario) ? (float) $empleado->salario : 0.0;
-            $ciudad = 'Sin ciudad';
+            $condicionActivo = 'fecha_egreso IS NULL';
+            $condicionActivoEmpleado = 'e.fecha_egreso IS NULL';
+
+            $resumen = $aplicarEmpresa(DB::table('empleados'))
+                ->selectRaw("
+                    COUNT(*) AS total_empleados,
+                    SUM(CASE WHEN {$condicionActivo} THEN 1 ELSE 0 END) AS activos,
+                    SUM(CASE WHEN {$condicionActivo} THEN 0 ELSE 1 END) AS inactivos,
+                    ROUND(SUM(COALESCE(salario, 0)), 2) AS salario_mensual_total,
+                    ROUND(SUM(CASE WHEN {$condicionActivo} THEN COALESCE(salario, 0) ELSE 0 END), 2) AS salario_mensual_activos,
+                    ROUND(SUM(CASE WHEN {$condicionActivo} THEN 0 ELSE COALESCE(salario, 0) END), 2) AS salario_mensual_inactivos,
+                    ROUND(AVG(COALESCE(salario, 0)), 2) AS salario_promedio
+                ")
+                ->first();
+
+            $salarioPorCiudad = $aplicarEmpresa(
+                DB::table('empleados as e')
+                    ->leftJoin('ciudades as c', 'c.id', '=', 'e.ciudad_id')
+            )
+                ->selectRaw("
+                    COALESCE(c.nombre, 'Sin ciudad') AS ciudad,
+                    ROUND(SUM(CASE WHEN {$condicionActivoEmpleado} THEN COALESCE(e.salario, 0) ELSE 0 END), 2) AS salario,
+                    COUNT(*) AS empleados,
+                    SUM(CASE WHEN {$condicionActivoEmpleado} THEN 1 ELSE 0 END) AS activos,
+                    SUM(CASE WHEN {$condicionActivoEmpleado} THEN 0 ELSE 1 END) AS inactivos
+                ")
+                ->groupBy(DB::raw("COALESCE(c.nombre, 'Sin ciudad')"))
+                ->orderByDesc('salario')
+                ->limit(12)
+                ->get()
+                ->map(function ($fila) {
+                    return [
+                        'ciudad' => $fila->ciudad,
+                        'salario' => (float) $fila->salario,
+                        'empleados' => (int) $fila->empleados,
+                        'activos' => (int) $fila->activos,
+                        'inactivos' => (int) $fila->inactivos,
+                    ];
+                });
+
+            $salarioPorEmpresa = $aplicarEmpresa(DB::table('empleados'))
+                ->whereNull('fecha_egreso')
+                ->selectRaw('companyid, ROUND(SUM(COALESCE(salario, 0)), 2) AS salario, COUNT(*) AS empleados')
+                ->groupBy('companyid')
+                ->get()
+                ->map(function ($fila) {
+                    return [
+                        'empresa' => $this->empresaRrhhLabel((string) $fila->companyid),
+                        'salario' => (float) $fila->salario,
+                        'empleados' => (int) $fila->empleados,
+                    ];
+                });
+
+            $activos = (int) ($resumen->activos ?? 0);
+            $inactivos = (int) ($resumen->inactivos ?? 0);
 
             return [
-                'companyid' => (string) $empleado->companyid,
-                'company' => $this->empresaRrhhLabel((string) $empleado->companyid),
-                'activo' => $fechaSalida === '',
-                'ciudad' => $ciudad,
-                'salario' => $salario,
+                'resumen' => [
+                    'total_empleados' => (int) ($resumen->total_empleados ?? 0),
+                    'activos' => $activos,
+                    'inactivos' => $inactivos,
+                    'salario_mensual_total' => (float) ($resumen->salario_mensual_total ?? 0),
+                    'salario_mensual_activos' => (float) ($resumen->salario_mensual_activos ?? 0),
+                    'salario_mensual_inactivos' => (float) ($resumen->salario_mensual_inactivos ?? 0),
+                    'salario_promedio' => (float) ($resumen->salario_promedio ?? 0),
+                ],
+                'charts' => [
+                    'estado' => [
+                        'labels' => ['Activos', 'Inactivos'],
+                        'series' => [$activos, $inactivos],
+                    ],
+                    'salario_ciudad' => [
+                        'labels' => $salarioPorCiudad->pluck('ciudad')->take(10)->values(),
+                        'series' => $salarioPorCiudad->pluck('salario')->take(10)->values(),
+                    ],
+                    'empleados_ciudad' => [
+                        'labels' => $salarioPorCiudad->pluck('ciudad')->take(10)->values(),
+                        'series' => $salarioPorCiudad->pluck('empleados')->take(10)->values(),
+                    ],
+                    'salario_empresa' => [
+                        'labels' => $salarioPorEmpresa->pluck('empresa')->values(),
+                        'series' => $salarioPorEmpresa->pluck('salario')->values(),
+                    ],
+                ],
+                'detalle_ciudad' => $salarioPorCiudad->values(),
             ];
         });
 
-        $activos = $normalizados->where('activo', true);
-        $inactivos = $normalizados->where('activo', false);
-
-        $salarioPorCiudad = $normalizados
-            ->groupBy('ciudad')
-            ->map(function ($items, $ciudad) {
-                $activosCiudad = $items->where('activo', true);
-
-                return [
-                    'ciudad' => $ciudad,
-                    'salario' => round($activosCiudad->sum('salario'), 2),
-                    'empleados' => $items->count(),
-                    'activos' => $activosCiudad->count(),
-                    'inactivos' => $items->where('activo', false)->count(),
-                ];
-            })
-            ->sortByDesc('salario')
-            ->values();
-
-        $salarioPorEmpresa = $activos
-            ->groupBy('company')
-            ->map(function ($items, $empresaNombre) {
-                return [
-                    'empresa' => $empresaNombre,
-                    'salario' => round($items->sum('salario'), 2),
-                    'empleados' => $items->count(),
-                ];
-            })
-            ->values();
-
-        return response()->json([
-            'resumen' => [
-                'total_empleados' => $normalizados->count(),
-                'activos' => $activos->count(),
-                'inactivos' => $inactivos->count(),
-                'salario_mensual_total' => round($normalizados->sum('salario'), 2),
-                'salario_mensual_activos' => round($activos->sum('salario'), 2),
-                'salario_mensual_inactivos' => round($inactivos->sum('salario'), 2),
-                'salario_promedio' => round($normalizados->avg('salario') ?: 0, 2),
-            ],
-            'charts' => [
-                'estado' => [
-                    'labels' => ['Activos', 'Inactivos'],
-                    'series' => [$activos->count(), $inactivos->count()],
-                ],
-                'salario_ciudad' => [
-                    'labels' => $salarioPorCiudad->pluck('ciudad')->take(10)->values(),
-                    'series' => $salarioPorCiudad->pluck('salario')->take(10)->values(),
-                ],
-                'empleados_ciudad' => [
-                    'labels' => $salarioPorCiudad->pluck('ciudad')->take(10)->values(),
-                    'series' => $salarioPorCiudad->pluck('empleados')->take(10)->values(),
-                ],
-                'salario_empresa' => [
-                    'labels' => $salarioPorEmpresa->pluck('empresa')->values(),
-                    'series' => $salarioPorEmpresa->pluck('salario')->values(),
-                ],
-            ],
-            'detalle_ciudad' => $salarioPorCiudad->take(12)->values(),
-        ]);
+        return response()->json($payload);
     }
 
     public function sincronizar(Request $request)
@@ -239,6 +251,9 @@ class EmpleadoController extends Controller
                 'omitidos' => $omitidos,
             ]);
         }
+
+        Cache::forget('empleados_dashboard:' . $empresa);
+        Cache::forget('empleados_dashboard:all');
 
         return response()->json([
             'message' => 'Datos sincronizados correctamente',
