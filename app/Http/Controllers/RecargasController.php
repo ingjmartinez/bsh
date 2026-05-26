@@ -31,11 +31,12 @@ class RecargasController extends Controller
         }
 
         curl_setopt_array($curl, array(
-            CURLOPT_URL => "https://ltkadapi.lotobet.bet/api/V1/drc0PcA35U7oMvsnz7/{$token->token}/{$fecha}/05",
+            CURLOPT_URL => "https://apiadmin.prodrl.lotvirtual.com/api/V1/drc0PcA35U7oMvsnz7/{$token->token}/{$fecha}/07",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
+            CURLOPT_CONNECTTIMEOUT => 15,
+            CURLOPT_TIMEOUT => 120,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'GET',
@@ -87,11 +88,12 @@ class RecargasController extends Controller
         }
 
         curl_setopt_array($curl, array(
-            CURLOPT_URL => "https://ltkadapi.lotobet.bet/api/V1/drc0PcA35U7oMvsnz7/{$token->token}/{$fecha}/05",
+            CURLOPT_URL => "https://apiadmin.prodrl.lotvirtual.com/api/V1/drc0PcA35U7oMvsnz7/{$token->token}/{$fecha}/07",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
+            CURLOPT_CONNECTTIMEOUT => 15,
+            CURLOPT_TIMEOUT => 120,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'GET',

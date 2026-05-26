@@ -6,6 +6,8 @@ class RecursosHumanosController extends Controller
 {
     public function index()
     {
+        // Los modulos inactivos permanecen configurados para preservar rutas/datos,
+        // pero no se muestran en el hub de Recursos Humanos.
         $modulos = collect(config('recursos_humanos', []))
             ->filter(fn ($modulo) => (bool) ($modulo['activo'] ?? true))
             ->map(function ($modulo) {

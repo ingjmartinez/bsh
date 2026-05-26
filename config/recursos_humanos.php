@@ -35,7 +35,8 @@ return [
         'icono' => 'ri-video-chat-line',
         'categoria' => 'Reclutamiento',
         'tags' => ['entrevista', 'candidatos', 'vacantes', 'online'],
-        'activo' => true,
+        // Vista ocultada del hub de Recursos Humanos; las rutas se conservan para no perder historial ni datos.
+        'activo' => false,
     ],
     [
         'nombre' => 'Empleados No Regularizados',

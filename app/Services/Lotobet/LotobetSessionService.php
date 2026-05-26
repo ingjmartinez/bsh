@@ -12,8 +12,9 @@ use RuntimeException;
 class LotobetSessionService
 {
     private const TOKEN_ID = 1;
-    private const TOKEN_URL = 'https://ltkadapi.lotobet.bet/api/v1/MfgFGBXCFF/C0HFxE1mm6pm6POPD5sb/8jSaDnMZfD9bMWOXg4f0';
-    private const BASE_URL = 'https://ltkadapi.lotobet.bet/api/V1';
+    private const TOKEN_URL = 'https://apiadmin.prodrl.lotvirtual.com/api/v1/MfgFGBXCFF/17BuSHQhIS/eyJLSmNm1j';
+    private const BASE_URL = 'https://apiadmin.prodrl.lotvirtual.com/api/V1';
+    private const COMPANY_CODE = '07';
 
     private array $headers = [
         'AhfCC: yB0tt5KW3wVVCYYtCpen',
@@ -68,7 +69,7 @@ class LotobetSessionService
     public function getReport(string $endpointKey, string $fecha): array
     {
         $token = $this->getToken();
-        $url = self::BASE_URL . "/{$endpointKey}/{$token->token}/{$fecha}/05";
+        $url = self::BASE_URL . "/{$endpointKey}/{$token->token}/{$fecha}/" . self::COMPANY_CODE;
         $response = $this->request($url);
         $data = json_decode($response['body'], true);
 
@@ -141,7 +142,7 @@ class LotobetSessionService
 
     private function cookiePath(): string
     {
-        return storage_path('app/etl/lotobet_cookie.txt');
+        return storage_path('app/etl/lotobet_prodrl_07_cookie.txt');
     }
 
     private function parseTokenExpiry($fechaString): ?Carbon
