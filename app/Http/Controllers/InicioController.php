@@ -142,7 +142,7 @@ class InicioController extends Controller
         $resumenLotobet = $this->getResumenVentasPorTabla('vt_usuarios_bet', $fechaInicio, $fechaFin, $catalogoProductos, $agenciasActivasMap);
         $resumenLotonet = $this->getResumenVentasPorTabla('vt_usuarios_net', $fechaInicio, $fechaFin, $catalogoProductos, $agenciasActivasMap);
 
-        $resumen['sistemas']['Lotobet'] = $resumenLotobet;
+        $resumen['sistemas']['Lotobet Real'] = $resumenLotobet;
         $resumen['sistemas']['Lotonet'] = $resumenLotonet;
 
         foreach (['tradicional', 'no_tradicional', 'recargas', 'otros'] as $tipo) {
@@ -569,7 +569,7 @@ class InicioController extends Controller
             ],
             'tipos' => $tipos,
             'sistemas' => [
-                'Lotobet' => [
+                'Lotobet Real' => [
                     'total_general' => 0,
                     'registros' => 0,
                     'tipos' => $tipos,

@@ -45,7 +45,7 @@
                                         <label class="mb-0" for="sistema">Sistema</label>
                                         <select class="form-control" id="sistema">
                                             <option value="todos">Todos</option>
-                                            <option value="lotobet">Lotobet</option>
+                                            <option value="lotobet">Lotobet Real</option>
                                             <option value="lotonet">Lotonet</option>
                                         </select>
                                     </div>

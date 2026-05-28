@@ -48,7 +48,7 @@
                                                 <select id="empresa" class="form-select">
                                                     <option value="">Todas</option>
                                                     <option value="168">BSH Support</option>
-                                                    <option value="169">Negosur</option>
+                                                    <option value="169">Consorcio SH</option>
                                                 </select>
                                             </div>
                                             <div>
@@ -144,7 +144,7 @@
                                         <label class="mb-0" for="ni_sistema">Sistema</label>
                                         <select id="ni_sistema" class="form-select">
                                             <option value="Todos">Todos</option>
-                                            <option value="Lotobet">Lotobet</option>
+                                            <option value="Lotobet">Lotobet Real</option>
                                             <option value="Lotonet">Lotonet</option>
                                         </select>
                                     </div>

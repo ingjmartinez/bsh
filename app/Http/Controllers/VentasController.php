@@ -289,7 +289,7 @@ class VentasController extends Controller
             return [
                 'ok' => false,
                 'status' => 502,
-                'message' => $curlError !== '' ? $curlError : 'No se pudo conectar con la API de Lotobet.',
+                'message' => $curlError !== '' ? $curlError : 'No se pudo conectar con la API de Lotobet Real.',
                 'rows' => [],
             ];
         }
@@ -300,7 +300,7 @@ class VentasController extends Controller
             return [
                 'ok' => false,
                 'status' => 502,
-                'message' => 'La API de Lotobet devolvio una respuesta invalida.',
+                'message' => 'La API de Lotobet Real devolvio una respuesta invalida.',
                 'rows' => [],
             ];
         }
@@ -313,7 +313,7 @@ class VentasController extends Controller
             return [
                 'ok' => false,
                 'status' => $httpCode,
-                'message' => $message !== '' ? $message : ('La API de Lotobet respondio con HTTP ' . $httpCode . '.'),
+                'message' => $message !== '' ? $message : ('La API de Lotobet Real respondio con HTTP ' . $httpCode . '.'),
                 'rows' => [],
             ];
         }
@@ -322,7 +322,7 @@ class VentasController extends Controller
             return [
                 'ok' => false,
                 'status' => 502,
-                'message' => $message !== '' ? $message : 'La API de Lotobet no devolvio el listado esperado.',
+                'message' => $message !== '' ? $message : 'La API de Lotobet Real no devolvio el listado esperado.',
                 'rows' => [],
             ];
         }
@@ -331,7 +331,7 @@ class VentasController extends Controller
             return [
                 'ok' => false,
                 'status' => 422,
-                'message' => $message !== '' ? $message : 'La API de Lotobet devolvio un error.',
+                'message' => $message !== '' ? $message : 'La API de Lotobet Real devolvio un error.',
                 'rows' => [],
             ];
         }

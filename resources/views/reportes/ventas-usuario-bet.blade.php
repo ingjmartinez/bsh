@@ -10,13 +10,13 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                            <h4 class="mb-sm-0">Verificación de Usuario Lotobet</h4>
+                            <h4 class="mb-sm-0">Verificación de Usuario Lotobet Real</h4>
 
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li class="breadcrumb-item"><a href="{{ route('inicio.index') }}">Inicio</a></li>
                                     <li class="breadcrumb-item"><a href="{{ route('reportes.index') }}">Reportes</a></li>
-                                    <li class="breadcrumb-item active">Verificacion de Usuario Lotobet</li>
+                                    <li class="breadcrumb-item active">Verificacion de Usuario Lotobet Real</li>
                                 </ol>
                             </div>
                         </div>
@@ -28,7 +28,7 @@
                     <div class="col-lg-12">
                         <div class="card">
                             <div class="card-header d-flex align-items-center justify-content-between">
-                                <h5 class="card-title mb-0">Sistema Lotobet</h5>
+                                <h5 class="card-title mb-0">Sistema Lotobet Real</h5>
 
                                 <div class="d-flex gap-3 align-items-center justify-content-between">
                                     <div><label class="mb-0" for="empresa">Mes</label></div>

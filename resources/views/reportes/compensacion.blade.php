@@ -59,7 +59,7 @@
                                         <label for="sistema" class="form-label">Empresa</label>
                                         <select id="sistema" class="form-control">
                                             <option value="todos">Todas</option>
-                                            <option value="lotobet">Lotobet</option>
+                                            <option value="lotobet">Lotobet Real</option>
                                             <option value="lotonet">Lotonet</option>
                                         </select>
                                     </div>

@@ -66,7 +66,7 @@
                                         <label class="mb-0" for="ni_sistema">Sistema</label>
                                         <select id="ni_sistema" class="form-select">
                                             <option value="Todos">Todos</option>
-                                            <option value="Lotobet">Lotobet</option>
+                                            <option value="Lotobet">Lotobet Real</option>
                                             <option value="Lotonet">Lotonet</option>
                                         </select>
                                     </div>

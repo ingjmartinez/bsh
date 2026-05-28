@@ -35,7 +35,7 @@
                                         <label class="mb-0" for="tipo_faltante">Sistema</label>
                                         <select class="form-select" id="tipo_faltante">
                                             <option value="all" selected>Todos</option>
-                                            <option value="bet">Lotobet</option>
+                                            <option value="bet">Lotobet Real</option>
                                             <option value="net">Lotonet</option>
                                         </select>
                                     </div>
@@ -174,7 +174,7 @@
         const urlBase = '/reportes-faltantes-lotobet';
         const nombresSistema = {
             all: 'Todos los sistemas',
-            bet: 'Lotobet',
+            bet: 'Lotobet Real',
             net: 'Lotonet'
         };
 

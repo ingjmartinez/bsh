@@ -104,7 +104,7 @@
                                         <label class="mb-0" for="ni_sistema">Sistema</label>
                                         <select id="ni_sistema" class="form-select">
                                             <option value="Todos">Todos</option>
-                                            <option value="Lotobet">Lotobet</option>
+                                            <option value="Lotobet">Lotobet Real</option>
                                             <option value="Lotonet">Lotonet</option>
                                         </select>
                                     </div>
@@ -608,7 +608,7 @@
     function normalizeAdministrativeEmpresaLabel(value) {
         const key = normalizeAdministrativeEmpresaKey(value);
         if (key === 'bsh_support') return 'BSH Support';
-        if (key === 'negosur') return 'Negosur';
+        if (key === 'negosur') return 'Consorcio SH';
         if (key === 'sin empresa') return 'Sin empresa';
         return String(value ?? '').trim();
     }

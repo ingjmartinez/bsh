@@ -70,7 +70,7 @@
                                         <label class="mb-0" for="ni_sistema">Sistema</label>
                                         <select id="ni_sistema" class="form-select">
                                             <option value="Todos">Todos</option>
-                                            <option value="Lotobet">Lotobet</option>
+                                            <option value="Lotobet">Lotobet Real</option>
                                             <option value="Lotonet">Lotonet</option>
                                         </select>
                                     </div>
@@ -450,68 +450,68 @@
             ["5. Servs. Tecnicos", "Jose Antonio Polanco Vasquez", "BSH Support", 0.0150275415513765],
             ["5. Servs. Tecnicos", "Josué Johan Martinez Mancebo", "BSH Support", 0.0150275415513765],
             ["5. Servs. Tecnicos", "Pedro Hector Santana Mateo", "BSH Support", 0.0150275415513765],
-            ["1. Gtes. Y Encarg.", "Erick junior Velasquez gomez", "Negosur", 0.124049587695015],
-            ["1. Gtes. Y Encarg.", "Yukaine Echavarria", "Negosur", 0.035],
-            ["1. Gtes. Y Encarg.", "Aramis \nMorel Arroyo", "Negosur", 0.045],
-            ["1. Gtes. Y Encarg.", "Johanset Batista", "Negosur", 0.03],
-            ["2. Monitoreo", "Altagracia karina Vallejo Bueno", "Negosur", 0.04],
-            ["2. Monitoreo", "Leyshi Y. Beras", "Negosur", 0.03],
-            ["2. Monitoreo", "Geldis Acosto", "Negosur", 0.01],
-            ["2. Monitoreo", "Joselanea Reynoso", "Negosur", 0.01],
-            ["2. Monitoreo", "Junior de Oleo", "Negosur", 0.01],
-            ["2. Monitoreo", "María Liriano", "Negosur", 0.01],
-            ["2. Monitoreo", "Reidy Reynoso", "Negosur", 0.01],
-            ["2. Monitoreo", "yolaidi Arias", "Negosur", 0.03],
-            ["4. Operadores", "Hector De Regla Mariñez Diaz", "Negosur", 0.03],
-            ["4. Operadores", "Sherlyn Lexander Perdomo valdez", "Negosur", 0.03],
-            ["4. Operadores", "Sayi Virginia Marmolejos", "Negosur", 0.00893353511893479],
-            ["4. Operadores", "Leydi Guerrero", "Negosur", 0.0183070385116862],
-            ["4. Operadores", "Alba Yris Tapia Morillo", "Negosur", 0.0183070385116862],
-            ["4. Operadores", "Yenifer Estefani Baez Cordero", "Negosur", 0.0183070385116862],
-            ["4. Operadores", "Yudekis Tejeda Tejeda", "Negosur", 0.0183070385116862],
-            ["4. Operadores", "Hector Guerrero Tejeda", "Negosur", 0.0183070385116862],
-            ["4. Operadores", "Sandra Diomare Arias Garcia", "Negosur", 0.0183070385116862],
-            ["4. Operadores", "Yaniris Reynoso", "Negosur", 0.0183070385116862],
-            ["4. Operadores", "jerry alejandro anziani arias", "Negosur", 0.0183070385116862],
-            ["4. Operadores", "Victor Baez", "Negosur", 0.0183070385116862],
-            ["4. Operadores", "Carla yasmel Barias baez", "Negosur", 0.0183070385116862],
-            ["4. Operadores", "Estafani Espinosa", "Negosur", 0.0183070385116862],
-            ["4. Operadores", "FElix Rosario", "Negosur", 0.0140923312152275],
-            ["4. Operadores", "Rosabel Arias de Lara", "Negosur", 0.0140923312152275],
-            ["4. Operadores", "Alex Yadir Figuereo Abreu", "Negosur", 0.0140923312152275],
-            ["4. Operadores", "Rafaela Brito", "Negosur", 0.0140923312152275],
-            ["4. Operadores", "Samir Ferrera", "Negosur", 0.0127621930270497],
-            ["4. Operadores", "Martin alejandro fernandez bello", "Negosur", 0.00719861317352419],
-            ["4. Operadores", "Victor julio Galvan montero", "Negosur", 0.00719861317352419],
-            ["4. Operadores", "Raulin Matos", "Negosur", 0.00780783001427268],
-            ["4. Operadores", "Nestor Antonio Terrero", "Negosur", 0.00780783001427268],
-            ["4. Operadores", "Leivin Pina Feliz", "Negosur", 0.00780783001427268],
-            ["4. Operadores", "Jeison Manuel Feliz Feliz", "Negosur", 0.00780783001427268],
-            ["4. Operadores", "José vega", "Negosur", 0.00780783001427268],
-            ["4. Operadores", "Georges gabriel reyes cuevas", "Negosur", 0.00780783001427268],
-            ["4. Operadores", "yeandrys dileissy Ortiz perez", "Negosur", 0.00780783001427268],
-            ["4. Operadores", "Silvia patricia batista diaz", "Negosur", 0.00780783001427268],
-            ["4. Operadores", "Fermin brito De leon", "Negosur", 0.00808769747562137],
-            ["4. Operadores", "Manuel Emilio Pérez", "Negosur", 0.00808769747562137],
-            ["4. Operadores", "Manuel Emilio Rivas", "Negosur", 0.00808769747562137],
-            ["4. Operadores", "Marco daniel Méndez gonzalez", "Negosur", 0.00808769747562137],
-            ["4. Operadores", "waner omar diaz sena", "Negosur", 0.00808769747562137],
-            ["4. Operadores", "Zenaldo gregorio volquez perez", "Negosur", 0.006],
-            ["4. Operadores", "Wilton feliz Alcantara pienda", "Negosur", 0.0127621930270497],
-            ["4. Operadores", "Deibi Garcia Made", "Negosur", 0.0127621930270497],
-            ["4. Operadores", "Pedro Suero", "Negosur", 0.0045266991406722],
-            ["4. Operadores", "Martires Suero Flores", "Negosur", 0.0045266991406722],
-            ["4. Operadores", "Melvin Moreno", "Negosur", 0.0045266991406722],
-            ["4. Operadores", "Pedro Suero Rosario", "Negosur", 0.004],
-            ["4. Operadores", "Martires Suero Flores", "Negosur", 0.004],
-            ["4. Operadores", "Melvin Francisco Moreno Suero", "Negosur", 0.004],
-            ["5. Servs. Tecnicos", "Julio Inocencio Dominguez Perez", "Negosur", 0.0173444076495108],
-            ["5. Servs. Tecnicos", "Raulin Guerrero", "Negosur", 0.02809917539003],
-            ["5. Servs. Tecnicos", "Comas Abreu Marcos", "Negosur", 0.00867220382475538],
-            ["5. Servs. Tecnicos", "Wendi Reyes", "Negosur", 0.0094685238738982],
-            ["5. Servs. Tecnicos", "Henry Matos", "Negosur", 0.0094685238738982],
-            ["5. Servs. Tecnicos", "Ignacio Nivar Victoriano", "Negosur", 0.006],
-            ["5. Servs. Tecnicos", "LUIS ENRIQUE MERAN MORA", "Negosur", 0.0234159794916916],
+            ["1. Gtes. Y Encarg.", "Erick junior Velasquez gomez", "Consorcio SH", 0.124049587695015],
+            ["1. Gtes. Y Encarg.", "Yukaine Echavarria", "Consorcio SH", 0.035],
+            ["1. Gtes. Y Encarg.", "Aramis \nMorel Arroyo", "Consorcio SH", 0.045],
+            ["1. Gtes. Y Encarg.", "Johanset Batista", "Consorcio SH", 0.03],
+            ["2. Monitoreo", "Altagracia karina Vallejo Bueno", "Consorcio SH", 0.04],
+            ["2. Monitoreo", "Leyshi Y. Beras", "Consorcio SH", 0.03],
+            ["2. Monitoreo", "Geldis Acosto", "Consorcio SH", 0.01],
+            ["2. Monitoreo", "Joselanea Reynoso", "Consorcio SH", 0.01],
+            ["2. Monitoreo", "Junior de Oleo", "Consorcio SH", 0.01],
+            ["2. Monitoreo", "María Liriano", "Consorcio SH", 0.01],
+            ["2. Monitoreo", "Reidy Reynoso", "Consorcio SH", 0.01],
+            ["2. Monitoreo", "yolaidi Arias", "Consorcio SH", 0.03],
+            ["4. Operadores", "Hector De Regla Mariñez Diaz", "Consorcio SH", 0.03],
+            ["4. Operadores", "Sherlyn Lexander Perdomo valdez", "Consorcio SH", 0.03],
+            ["4. Operadores", "Sayi Virginia Marmolejos", "Consorcio SH", 0.00893353511893479],
+            ["4. Operadores", "Leydi Guerrero", "Consorcio SH", 0.0183070385116862],
+            ["4. Operadores", "Alba Yris Tapia Morillo", "Consorcio SH", 0.0183070385116862],
+            ["4. Operadores", "Yenifer Estefani Baez Cordero", "Consorcio SH", 0.0183070385116862],
+            ["4. Operadores", "Yudekis Tejeda Tejeda", "Consorcio SH", 0.0183070385116862],
+            ["4. Operadores", "Hector Guerrero Tejeda", "Consorcio SH", 0.0183070385116862],
+            ["4. Operadores", "Sandra Diomare Arias Garcia", "Consorcio SH", 0.0183070385116862],
+            ["4. Operadores", "Yaniris Reynoso", "Consorcio SH", 0.0183070385116862],
+            ["4. Operadores", "jerry alejandro anziani arias", "Consorcio SH", 0.0183070385116862],
+            ["4. Operadores", "Victor Baez", "Consorcio SH", 0.0183070385116862],
+            ["4. Operadores", "Carla yasmel Barias baez", "Consorcio SH", 0.0183070385116862],
+            ["4. Operadores", "Estafani Espinosa", "Consorcio SH", 0.0183070385116862],
+            ["4. Operadores", "FElix Rosario", "Consorcio SH", 0.0140923312152275],
+            ["4. Operadores", "Rosabel Arias de Lara", "Consorcio SH", 0.0140923312152275],
+            ["4. Operadores", "Alex Yadir Figuereo Abreu", "Consorcio SH", 0.0140923312152275],
+            ["4. Operadores", "Rafaela Brito", "Consorcio SH", 0.0140923312152275],
+            ["4. Operadores", "Samir Ferrera", "Consorcio SH", 0.0127621930270497],
+            ["4. Operadores", "Martin alejandro fernandez bello", "Consorcio SH", 0.00719861317352419],
+            ["4. Operadores", "Victor julio Galvan montero", "Consorcio SH", 0.00719861317352419],
+            ["4. Operadores", "Raulin Matos", "Consorcio SH", 0.00780783001427268],
+            ["4. Operadores", "Nestor Antonio Terrero", "Consorcio SH", 0.00780783001427268],
+            ["4. Operadores", "Leivin Pina Feliz", "Consorcio SH", 0.00780783001427268],
+            ["4. Operadores", "Jeison Manuel Feliz Feliz", "Consorcio SH", 0.00780783001427268],
+            ["4. Operadores", "José vega", "Consorcio SH", 0.00780783001427268],
+            ["4. Operadores", "Georges gabriel reyes cuevas", "Consorcio SH", 0.00780783001427268],
+            ["4. Operadores", "yeandrys dileissy Ortiz perez", "Consorcio SH", 0.00780783001427268],
+            ["4. Operadores", "Silvia patricia batista diaz", "Consorcio SH", 0.00780783001427268],
+            ["4. Operadores", "Fermin brito De leon", "Consorcio SH", 0.00808769747562137],
+            ["4. Operadores", "Manuel Emilio Pérez", "Consorcio SH", 0.00808769747562137],
+            ["4. Operadores", "Manuel Emilio Rivas", "Consorcio SH", 0.00808769747562137],
+            ["4. Operadores", "Marco daniel Méndez gonzalez", "Consorcio SH", 0.00808769747562137],
+            ["4. Operadores", "waner omar diaz sena", "Consorcio SH", 0.00808769747562137],
+            ["4. Operadores", "Zenaldo gregorio volquez perez", "Consorcio SH", 0.006],
+            ["4. Operadores", "Wilton feliz Alcantara pienda", "Consorcio SH", 0.0127621930270497],
+            ["4. Operadores", "Deibi Garcia Made", "Consorcio SH", 0.0127621930270497],
+            ["4. Operadores", "Pedro Suero", "Consorcio SH", 0.0045266991406722],
+            ["4. Operadores", "Martires Suero Flores", "Consorcio SH", 0.0045266991406722],
+            ["4. Operadores", "Melvin Moreno", "Consorcio SH", 0.0045266991406722],
+            ["4. Operadores", "Pedro Suero Rosario", "Consorcio SH", 0.004],
+            ["4. Operadores", "Martires Suero Flores", "Consorcio SH", 0.004],
+            ["4. Operadores", "Melvin Francisco Moreno Suero", "Consorcio SH", 0.004],
+            ["5. Servs. Tecnicos", "Julio Inocencio Dominguez Perez", "Consorcio SH", 0.0173444076495108],
+            ["5. Servs. Tecnicos", "Raulin Guerrero", "Consorcio SH", 0.02809917539003],
+            ["5. Servs. Tecnicos", "Comas Abreu Marcos", "Consorcio SH", 0.00867220382475538],
+            ["5. Servs. Tecnicos", "Wendi Reyes", "Consorcio SH", 0.0094685238738982],
+            ["5. Servs. Tecnicos", "Henry Matos", "Consorcio SH", 0.0094685238738982],
+            ["5. Servs. Tecnicos", "Ignacio Nivar Victoriano", "Consorcio SH", 0.006],
+            ["5. Servs. Tecnicos", "LUIS ENRIQUE MERAN MORA", "Consorcio SH", 0.0234159794916916],
         ].map(function (row) {
             return {
                 grupo: row[0],
@@ -669,259 +669,259 @@
     {
         "grupo": "4. Operadores",
         "nombre": "Hector De Regla",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.03
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Sherlyn Lexander",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.03
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Sayi Virginia",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.0089335351189348
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Leydi",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.018307038511686
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Alba Yris",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.018307038511686
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Yenifer Estefani",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.018307038511686
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Yudekis Tejeda",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.018307038511686
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Hector",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.018307038511686
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Sandra Diomare",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.018307038511686
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Yaniris",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.018307038511686
     },
     {
         "grupo": "4. Operadores",
         "nombre": "jerry alejandro",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.018307038511686
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Victor",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.018307038511686
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Carla yasmel",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.018307038511686
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Estafani",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.018307038511686
     },
     {
         "grupo": "4. Operadores",
         "nombre": "FElix",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.014092331215227
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Rosabel",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.014092331215227
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Alex Yadir",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.014092331215227
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Rafaela",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.014092331215227
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Samir",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.01276219302705
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Martin alejandro",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.0071986131735242
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Victor julio",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.0071986131735242
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Raulin",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.0078078300142727
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Nestor Antonio",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.0078078300142727
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Leivin",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.0078078300142727
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Jeison Manuel",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.0078078300142727
     },
     {
         "grupo": "4. Operadores",
         "nombre": "José",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.0078078300142727
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Georges gabriel",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.0078078300142727
     },
     {
         "grupo": "4. Operadores",
         "nombre": "yeandrys dileissy",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.0078078300142727
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Silvia patricia",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.0078078300142727
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Fermin brito",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.0080876974756214
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Manuel Emilio",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.0080876974756214
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Manuel Emilio ",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.0080876974756214
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Marco daniel",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.0080876974756214
     },
     {
         "grupo": "4. Operadores",
         "nombre": "waner omar",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.0080876974756214
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Zenaldo gregorio",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.006
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Wilton feliz",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.01276219302705
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Deibi Garcia",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.01276219302705
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Pedro",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.0045266991406722
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Martires",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.0045266991406722
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Melvin",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.0045266991406722
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Pedro",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.004
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Martires",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.004
     },
     {
         "grupo": "4. Operadores",
         "nombre": "Melvin Francisco",
-        "empresa": "Negosur",
+        "empresa": "Consorcio SH",
         "pct": 0.004
     }
 ];

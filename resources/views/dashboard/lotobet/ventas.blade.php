@@ -88,11 +88,11 @@
                     <div class="col-12">
                         <div class="d-flex justify-content-between align-items-start align-items-lg-center flex-column flex-lg-row gap-3 text-center text-lg-start mb-3">
                             <div>
-                                <h1 class="h3 mb-1">Dashboard Financiero LotoBet - Ventas por Tipo de Producto</h1>
+                                <h1 class="h3 mb-1">Dashboard Financiero Lotobet Real - Ventas por Tipo de Producto</h1>
                                 <ol class="breadcrumb m-0 justify-content-center justify-content-lg-start">
                                     <li class="breadcrumb-item"><a href="{{ route('inicio.index') }}">Inicio</a></li>
                                     <li class="breadcrumb-item"><a href="{{ route('dashboard.index') }}">Dashboard</a></li>
-                                    <li class="breadcrumb-item active">Lotobet Ventas</li>
+                                    <li class="breadcrumb-item active">Lotobet Real Ventas</li>
                                 </ol>
                             </div>
                             <div class="d-flex align-items-center gap-2 flex-wrap justify-content-center">
@@ -117,7 +117,7 @@
                         <label for="empresa" class="form-label">Empresa</label>
                         <select id="empresa" class="form-select">
                             <option value="todas" selected>Todas</option>
-                            <option value="negosur">Negosur</option>
+                            <option value="negosur">Consorcio SH</option>
                             <option value="joselito">BSH Support</option>
                         </select>
                     </div>

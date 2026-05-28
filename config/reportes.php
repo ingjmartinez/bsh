@@ -2,7 +2,7 @@
 
 return [
     [
-        'nombre' => 'Ventas por Usuario Lotobet',
+        'nombre' => 'Ventas por Usuario Lotobet Real',
         'descripcion' => 'Consulta ventas por usuario en un mes seleccionado.',
         'url' => '/reportes-ventas-usuario-lotobet',
         'icono' => 'ri-user-search-line',
@@ -11,7 +11,7 @@ return [
         'activo' => true,
     ],
     [
-        'nombre' => 'Faltantes Lotobet',
+        'nombre' => 'Faltantes Lotobet Real',
         'descripcion' => 'Reporte de faltantes por usuario y agencia.',
         'url' => '/reportes-faltantes-lotobet',
         'icono' => 'ri-error-warning-line',

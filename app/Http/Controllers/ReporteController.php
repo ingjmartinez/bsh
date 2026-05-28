@@ -198,7 +198,7 @@ class ReporteController extends Controller
         return response()->json([
             'resumen' => [
                 'sistema' => match ($validated['sistema']) {
-                    'lotobet' => 'Lotobet',
+                    'lotobet' => 'Lotobet Real',
                     'lotonet' => 'Lotonet',
                     default => 'Todas',
                 },
@@ -314,7 +314,7 @@ class ReporteController extends Controller
         return [
             'tipo' => 'bet',
             'tabla' => 'faltantes_bet',
-            'nombre' => 'Lotobet',
+            'nombre' => 'Lotobet Real',
         ];
     }
 

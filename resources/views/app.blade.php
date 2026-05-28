@@ -975,7 +975,7 @@
                                 <ul class="nav nav-sm flex-column">
                                     <li class="nav-item">
                                         <a href="{{ url('/generar-lotobet') }}" class="nav-link">
-                                            <span data-key="t-dashboards">Generar Lotobet</span>
+                                            <span data-key="t-dashboards">Generar Lotobet Real</span>
                                         </a>
                                     </li>
                                     <li class="nav-item">
@@ -988,7 +988,7 @@
                                         <a href="#sidebarEmail" class="nav-link collapsed" data-bs-toggle="collapse"
                                             role="button" aria-expanded="false" aria-controls="sidebarEmail"
                                             data-key="t-email">
-                                            Lotobet
+                                            Lotobet Real
                                         </a>
                                         <div class="collapse menu-dropdown" id="sidebarEmail">
                                             <ul class="nav nav-sm flex-column">
@@ -1110,7 +1110,7 @@
 
                                     <li class="nav-item">
                                         <a href="{{ url('/ventas-flash-lotobet') }}" class="nav-link">
-                                            <span data-key="t-dashboards">Ventas Flash Lotobet</span>
+                                            <span data-key="t-dashboards">Ventas Flash Lotobet Real</span>
                                         </a>
                                     </li>
                                     <li class="nav-item d-none">

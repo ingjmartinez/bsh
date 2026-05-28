@@ -1,6 +1,6 @@
 @extends('app')
 
-@section('title', 'Dashboard Ventas Flash Lotobet')
+@section('title', 'Dashboard Ventas Flash Lotobet Real')
 
 @section('content')
     <style>
@@ -89,11 +89,11 @@
                         <div
                             class="d-flex justify-content-between align-items-start align-items-lg-center flex-column flex-lg-row gap-3 text-center text-lg-start mb-3">
                             <div>
-                                <h1 class="h3 mb-1">Dashboard Ventas Flash Lotobet</h1>
+                                <h1 class="h3 mb-1">Dashboard Ventas Flash Lotobet Real</h1>
                                 <ol class="breadcrumb m-0 justify-content-center justify-content-lg-start">
                                     <li class="breadcrumb-item"><a href="{{ route('inicio.index') }}">Inicio</a></li>
                                     <li class="breadcrumb-item"><a href="{{ route('dashboard.index') }}">Dashboard</a></li>
-                                    <li class="breadcrumb-item active">Lotobet Flash</li>
+                                    <li class="breadcrumb-item active">Lotobet Real Flash</li>
                                 </ol>
                             </div>
                             <div class="d-flex align-items-center gap-2 flex-wrap justify-content-center">

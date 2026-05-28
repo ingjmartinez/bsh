@@ -351,11 +351,11 @@ class AsistenciaComparativaController extends Controller
         $token = Token::find(1);
 
         if (!$token) {
-            throw new \RuntimeException('Genere un token de Lotobet.');
+            throw new \RuntimeException('Genere un token de Lotobet Real.');
         }
 
         if (now()->greaterThan($token->fecha)) {
-            throw new \RuntimeException('El token de Lotobet expiró, genere uno nuevo.');
+            throw new \RuntimeException('El token de Lotobet Real expiró, genere uno nuevo.');
         }
 
         $curl = curl_init();
@@ -382,7 +382,7 @@ class AsistenciaComparativaController extends Controller
         $payload = json_decode((string) $response, true);
         $code = isset($payload['code']) ? (string) $payload['code'] : null;
         if ($code !== null && !in_array(strtolower(trim($code)), ['0', '00', '200', 'ok', 'success'], true)) {
-            $msg = $payload['msg'] ?? $payload['message'] ?? 'Respuesta inválida de API Lotobet';
+            $msg = $payload['msg'] ?? $payload['message'] ?? 'Respuesta inválida de API Lotobet Real';
             throw new \RuntimeException($msg);
         }
 

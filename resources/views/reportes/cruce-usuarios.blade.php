@@ -32,7 +32,7 @@
                                     <div class="col-md-2">
                                         <label for="sistema" class="form-label">Sistema</label>
                                         <select id="sistema" class="form-control">
-                                            <option value="Lotobet">Lotobet</option>
+                                            <option value="Lotobet">Lotobet Real</option>
                                             <option value="Lotonet">Lotonet</option>
                                         </select>
                                     </div>

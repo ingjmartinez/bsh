@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Reporte de Faltantes {{ $sistema ?? 'Lotobet' }}</title>
+    <title>Reporte de Faltantes {{ $sistema ?? 'Lotobet Real' }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -56,7 +56,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>Reporte de Faltantes {{ $sistema ?? 'Lotobet' }}</h1>
+        <h1>Reporte de Faltantes {{ $sistema ?? 'Lotobet Real' }}</h1>
         <p>Fecha de Generacion: {{ \Carbon\Carbon::now()->format('d/m/Y H:i') }}</p>
     </div>
 

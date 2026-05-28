@@ -117,7 +117,7 @@
                         <label for="empresa" class="form-label">Empresa</label>
                         <select id="empresa" class="form-select">
                             <option value="todas" selected>Todas</option>
-                            <option value="negosur">Negosur</option>
+                            <option value="negosur">Consorcio SH</option>
                             <option value="joselito">BSH Support</option>
                         </select>
                     </div>

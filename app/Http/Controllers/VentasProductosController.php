@@ -38,7 +38,7 @@ class VentasProductosController extends Controller
                 $contenido = [];
             }
         } catch (\Throwable $e) {
-            Log::error('Error consultando API ventas producto Lotobet', [
+            Log::error('Error consultando API ventas producto Lotobet Real', [
                 'fecha' => $fecha,
                 'error' => $e->getMessage(),
             ]);
@@ -81,7 +81,7 @@ class VentasProductosController extends Controller
                 ->groupBy('agencias.id', 'agencias.codigo', 'agencias.nombre', 'agencias.terminal', 'agencias.estatus')
                 ->get();
         } catch (\Throwable $e) {
-            Log::error('Error enriqueciendo ventas producto Lotobet con agencias locales', [
+            Log::error('Error enriqueciendo ventas producto Lotobet Real con agencias locales', [
                 'fecha' => $fecha,
                 'error' => $e->getMessage(),
             ]);
@@ -229,7 +229,7 @@ class VentasProductosController extends Controller
             $result = app(LotobetVentasProductoEtlService::class)->run($fecha);
 
             return response()->json([
-                'message' => 'ETL ventas producto Lotobet completado.',
+                'message' => 'ETL ventas producto Lotobet Real completado.',
                 'run_id' => $result['run_id'],
                 'total' => $result['inserted'],
                 'expected' => $result['expected'],

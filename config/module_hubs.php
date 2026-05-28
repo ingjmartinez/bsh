@@ -15,8 +15,8 @@ return [
                 'activo' => true,
             ],
             [
-                'nombre' => 'Lotobet Ventas',
-                'descripcion' => 'Dashboard financiero de LotoBet con ventas por tipo de producto y agencia.',
+                'nombre' => 'Lotobet Real Ventas',
+                'descripcion' => 'Dashboard financiero de Lotobet Real con ventas por tipo de producto y agencia.',
                 'url' => '/ventas-lotobet-dashboard',
                 'icono' => 'ri-bar-chart-box-line',
                 'categoria' => 'Ventas',
@@ -25,7 +25,7 @@ return [
             ],
             [
                 'nombre' => 'KPI Metas',
-                'descripcion' => 'Seguimiento de metas, cumplimiento y severidad para Lotobet.',
+                'descripcion' => 'Seguimiento de metas, cumplimiento y severidad para Lotobet Real.',
                 'url' => '/kpi-lotobet',
                 'icono' => 'ri-speed-up-line',
                 'categoria' => 'Indicadores',
@@ -33,8 +33,8 @@ return [
                 'activo' => true,
             ],
             [
-                'nombre' => 'Lotobet Flash',
-                'descripcion' => 'Dashboard de ventas flash de LotoBet con lectura operativa por fecha.',
+                'nombre' => 'Lotobet Real Flash',
+                'descripcion' => 'Dashboard de ventas flash de Lotobet Real con lectura operativa por fecha.',
                 'url' => '/ventas-lotobet-flash-dashboard',
                 'icono' => 'ri-flashlight-line',
                 'categoria' => 'Ventas',

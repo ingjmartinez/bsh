@@ -1,6 +1,6 @@
 @extends('app')
 
-@section('title', 'KPI Lotobet - Metas y Severidad')
+@section('title', 'KPI Lotobet Real - Metas y Severidad')
 
 @section('content')
     <div class="main-content">
@@ -10,12 +10,12 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                            <h4 class="mb-sm-0">KPI Lotobet - Metas y Severidad</h4>
+                            <h4 class="mb-sm-0">KPI Lotobet Real - Metas y Severidad</h4>
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li class="breadcrumb-item"><a href="{{ route('inicio.index') }}">Inicio</a></li>
                                     <li class="breadcrumb-item"><a href="{{ route('dashboard.index') }}">Dashboard</a></li>
-                                    <li class="breadcrumb-item active">KPI Lotobet</li>
+                                    <li class="breadcrumb-item active">KPI Lotobet Real</li>
                                 </ol>
                             </div>
                         </div>

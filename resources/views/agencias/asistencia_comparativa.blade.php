@@ -49,7 +49,7 @@
                                     <div class="col-md-4">
                                         <div class="d-flex flex-wrap justify-content-md-end gap-2">
                                             <button class="btn btn-dark btn-sm" id="btnGenerarTokenLotobet">
-                                                <i class="ri-key-line me-1"></i> Token Lotobet
+                                                <i class="ri-key-line me-1"></i> Token Lotobet Real
                                             </button>
                                             <button class="btn btn-info text-white btn-sm" id="btnGenerarTokenLotonet">
                                                 <i class="ri-shield-keyhole-line me-1"></i> Token Lotonet
@@ -576,17 +576,17 @@
 
     function generarTokenLotobet() {
         Swal.fire({
-            title: 'Generando token Lotobet...',
+            title: 'Generando token Lotobet Real...',
             allowOutsideClick: false,
             didOpen: () => Swal.showLoading(),
         });
 
         $.getJSON(URL_TOKEN_BET)
             .done(function(resp) {
-                Swal.fire('Listo', resp?.success || 'Token de Lotobet generado correctamente.', 'success');
+                Swal.fire('Listo', resp?.success || 'Token de Lotobet Real generado correctamente.', 'success');
             })
             .fail(function(xhr) {
-                const msg = xhr?.responseJSON?.message || 'No se pudo generar token de Lotobet.';
+                const msg = xhr?.responseJSON?.message || 'No se pudo generar token de Lotobet Real.';
                 Swal.fire('Error', msg, 'error');
             });
     }

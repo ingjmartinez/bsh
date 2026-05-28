@@ -36,8 +36,8 @@
                                                 <label class="form-label text-white text-opacity-75">Empresa</label>
                                                 <select id="empresa" class="form-select border-0 shadow-sm">
                                                     <option value="">Todas</option>
-                                                    <option value="168">168 = Grupo Joselito</option>
-                                                    <option value="169">169 = Negosur</option>
+                                                    <option value="168">168 = Bsh Support</option>
+                                                    <option value="169">169 = Consorcio SH</option>
                                                 </select>
                                             </div>
                                             <div class="col-sm-6 d-flex align-items-end">
@@ -268,8 +268,8 @@
         }
 
         function empresaTexto(valor) {
-            if (String(valor) === '168') return 'Grupo Joselito';
-            if (String(valor) === '169') return 'Negosur';
+            if (String(valor) === '168') return 'Bsh Support';
+            if (String(valor) === '169') return 'Consorcio SH';
             return 'Todas las empresas';
         }
 

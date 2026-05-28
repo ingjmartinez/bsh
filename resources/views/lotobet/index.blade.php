@@ -20,7 +20,7 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                            <h4 class="mb-sm-0">Procesar Todo Lotobet</h4>
+                            <h4 class="mb-sm-0">Procesar Todo Lotobet Real</h4>
                         </div>
                     </div>
                 </div>
@@ -130,7 +130,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalConfigAutoLabel">Configurar auto proceso Lotobet</h5>
+                    <h5 class="modal-title" id="modalConfigAutoLabel">Configurar auto proceso Lotobet Real</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">

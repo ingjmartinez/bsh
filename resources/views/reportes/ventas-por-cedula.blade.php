@@ -36,7 +36,7 @@
                                         <select id="sistema" class="form-control">
                                             <option value="todos">Todos</option>
                                             <option value="lotonet">Lotonet</option>
-                                            <option value="lotobet">Lotobet</option>
+                                            <option value="lotobet">Lotobet Real</option>
                                         </select>
                                     </div>
                                     <div class="col-md-2">

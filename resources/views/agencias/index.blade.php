@@ -78,7 +78,7 @@
                                             <h5 class="mb-0 text-info" id="countAgenciasBshSupport">0</h5>
                                         </div>
                                         <div>
-                                            <small class="text-muted d-block">Agencias Negosur</small>
+                                            <small class="text-muted d-block">Agencias Consorcio SH</small>
                                             <h5 class="mb-0 text-primary" id="countAgenciasNegosur">0</h5>
                                         </div>
                                         <div>
@@ -98,7 +98,7 @@
                                     <div class="d-flex gap-2 flex-wrap">
                                         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnFiltroEmpresaTodas">Todas empresas</button>
                                         <button type="button" class="btn btn-sm btn-outline-info" id="btnFiltroEmpresaBshSupport">BSH Support</button>
-                                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnFiltroEmpresaNegosur">Negosur</button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnFiltroEmpresaNegosur">Consorcio SH</button>
                                     </div>
                                 </div>
                                 <div class="table-responsive">

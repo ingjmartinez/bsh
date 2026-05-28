@@ -223,7 +223,7 @@
                                     <div><label class="mb-0" for="sistema">Sistema</label></div>
                                     <div>
                                         <select id="sistema" class="form-select">
-                                            <option value="Lotobet">Lotobet</option>
+                                            <option value="Lotobet">Lotobet Real</option>
                                             <option value="Lotonet">Lotonet</option>
                                         </select>
                                     </div>
@@ -283,7 +283,7 @@
                                     {{-- <div><label class="mb-0" for="sistema">Sistema</label></div>
                                     <div>
                                         <select id="sistema" class="form-select">
-                                            <option value="Lotobet">Lotobet</option>
+                                            <option value="Lotobet">Lotobet Real</option>
                                             <option value="Lotonet">Lotonet</option>
                                         </select>
                                     </div> --}}
@@ -343,7 +343,7 @@
                                     {{-- <div><label class="mb-0" for="sistema_admin">Sistema</label></div>
                                     <div>
                                         <select id="sistema_admin" class="form-select">
-                                            <option value="Lotobet">Lotobet</option>
+                                            <option value="Lotobet">Lotobet Real</option>
                                             <option value="Lotonet">Lotonet</option>
                                         </select>
                                     </div> --}}
