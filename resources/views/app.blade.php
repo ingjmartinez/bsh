@@ -93,6 +93,8 @@
             max-height: calc(var(--crm-sidebar-height) - var(--crm-sidebar-brand-height));
             overflow-y: auto;
             overflow-x: hidden;
+            scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+            scrollbar-width: thin;
         }
 
         html[data-layout="vertical"] #scrollbar .container-fluid,
@@ -199,20 +201,25 @@
 
         #scrollbar::-webkit-scrollbar,
         #navbar-nav::-webkit-scrollbar {
-            width: 10px;
+            width: 8px;
         }
 
         #scrollbar::-webkit-scrollbar-thumb,
         #navbar-nav::-webkit-scrollbar-thumb {
-            background-color: rgba(255, 255, 255, 0.28);
+            background-color: rgba(255, 255, 255, 0.24);
             background-clip: content-box;
-            border: 3px solid transparent;
+            border: 2px solid transparent;
             border-radius: 999px;
         }
 
         #scrollbar::-webkit-scrollbar-track,
         #navbar-nav::-webkit-scrollbar-track {
             background: transparent;
+        }
+
+        #scrollbar::-webkit-scrollbar-thumb:hover,
+        #navbar-nav::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.42);
         }
 
         #scrollbar .simplebar-track.simplebar-vertical,
@@ -1931,7 +1938,41 @@
                 });
             }
 
+            function bindSidebarWheelScroll() {
+                const scrollbar = document.getElementById('scrollbar');
+
+                if (!scrollbar || scrollbar.dataset.wheelScrollBound === '1') {
+                    return;
+                }
+
+                scrollbar.dataset.wheelScrollBound = '1';
+                scrollbar.addEventListener('wheel', function (event) {
+                    const scrollElement = document.querySelector('#scrollbar .simplebar-content-wrapper') || scrollbar;
+
+                    if (!scrollElement) {
+                        return;
+                    }
+
+                    const canScroll = scrollElement.scrollHeight > scrollElement.clientHeight;
+                    if (!canScroll) {
+                        return;
+                    }
+
+                    const delta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
+                    const atTop = scrollElement.scrollTop <= 0;
+                    const atBottom = Math.ceil(scrollElement.scrollTop + scrollElement.clientHeight) >= scrollElement.scrollHeight;
+
+                    if ((delta < 0 && atTop) || (delta > 0 && atBottom)) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    scrollElement.scrollTop += delta;
+                }, { passive: false });
+            }
+
             recalculateMenuScroll();
+            bindSidebarWheelScroll();
             window.addEventListener('resize', recalculateMenuScroll);
             window.addEventListener('orientationchange', recalculateMenuScroll);
             document.addEventListener('shown.bs.collapse', function (event) {

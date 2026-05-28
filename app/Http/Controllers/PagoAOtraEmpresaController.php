@@ -31,7 +31,7 @@ class PagoAOtraEmpresaController extends Controller
         }
 
         curl_setopt_array($curl, array(
-            CURLOPT_URL => "https://ltkadapi.lotobet.bet/api/V1/XCu6kLrhpbrkYOIvt6/{$token->token}/{$fecha}/05",
+            CURLOPT_URL => "https://apiadmin.prodrl.lotvirtual.com/api/V1/XCu6kLrhpbrkYOIvt6/{$token->token}/{$fecha}/07",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -87,7 +87,7 @@ class PagoAOtraEmpresaController extends Controller
         }
 
         curl_setopt_array($curl, array(
-            CURLOPT_URL => "https://ltkadapi.lotobet.bet/api/V1/XCu6kLrhpbrkYOIvt6/{$token->token}/{$fecha}/05",
+            CURLOPT_URL => "https://apiadmin.prodrl.lotvirtual.com/api/V1/XCu6kLrhpbrkYOIvt6/{$token->token}/{$fecha}/07",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,

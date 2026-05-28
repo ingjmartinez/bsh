@@ -306,6 +306,26 @@
                 .catch(e => addLog('Error generar token: ' + e.message, 'error'));
         });
 
+        function insertedRowsFromResponse(json) {
+            if (!json || typeof json.total === 'undefined' || json.total === null || json.total === '') {
+                return null;
+            }
+
+            const total = Number(json.total);
+            return Number.isFinite(total) ? total : null;
+        }
+
+        function moduleResultMessage(json) {
+            const insertedRows = insertedRowsFromResponse(json);
+            const baseMessage = json.message || json.error || '';
+
+            if (insertedRows !== null) {
+                return `Filas insertadas: ${insertedRows}${baseMessage ? ` - ${baseMessage}` : ''}`;
+            }
+
+            return baseMessage || JSON.stringify(json);
+        }
+
         async function processDate(date, options = { stopOnError: false }) {
             addLog(`Iniciando procesamiento para ${date}`);
             const results = [];
@@ -330,7 +350,7 @@
 
                     // Si viene JSON con message o total, mostrarlo
                     if (json) {
-                        const msg = json.message || (json.total ? `Total: ${json.total}` : JSON.stringify(json));
+                        const msg = moduleResultMessage(json);
                         addLog(`OK ${mod.name}: ${msg}`);
                         setStatus(mod.name, 'OK', msg);
                         results.push({ module: mod.name, ok: true, data: json });
@@ -351,10 +371,29 @@
             // resumen
             const okCount = results.filter(r => r.ok).length;
             const errCount = results.filter(r => !r.ok).length;
-            addLog(`Resumen: OK=${okCount} Error=${errCount}`);
+            const insertedTotal = results.reduce((sum, result) => {
+                const rows = insertedRowsFromResponse(result.data);
+                return rows === null ? sum : sum + rows;
+            }, 0);
+            const insertedRowsByModule = results
+                .filter(result => result.ok)
+                .map(result => {
+                    const rows = insertedRowsFromResponse(result.data);
+                    return rows === null ? null : `<tr><td>${result.module}</td><td class="text-end">${rows}</td></tr>`;
+                })
+                .filter(Boolean)
+                .join('');
+
+            addLog(`Resumen: OK=${okCount} Error=${errCount} Filas insertadas=${insertedTotal}`);
             Swal.fire({
                 title: 'Resumen',
-                html: `Fecha: <strong>${date}</strong><br>OK: <strong>${okCount}</strong><br>Errores: <strong>${errCount}</strong>`,
+                html: `
+                    Fecha: <strong>${date}</strong><br>
+                    OK: <strong>${okCount}</strong><br>
+                    Errores: <strong>${errCount}</strong><br>
+                    Filas insertadas: <strong>${insertedTotal}</strong>
+                    ${insertedRowsByModule ? `<div class="table-responsive mt-3"><table class="table table-sm table-bordered mb-0"><thead><tr><th>Modulo</th><th class="text-end">Filas</th></tr></thead><tbody>${insertedRowsByModule}</tbody></table></div>` : ''}
+                `,
                 icon: errCount > 0 ? 'warning' : 'success'
             });
 

@@ -262,7 +262,7 @@ class VentasController extends Controller
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-            CURLOPT_URL => "https://ltkadapi.lotobet.bet/api/V1/EQsEpamN7MuKb0Y7/{$token->token}/{$fecha}/05",
+            CURLOPT_URL => "https://apiadmin.prodrl.lotvirtual.com/api/V1/EQsEpamN7MuKb0Y7/{$token->token}/{$fecha}/07",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
