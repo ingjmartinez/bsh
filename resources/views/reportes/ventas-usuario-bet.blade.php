@@ -121,7 +121,7 @@
                 event.preventDefault();
             }
             const mes = document.getElementById('mes').value;
-            const url = `/reportes-ventas-usuario-bet/list?mes=${mes}&page=${page}`;
+            const url = `/reportes-ventas-usuario-lotobet/list?mes=${mes}&page=${page}`;
 
             Swal.fire({
                 title: "Cargando data ...",
@@ -184,13 +184,13 @@
 
         document.getElementById('btnExportarExcel').addEventListener('click', function() {
             const mes = document.getElementById('mes').value;
-            const url = `/reportes-ventas-usuario-bet/excel?mes=${mes}`;
+            const url = `/reportes-ventas-usuario-lotobet/excel?mes=${mes}`;
             window.open(url, '_blank');
         });
 
          document.getElementById('btnExportarPdf').addEventListener('click', function() {
             const mes = document.getElementById('mes').value;
-            const url = `/reportes-ventas-usuario-bet/pdf?mes=${mes}`;
+            const url = `/reportes-ventas-usuario-lotobet/pdf?mes=${mes}`;
             window.open(url, '_blank');
         });
     </script>

@@ -11,6 +11,19 @@ use Illuminate\Support\Facades\DB;
 
 class ReporteController extends Controller
 {
+    private function tipoProductoSql(string $ventaAlias = 'v', string $catalogoAlias = 'c'): string
+    {
+        $descripcion = "UPPER(COALESCE({$ventaAlias}.descripcion, ''))";
+
+        return "LOWER(COALESCE(NULLIF(TRIM({$catalogoAlias}.tipo), ''), CASE
+            WHEN {$descripcion} LIKE '%RECARG%' THEN 'recarga'
+            WHEN {$descripcion} LIKE '%PAQUET%' THEN 'paquetico'
+            WHEN {$descripcion} LIKE '%LOTO%' OR {$descripcion} LIKE '%POOL%' THEN 'no tradicional'
+            WHEN {$descripcion} LIKE '%QUINIELA%' OR {$descripcion} LIKE '%PALE%' OR {$descripcion} LIKE '%TRIPLETA%' THEN 'tradicional'
+            ELSE 'tradicional'
+        END))";
+    }
+
     public function indexReportes()
     {
         $reportes = collect(config('reportes', []))
@@ -209,8 +222,8 @@ class ReporteController extends Controller
         $mes = $request->input('mes');
         $page = $request->input('page', 1);
 
-        $query = DB::table('vt_usuarios_bet')
-            ->select('consorcio_id', 'agencia_id', 'cedula', 'tipo')
+        $query = DB::table('ventas_usuarios_bet')
+            ->selectRaw('NULL AS consorcio_id, agencia_id, cedula, NULL AS tipo')
             ->whereNotIn('cedula', function ($sub) {
                 $sub->select('cedula')->from('empleados')->whereNotNull('cedula');
             });
@@ -221,7 +234,7 @@ class ReporteController extends Controller
         }
 
         $registros = $query
-            ->groupBy('consorcio_id', 'agencia_id', 'cedula', 'tipo')
+            ->groupBy('agencia_id', 'cedula')
             ->orderBy('cedula', 'desc')
             ->paginate(50, ['*'], 'page', $page);
 
@@ -248,8 +261,8 @@ class ReporteController extends Controller
 
         $mes = $request->input('mes');
 
-        $query = DB::table('vt_usuarios_bet')
-            ->select('consorcio_id', 'agencia_id', 'cedula', 'tipo')
+        $query = DB::table('ventas_usuarios_bet')
+            ->selectRaw('NULL AS consorcio_id, agencia_id, cedula, NULL AS tipo')
             ->whereNotIn('cedula', function ($sub) {
                 $sub->select('cedula')->from('empleados')->whereNotNull('cedula');
             });
@@ -260,7 +273,7 @@ class ReporteController extends Controller
         }
 
         $registros = $query
-            ->groupBy('consorcio_id', 'agencia_id', 'cedula', 'tipo')
+            ->groupBy('agencia_id', 'cedula')
             ->orderBy('cedula', 'desc')
             ->get();        
 
@@ -448,7 +461,8 @@ class ReporteController extends Controller
         }
 
         // Determinar la tabla según el sistema
-        $tabla = $sistema === 'Lotobet' ? 'vt_usuarios_bet' : 'vt_usuarios_net';
+        $tabla = $sistema === 'Lotobet' ? 'ventas_producto_bet' : 'ventas_producto_net';
+        $tipoProductoSql = $this->tipoProductoSql('v', 'cj');
 
         // Consulta principal por día
         $resultados = DB::select("
@@ -465,10 +479,10 @@ class ReporteController extends Controller
             FROM (
                 SELECT
                     DATE(v.fecha) AS Fecha,
-                    SUM(CASE WHEN cj.tipo = 'tradicional'     THEN v.monto ELSE 0 END) AS Tradicional,
-                    SUM(CASE WHEN cj.tipo = 'no tradicional'  THEN v.monto ELSE 0 END) AS No_Tradicional,
-                    SUM(CASE WHEN cj.tipo = 'recarga'         THEN v.monto ELSE 0 END) AS Recarga,
-                    SUM(CASE WHEN cj.tipo = 'paquetico'       THEN v.monto ELSE 0 END) AS Paquetico
+                    SUM(CASE WHEN {$tipoProductoSql} = 'tradicional'     THEN v.monto ELSE 0 END) AS Tradicional,
+                    SUM(CASE WHEN {$tipoProductoSql} = 'no tradicional'  THEN v.monto ELSE 0 END) AS No_Tradicional,
+                    SUM(CASE WHEN {$tipoProductoSql} = 'recarga'         THEN v.monto ELSE 0 END) AS Recarga,
+                    SUM(CASE WHEN {$tipoProductoSql} = 'paquetico'       THEN v.monto ELSE 0 END) AS Paquetico
                 FROM {$tabla} v
                 LEFT JOIN catalogo_juegos cj
                     ON v.producto_id = cj.producto_id
@@ -481,10 +495,10 @@ class ReporteController extends Controller
 
             SELECT
                 'TOTAL' AS Fecha,
-                FORMAT(SUM(CASE WHEN cj.tipo = 'tradicional'     THEN v.monto ELSE 0 END), 2, 'en_US') AS Tradicional,
-                FORMAT(SUM(CASE WHEN cj.tipo = 'no tradicional'  THEN v.monto ELSE 0 END), 2, 'en_US') AS No_Tradicional,
-                FORMAT(SUM(CASE WHEN cj.tipo = 'recarga'         THEN v.monto ELSE 0 END), 2, 'en_US') AS Recarga,
-                FORMAT(SUM(CASE WHEN cj.tipo = 'paquetico'       THEN v.monto ELSE 0 END), 2, 'en_US') AS Paquetico,
+                FORMAT(SUM(CASE WHEN {$tipoProductoSql} = 'tradicional'     THEN v.monto ELSE 0 END), 2, 'en_US') AS Tradicional,
+                FORMAT(SUM(CASE WHEN {$tipoProductoSql} = 'no tradicional'  THEN v.monto ELSE 0 END), 2, 'en_US') AS No_Tradicional,
+                FORMAT(SUM(CASE WHEN {$tipoProductoSql} = 'recarga'         THEN v.monto ELSE 0 END), 2, 'en_US') AS Recarga,
+                FORMAT(SUM(CASE WHEN {$tipoProductoSql} = 'paquetico'       THEN v.monto ELSE 0 END), 2, 'en_US') AS Paquetico,
                 FORMAT(SUM(v.monto), 2, 'en_US') AS Total_Dia
             FROM {$tabla} v
             LEFT JOIN catalogo_juegos cj
@@ -517,7 +531,8 @@ class ReporteController extends Controller
             return response()->json([]);
         }
 
-        $tabla = $sistema === 'Lotobet' ? 'vt_usuarios_bet' : 'vt_usuarios_net';
+        $tabla = $sistema === 'Lotobet' ? 'ventas_producto_bet' : 'ventas_producto_net';
+        $tipoProductoSql = $this->tipoProductoSql('v', 'c');
 
         $selectPeriodo = $periodo === 'mes'
             ? "DATE_FORMAT(v.fecha, '%Y-%m')"
@@ -527,10 +542,10 @@ class ReporteController extends Controller
             SELECT
                 v.agencia_id AS agencia_id,
                 {$selectPeriodo} AS periodo,
-                FORMAT(SUM(CASE WHEN c.tipo = 'tradicional'     THEN v.monto ELSE 0 END), 2, 'en_US') AS tradicional,
-                FORMAT(SUM(CASE WHEN c.tipo = 'no tradicional'  THEN v.monto ELSE 0 END), 2, 'en_US') AS no_tradicional,
-                FORMAT(SUM(CASE WHEN c.tipo = 'recarga'         THEN v.monto ELSE 0 END), 2, 'en_US') AS recargas,
-                FORMAT(SUM(CASE WHEN c.tipo = 'paquetico'       THEN v.monto ELSE 0 END), 2, 'en_US') AS paquetico,
+                FORMAT(SUM(CASE WHEN {$tipoProductoSql} = 'tradicional'     THEN v.monto ELSE 0 END), 2, 'en_US') AS tradicional,
+                FORMAT(SUM(CASE WHEN {$tipoProductoSql} = 'no tradicional'  THEN v.monto ELSE 0 END), 2, 'en_US') AS no_tradicional,
+                FORMAT(SUM(CASE WHEN {$tipoProductoSql} = 'recarga'         THEN v.monto ELSE 0 END), 2, 'en_US') AS recargas,
+                FORMAT(SUM(CASE WHEN {$tipoProductoSql} = 'paquetico'       THEN v.monto ELSE 0 END), 2, 'en_US') AS paquetico,
                 FORMAT(SUM(v.monto), 2, 'en_US') AS total
             FROM {$tabla} v
             LEFT JOIN catalogo_juegos c
@@ -580,7 +595,8 @@ class ReporteController extends Controller
             return response()->json([]);
         }
 
-        $tabla = $sistema === 'Lotobet' ? 'vt_usuarios_bet' : 'vt_usuarios_net';
+        $tabla = $sistema === 'Lotobet' ? 'ventas_producto_bet' : 'ventas_producto_net';
+        $tipoProductoSql = $this->tipoProductoSql('v', 'c');
 
         $selectPeriodo = $periodo === 'mes'
             ? "DATE_FORMAT(v.fecha, '%Y-%m')"
@@ -593,10 +609,10 @@ class ReporteController extends Controller
                 a.nombre_agencia AS nombre_agencia,
                 a.ruta AS ruta,
                 {$selectPeriodo} AS periodo,
-                FORMAT(SUM(CASE WHEN c.tipo = 'tradicional'     THEN v.monto ELSE 0 END), 2, 'en_US') AS tradicional,
-                FORMAT(SUM(CASE WHEN c.tipo = 'no tradicional'  THEN v.monto ELSE 0 END), 2, 'en_US') AS no_tradicional,
-                FORMAT(SUM(CASE WHEN c.tipo = 'recarga'         THEN v.monto ELSE 0 END), 2, 'en_US') AS recargas,
-                FORMAT(SUM(CASE WHEN c.tipo = 'paquetico'       THEN v.monto ELSE 0 END), 2, 'en_US') AS paquetico,
+                FORMAT(SUM(CASE WHEN {$tipoProductoSql} = 'tradicional'     THEN v.monto ELSE 0 END), 2, 'en_US') AS tradicional,
+                FORMAT(SUM(CASE WHEN {$tipoProductoSql} = 'no tradicional'  THEN v.monto ELSE 0 END), 2, 'en_US') AS no_tradicional,
+                FORMAT(SUM(CASE WHEN {$tipoProductoSql} = 'recarga'         THEN v.monto ELSE 0 END), 2, 'en_US') AS recargas,
+                FORMAT(SUM(CASE WHEN {$tipoProductoSql} = 'paquetico'       THEN v.monto ELSE 0 END), 2, 'en_US') AS paquetico,
                 FORMAT(SUM(v.monto), 2, 'en_US') AS total
             FROM {$tabla} v
             JOIN agencias a
@@ -644,12 +660,12 @@ class ReporteController extends Controller
         };
 
         if ($sistema === 'lotonet') {
-            $ventasUnificadas = $buildConsultaBase('vt_usuarios_net');
+            $ventasUnificadas = $buildConsultaBase('ventas_usuarios_net');
         } elseif ($sistema === 'lotobet') {
-            $ventasUnificadas = $buildConsultaBase('vt_usuarios_bet');
+            $ventasUnificadas = $buildConsultaBase('ventas_usuarios_bet');
         } else {
-            $ventasUnificadas = $buildConsultaBase('vt_usuarios_net')
-                ->unionAll($buildConsultaBase('vt_usuarios_bet'));
+            $ventasUnificadas = $buildConsultaBase('ventas_usuarios_net')
+                ->unionAll($buildConsultaBase('ventas_usuarios_bet'));
         }
 
         $resultados = DB::query()
@@ -675,7 +691,7 @@ class ReporteController extends Controller
         }
 
         // Determinar la tabla según el sistema
-        $tabla = $sistema === 'Lotobet' ? 'vt_usuarios_bet' : 'vt_usuarios_net';
+        $tabla = $sistema === 'Lotobet' ? 'ventas_usuarios_bet' : 'ventas_usuarios_net';
 
         // Deshabilitar temporalmente strict mode para esta consulta
         DB::statement("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'STRICT_TRANS_TABLES',''))");
@@ -790,7 +806,7 @@ class ReporteController extends Controller
             ]);
         }
 
-        $tabla = $sistema === 'Lotobet' ? 'vt_usuarios_bet' : 'vt_usuarios_net';
+        $tabla = $sistema === 'Lotobet' ? 'ventas_usuarios_bet' : 'ventas_usuarios_net';
 
         $fechas = DB::select(" 
             SELECT

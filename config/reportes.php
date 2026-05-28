@@ -2,21 +2,21 @@
 
 return [
     [
-        'nombre' => 'Ventas por Usuario BET',
+        'nombre' => 'Ventas por Usuario Lotobet',
         'descripcion' => 'Consulta ventas por usuario en un mes seleccionado.',
-        'url' => '/reportes-ventas-usuario-bet',
+        'url' => '/reportes-ventas-usuario-lotobet',
         'icono' => 'ri-user-search-line',
         'categoria' => 'Ventas',
-        'tags' => ['usuarios', 'bet', 'ventas'],
+        'tags' => ['usuarios', 'lotobet', 'ventas'],
         'activo' => true,
     ],
     [
-        'nombre' => 'Faltantes BET',
+        'nombre' => 'Faltantes Lotobet',
         'descripcion' => 'Reporte de faltantes por usuario y agencia.',
-        'url' => '/reportes-faltantes-bet',
+        'url' => '/reportes-faltantes-lotobet',
         'icono' => 'ri-error-warning-line',
         'categoria' => 'Operaciones',
-        'tags' => ['faltantes', 'bet', 'agencias'],
+        'tags' => ['faltantes', 'lotobet', 'agencias'],
         'activo' => true,
     ],
     [

@@ -278,10 +278,20 @@ Route::middleware('role_or_permission:superadmin|admin|module.recursos_humanos.v
 Route::middleware('role_or_permission:superadmin|admin|module.reportes.view')->group(function () {
     Route::get('/reportes', [ReporteController::class, 'indexReportes'])->name('reportes.index');
 
+    Route::get('/reportes-ventas-usuario-lotobet', [ReporteController::class, 'ventasUsuarioBet']);
+    Route::get('/reportes-ventas-usuario-lotobet/list', [ReporteController::class, 'listVentasUsuarioBet']);
+    Route::get('/reportes-ventas-usuario-lotobet/excel', [ReporteController::class, 'excelVentasUsuarioBet']);
+    Route::get('/reportes-ventas-usuario-lotobet/pdf', [ReporteController::class, 'pdfVentasUsuarioBet']);
+
     Route::get('/reportes-ventas-usuario-bet', [ReporteController::class, 'ventasUsuarioBet']);
     Route::get('/reportes-ventas-usuario-bet/list', [ReporteController::class, 'listVentasUsuarioBet']);
     Route::get('/reportes-ventas-usuario-bet/excel', [ReporteController::class, 'excelVentasUsuarioBet']);
     Route::get('/reportes-ventas-usuario-bet/pdf', [ReporteController::class, 'pdfVentasUsuarioBet']);
+
+    Route::get('/reportes-faltantes-lotobet', [ReporteController::class, 'faltantesBet']);
+    Route::get('/reportes-faltantes-lotobet/list', [ReporteController::class, 'listFaltantesBet']);
+    Route::get('/reportes-faltantes-lotobet/excel', [ReporteController::class, 'excelFaltantesBet']);
+    Route::get('/reportes-faltantes-lotobet/pdf', [ReporteController::class, 'pdfFaltantesBet']);
 
     Route::get('/reportes-faltantes-bet', [ReporteController::class, 'faltantesBet']);
     Route::get('/reportes-faltantes-bet/list', [ReporteController::class, 'listFaltantesBet']);

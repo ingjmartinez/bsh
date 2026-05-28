@@ -20,15 +20,11 @@ class VentasUsuarioExport implements FromQuery, WithHeadings, WithMapping, Shoul
     {
         ini_set('memory_limit', '2G'); // Aumentar el límite de memoria a 512MB
 
-        $query = DB::table('vt_usuarios_bet')
-            ->select('consorcio_id', 'agencia_id', 'cedula', 'tipo')
+        $query = DB::table('ventas_usuarios_bet')
+            ->selectRaw('NULL AS consorcio_id, agencia_id, cedula, NULL AS tipo')
             ->whereNotIn('cedula', function ($sub) {
                 $sub->select('cedula')->from('empleados')->whereNotNull('cedula');
             });
-
-        if ($this->tipo) {
-            $query->where('tipo', $this->tipo);
-        }
 
         if ($this->fecha) {
             $query->whereDate('fecha', $this->fecha);
@@ -40,7 +36,7 @@ class VentasUsuarioExport implements FromQuery, WithHeadings, WithMapping, Shoul
             $query->whereYear('fecha', $year)->whereMonth('fecha', $month);
         }
 
-        return $query->groupBy('consorcio_id', 'agencia_id', 'cedula', 'tipo')
+        return $query->groupBy('agencia_id', 'cedula')
             ->orderBy('cedula', 'desc');
     }
 

@@ -171,7 +171,7 @@
     </div>
 
     <script>
-        const urlBase = '/reportes-faltantes-bet';
+        const urlBase = '/reportes-faltantes-lotobet';
         const nombresSistema = {
             all: 'Todos los sistemas',
             bet: 'Lotobet',
