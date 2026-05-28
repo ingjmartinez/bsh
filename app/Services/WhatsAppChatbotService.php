@@ -21,7 +21,7 @@ class WhatsAppChatbotService
     private const STEP_SG_TERMINAL = 'servicios_generales_terminal';
     private const STEP_SG_IMAGEN = 'servicios_generales_imagen';
 
-    private const MENU_MESSAGE = "Hola. Soy el asistente virtual de BSH, comprometido contigo siempre.\n\nPara continuar, escribe solo el numero de la opcion que necesitas:\n\n1-Consultar horario de servicio\n2-Consultar servicios disponibles\n3-Pagar ticket\n4-Anular ticket\n5-Recursos Humanos\n6-Reportar averia\n7-Reportar averia\n\nEstoy listo para ayudarte.";
+    private const MENU_MESSAGE = "Hola. Soy el asistente virtual de BSH, comprometido contigo siempre.\n\nPara continuar, escribe solo el numero de la opcion que necesitas:\n\n1-Consultar horario de servicio\n2-Consultar servicios disponibles\n3-Pagar ticket\n4-Anular ticket\n5-Recursos Humanos\n6-Reportar averia\n\nEstoy listo para ayudarte.";
 
     public function handleIncoming(string $phone, string $message, ?string $account = null, array $incoming = []): array
     {
@@ -148,16 +148,6 @@ class WhatsAppChatbotService
             }
 
             if ($message === '6') {
-                $session->step = self::STEP_TICKET_NUMERO;
-                $session->context = [
-                    'categoria' => TicketSolicitud::CATEGORIA_AVERIA,
-                    'categoria_label' => 'Reportar averia',
-                ];
-
-                return 'Indica el codigo del terminal con averia.';
-            }
-
-            if ($message === '7') {
                 $session->step = self::STEP_SG_TIPO;
                 $session->context = [];
 
@@ -237,7 +227,7 @@ class WhatsAppChatbotService
         if ($tipo === '' || $terminalCodigo === '') {
             $this->resetSession($session);
 
-            return 'Perdi el contexto de la solicitud. Por favor inicia de nuevo y elige la opcion 7.';
+            return 'Perdi el contexto de la solicitud. Por favor inicia de nuevo y elige la opcion 6.';
         }
 
         if ($attachmentUrl === null) {
@@ -301,7 +291,7 @@ class WhatsAppChatbotService
         if ($ticketNumero === '') {
             $this->resetSession($session);
 
-            return 'Perdi el contexto de la solicitud. Por favor inicia de nuevo y elige la opcion 3, 4 o 6.';
+            return 'Perdi el contexto de la solicitud. Por favor inicia de nuevo y elige la opcion 3 o 4.';
         }
 
         if ($attachmentUrl === null) {
