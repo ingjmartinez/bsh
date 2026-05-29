@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class EmpleadoController extends Controller
 {
@@ -207,11 +208,10 @@ class EmpleadoController extends Controller
             return response()->json(['error' => 'Respuesta invalida del servicio de empleados.'], 502);
         }
 
-        $columnasActualizables = array_values(array_filter((new Empleado())->getFillable(), function ($columna) {
-            return !in_array($columna, ['companyid', 'empleadoid'], true);
-        }));
+        $columnasEmpleados = array_flip(Schema::getColumnListing('empleados'));
 
         $lote = [];
+        $columnasActualizables = [];
         $procesados = 0;
         $omitidos = 0;
         $tamanoLote = 500;
@@ -224,7 +224,17 @@ class EmpleadoController extends Controller
                     continue;
                 }
 
-                $lote[] = $this->mapearEmpleadoApi($e, $empresa);
+                $empleado = array_intersect_key($this->mapearEmpleadoApi($e, $empresa), $columnasEmpleados);
+
+                if (empty($columnasActualizables)) {
+                    $columnasActualizables = array_values(array_diff(array_keys($empleado), [
+                        'companyid',
+                        'empleadoid',
+                        'created_at',
+                    ]));
+                }
+
+                $lote[] = $empleado;
                 $procesados++;
 
                 if (count($lote) >= $tamanoLote) {
