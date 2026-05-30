@@ -58,10 +58,32 @@ class LotonetRowMapper
 
     public static function ventaProducto(array $row, string $fecha): array
     {
+        $terminalCodigo = self::stringValue($row['terminal_codigo'] ?? $row['agencia_id'] ?? $row['codigo'] ?? null);
+        $juegoId = self::intValue($row['juego_id'] ?? $row['producto_id'] ?? null);
+        $juegoDesc = self::stringValue($row['juego_desc'] ?? $row['descripcion'] ?? null);
+        $montoJugado = self::decimalValue($row['monto_jugado'] ?? $row['monto'] ?? 0);
+
         return [
-            'agencia_id' => self::stringValue($row['agencia_id'] ?? $row['codigo'] ?? null),
-            'producto_id' => self::intValue($row['producto_id'] ?? null),
-            'monto' => self::decimalValue($row['monto'] ?? 0),
+            'consorcio_id' => self::intValue($row['consorcio_id'] ?? null),
+            'consorcio_codigo' => self::stringValue($row['consorcio_codigo'] ?? null),
+            'consorcio_desc' => self::stringValue($row['consorcio_desc'] ?? null),
+            'banca_id' => self::intValue($row['banca_id'] ?? null),
+            'banca_desc' => self::stringValue($row['banca_desc'] ?? null),
+            'agencia_id' => $terminalCodigo,
+            'terminal_codigo' => $terminalCodigo,
+            'terminal_desc' => self::stringValue($row['terminal_desc'] ?? null),
+            'loteria_id' => self::intValue($row['loteria_id'] ?? null),
+            'loteria_desc' => self::stringValue($row['loteria_desc'] ?? null),
+            'producto_id' => $juegoId,
+            'juego_id' => $juegoId,
+            'juego_prefijo' => self::stringValue($row['juego_prefijo'] ?? null),
+            'juego_desc' => $juegoDesc,
+            'descripcion' => $juegoDesc,
+            'monto' => $montoJugado,
+            'monto_jugado' => $montoJugado,
+            'monto_pagado' => self::decimalValue($row['monto_pagado'] ?? 0),
+            'monto_premiado' => self::decimalValue($row['monto_premiado'] ?? 0),
+            'impuesto_retenido' => self::decimalValue($row['impuesto_retenido'] ?? 0),
             'fecha' => $row['fecha'] ?? $fecha,
             'sorteo_id' => self::intValue($row['sorteo_id'] ?? $row['numero_sorteo'] ?? null),
             'created_at' => now(),

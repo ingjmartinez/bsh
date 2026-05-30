@@ -52,7 +52,7 @@
                                                 <i class="ri-key-line me-1"></i> Token Lotobet Real
                                             </button>
                                             <button class="btn btn-info text-white btn-sm" id="btnGenerarTokenLotonet">
-                                                <i class="ri-shield-keyhole-line me-1"></i> Token Lotonet
+                                                <i class="ri-shield-keyhole-line me-1"></i> Token Lotonet Lotedom
                                             </button>
                                             <button class="btn btn-success btn-sm" id="btnEnviarCoordinador" disabled>
                                                 <i class="ri-mail-send-line me-1"></i> Enviar a coordinador
@@ -593,17 +593,17 @@
 
     function generarTokenLotonet() {
         Swal.fire({
-            title: 'Iniciando sesión Lotonet...',
+            title: 'Iniciando sesión Lotonet Lotedom...',
             allowOutsideClick: false,
             didOpen: () => Swal.showLoading(),
         });
 
         $.getJSON(URL_TOKEN_NET)
             .done(function(resp) {
-                Swal.fire('Listo', resp?.success || 'Sesión de Lotonet iniciada correctamente.', 'success');
+                Swal.fire('Listo', resp?.success || 'Sesión de Lotonet Lotedom iniciada correctamente.', 'success');
             })
             .fail(function(xhr) {
-                const msg = xhr?.responseJSON?.message || 'No se pudo iniciar sesión Lotonet.';
+                const msg = xhr?.responseJSON?.message || 'No se pudo iniciar sesión Lotonet Lotedom.';
                 Swal.fire('Error', msg, 'error');
             });
     }

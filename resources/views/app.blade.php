@@ -886,7 +886,7 @@
                         @if ($canModule('dashboard'))
                             <li class="nav-item">
                                 <a href="{{ route('dashboard.index') }}"
-                                    class="nav-link menu-link {{ request()->routeIs('inicio.index') || request()->is('dashboard*') || request()->is('ventas-lotobet-dashboard*') || request()->is('ventas-lotonet-dashboard*') || request()->is('ventas-lotobet-flash-dashboard*') || request()->is('ventas-mar-dashboard*') || request()->is('kpi-lotobet*') ? 'active' : '' }}">
+                                    class="nav-link menu-link {{ request()->routeIs('inicio.index') || request()->is('dashboard*') || request()->is('ventas-lotobet-dashboard*') || request()->is('ventas-lotonet-dashboard*') || request()->is('ventas-lotobet-flash-dashboard*') || request()->is('kpi-lotobet*') ? 'active' : '' }}">
                                     <i class="ri-apps-2-line"></i> <span data-key="t-apps">Dashboard</span>
                                 </a>
                             </li>
@@ -980,7 +980,7 @@
                                     </li>
                                     <li class="nav-item">
                                         <a href="{{ url('/generar-lotonet') }}" class="nav-link">
-                                            <span data-key="t-dashboards">Generar Lotonet</span>
+                                            <span data-key="t-dashboards">Generar Lotonet Lotedom</span>
                                         </a>
                                     </li>
 
@@ -1040,7 +1040,7 @@
                                         <a href="#sidebarInvoices" class="nav-link collapsed"
                                             data-bs-toggle="collapse" role="button" aria-expanded="false"
                                             aria-controls="sidebarInvoices" data-key="t-invoices">
-                                            Lotonet
+                                            Lotonet Lotedom
                                         </a>
                                         <div class="collapse menu-dropdown" id="sidebarInvoices">
                                             <ul class="nav nav-sm flex-column">
@@ -1093,29 +1093,13 @@
                                         </div>
                                     </li>
                                     <li class="nav-item">
-                                        <a href="#sidebarMar" class="nav-link collapsed" data-bs-toggle="collapse"
-                                            role="button" aria-expanded="false" aria-controls="sidebarMar"
-                                            data-key="t-invoices">
-                                            Mar
-                                        </a>
-                                        <div class="collapse menu-dropdown" id="sidebarMar">
-                                            <ul class="nav nav-sm flex-column">
-                                                <li class="nav-item">
-                                                    <a href="{{ url('/mar-ventas') }}" class="nav-link"
-                                                        data-key="t-mailbox"> Ventas </a>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </li>
-
-                                    <li class="nav-item">
                                         <a href="{{ url('/ventas-flash-lotobet') }}" class="nav-link">
                                             <span data-key="t-dashboards">Ventas Flash Lotobet Real</span>
                                         </a>
                                     </li>
                                     <li class="nav-item d-none">
                                         <a href="{{ url('/ventas-flash-lotonet') }}" class="nav-link">
-                                            <span data-key="t-dashboards">Ventas Flash Lotonet</span>
+                                            <span data-key="t-dashboards">Ventas Flash Lotonet Lotedom</span>
                                         </a>
                                     </li>
                                 </ul>

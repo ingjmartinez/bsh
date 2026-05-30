@@ -224,7 +224,7 @@
                                     <div>
                                         <select id="sistema" class="form-select">
                                             <option value="Lotobet">Lotobet Real</option>
-                                            <option value="Lotonet">Lotonet</option>
+                                            <option value="Lotonet">Lotonet Lotedom</option>
                                         </select>
                                     </div>
 
@@ -284,7 +284,7 @@
                                     <div>
                                         <select id="sistema" class="form-select">
                                             <option value="Lotobet">Lotobet Real</option>
-                                            <option value="Lotonet">Lotonet</option>
+                                            <option value="Lotonet">Lotonet Lotedom</option>
                                         </select>
                                     </div> --}}
 
@@ -344,7 +344,7 @@
                                     <div>
                                         <select id="sistema_admin" class="form-select">
                                             <option value="Lotobet">Lotobet Real</option>
-                                            <option value="Lotonet">Lotonet</option>
+                                            <option value="Lotonet">Lotonet Lotedom</option>
                                         </select>
                                     </div> --}}
 

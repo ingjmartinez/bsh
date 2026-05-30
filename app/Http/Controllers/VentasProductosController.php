@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agencia;
+use App\Models\Token;
 use App\Models\VtProducto;
 use App\Models\VtProductoNet;
 use App\Services\Etl\LotobetVentasProductoEtlService;
 use App\Services\Lotobet\LotobetSessionService;
+use App\Support\LotonetRowMapper;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -14,6 +17,8 @@ use Illuminate\Support\Facades\Validator;
 
 class VentasProductosController extends Controller
 {
+    private const LOTEDOM_TOKEN_ID = 3;
+
     public function getVentasProductosLotobet(Request $request)
     {
         ini_set('memory_limit', '512M');
@@ -260,57 +265,51 @@ class VentasProductosController extends Controller
     {
         header('Content-Type: application/json');
 
-        $curl = curl_init();
-
         $fecha = $request->query('fecha');
 
-        $curl = curl_init();
+        $validator = Validator::make(['fecha' => $fecha], [
+            'fecha' => ['required', 'date_format:Y-m-d'],
+        ]);
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => "http://contable.apploteka.com//api/finan/ventas_loteria/{$fecha}/5",
-            CURLOPT_PROXY => '',
-            CURLOPT_NOPROXY => '*',
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_POSTFIELDS => '{
-                "usuario": {
-                    "username": "fjoselito",
-                    "password": "mnXd5pSyF3HXjCC4"
-                }
-            }',
-            CURLOPT_HTTPHEADER => array(
-                'token: ZFozLWdBYyqERusVdTsW',
-                'Content-Type: application/json',
-                'Cookie: _orkapi_session=RkZLWFpIMnM1UTdUdjRXVzNuMFRmZFZnQ2U5N0JoV0JaSzBheUFlZ21TSVoyUEhWWFc2Y2R4Nzd2SmVhQXJKOGtsSktHWnNmelgzWGsxcmJESEVkcXRlWW5tdGpzU1ZZcXRBZFNva2lqL3pGMFppZFZnZUxPUXBscWxLYVdVcUwzdURYb1V5bGJwanZkeDdJTGUzZndkV3FxNmtiMjdvNkxpU0ZQK2RWRU1nPS0tbkVwL215TXpYTXpLS1lYYXJTR3Y2UT09--7e272c2a327d71d9feb7996870d828122936b682'
-            ),
-        ));
+        if ($validator->fails()) {
+            return response()->json([
+                'ventas' => [],
+                'code' => 1,
+                'message' => 'Fecha invalida. Use el formato YYYY-MM-DD.',
+            ], 422);
+        }
 
-        $response = curl_exec($curl);
+        $apiResult = $this->fetchVentasProductosLotonetApi($fecha);
 
-        curl_close($curl);
+        if (!$apiResult['ok']) {
+            return response()->json([
+                'ventas' => [],
+                'code' => 1,
+                'message' => $apiResult['message'],
+            ], $apiResult['status']);
+        }
 
-        $ventas = json_decode($response, true);
-
-        $data = $ventas['data']['result'] ?? [];
-
-        return response()->json(['ventas' => $data, 'code' => $ventas['code'], 'message' => '']);
+        return response()->json(['ventas' => $apiResult['data'], 'code' => 0, 'message' => '']);
     }
 
     public function saveVentasProductosLotonet(Request $request)
     {
-        ini_set('memory_limit', '1G'); // Aumentar el límite de memoria a 512MB
-        ini_set('max_execution_time', 300); // 300 segundos = 5 minutos
-        set_time_limit(300);                // alternativa equivalente
+        ini_set('memory_limit', '1G');
+        ini_set('max_execution_time', 300);
+        set_time_limit(300);
         header('Content-Type: application/json');
 
-        $curl = curl_init();
-
         $fecha = $request->query('fecha');
+
+        $validator = Validator::make(['fecha' => $fecha], [
+            'fecha' => ['required', 'date_format:Y-m-d'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'error' => 'Fecha invalida. Use el formato YYYY-MM-DD.',
+            ], 422);
+        }
 
         $existe = VtProductoNet::whereDate('fecha', $fecha)->exists();
 
@@ -318,39 +317,17 @@ class VentasProductosController extends Controller
             return response()->json(['message' => 'Ya hay data guardada en la fecha: ' . $fecha]);
         }
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => "http://contable.apploteka.com//api/finan/ventas_loteria/{$fecha}/5",
-            CURLOPT_PROXY => '',
-            CURLOPT_NOPROXY => '*',
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_POSTFIELDS => '{
-                "usuario": {
-                    "username": "fjoselito",
-                    "password": "mnXd5pSyF3HXjCC4"
-                }
-            }',
-            CURLOPT_HTTPHEADER => array(
-                'token: ZFozLWdBYyqERusVdTsW',
-                'Content-Type: application/json',
-                'Cookie: _orkapi_session=RkZLWFpIMnM1UTdUdjRXVzNuMFRmZFZnQ2U5N0JoV0JaSzBheUFlZ21TSVoyUEhWWFc2Y2R4Nzd2SmVhQXJKOGtsSktHWnNmelgzWGsxcmJESEVkcXRlWW5tdGpzU1ZZcXRBZFNva2lqL3pGMFppZFZnZUxPUXBscWxLYVdVcUwzdURYb1V5bGJwanZkeDdJTGUzZndkV3FxNmtiMjdvNkxpU0ZQK2RWRU1nPS0tbkVwL215TXpYTXpLS1lYYXJTR3Y2UT09--7e272c2a327d71d9feb7996870d828122936b682'
-            ),
-        ));
+        $apiResult = $this->fetchVentasProductosLotonetApi($fecha);
 
-        $response = curl_exec($curl);
-
-        curl_close($curl);
-
-        $ventas = json_decode($response, true);
+        if (!$apiResult['ok']) {
+            return response()->json([
+                'error' => $apiResult['message'],
+            ], $apiResult['status']);
+        }
 
         $data = array_map(
             fn (array $row): array => LotonetRowMapper::ventaProducto($row, $fecha),
-            $ventas['data']['result'] ?? []
+            $apiResult['data']
         );
 
         if (!empty($data)) {
@@ -365,6 +342,121 @@ class VentasProductosController extends Controller
         ]);
     }
 
+    private function fetchVentasProductosLotonetApi(string $fecha): array
+    {
+        $token = Token::find(self::LOTEDOM_TOKEN_ID);
+
+        if (!$token || empty($token->token)) {
+            return [
+                'ok' => false,
+                'status' => 404,
+                'message' => 'Genere un token Lotedom antes de consultar la data.',
+                'data' => [],
+            ];
+        }
+
+        if (!empty($token->fecha) && now()->greaterThan(Carbon::parse($token->fecha))) {
+            return [
+                'ok' => false,
+                'status' => 401,
+                'message' => 'El token Lotedom ha expirado, genere uno nuevo.',
+                'data' => [],
+            ];
+        }
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => "https://lotedom-api.orkapi.net/api/finan/ventas/{$fecha}",
+            CURLOPT_PROXY => '',
+            CURLOPT_NOPROXY => '*',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_CONNECTTIMEOUT => 15,
+            CURLOPT_TIMEOUT => 60,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'GET',
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_SSL_VERIFYPEER => 0,
+            CURLOPT_HTTPHEADER => array(
+                'token: ' . $token->token,
+                'Content-Type: application/json',
+                'Cookie: _orkapi_session=41Rb84eiSXPUY%2B%2BsGWuZYW7NPs8KCdPfTK2kKFavRpqbz%2B4V6%2F9kIB9sGvSv%2BvxgIh5z09VulnwhGdWrBeeY6gRzgz9hx19936rO4rSzYcx%2Bi7Q2uvcY%2Fxp1yikmFfAhe%2FHPl7EhQhSZtNrrwyAcnJlUSKR2sPzhMqJCnp%2BH1NPoKBce%2BuJsJWrosCAJwBqPj8mJNhA0Kh%2BFeTDDSmRRI7TCMuEzjbKVER49RZ0TItuNypHToFacRQNi%2B8kD0QCOUvZA9Y2E7zFuGV7x7yfw2zTC3%2FQIvuLrC%2FuiuXx5Iw%3D%3D--L7iC0pRfgG8W4Qor--swcVaBH4o3N%2BE7IIf4VF%2BQ%3D%3D',
+            ),
+        ));
+
+        $response = curl_exec($curl);
+        $curlError = curl_error($curl);
+        $httpCode = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+
+        curl_close($curl);
+
+        if ($response === false || $curlError !== '') {
+            return [
+                'ok' => false,
+                'status' => 502,
+                'message' => $curlError !== '' ? $curlError : 'No se pudo conectar con la API de ventas Lotedom.',
+                'data' => [],
+            ];
+        }
+
+        $ventas = json_decode($response, true);
+
+        if (!is_array($ventas)) {
+            return [
+                'ok' => false,
+                'status' => 502,
+                'message' => 'La API de ventas Lotedom devolvio una respuesta invalida.',
+                'data' => [],
+            ];
+        }
+
+        if ($httpCode >= 400) {
+            return [
+                'ok' => false,
+                'status' => $httpCode,
+                'message' => data_get($ventas, 'message') ?: data_get($ventas, 'msg') ?: "La API de ventas Lotedom respondio con HTTP {$httpCode}.",
+                'data' => [],
+            ];
+        }
+
+        $data = data_get($ventas, 'data.result')
+            ?? data_get($ventas, 'data')
+            ?? data_get($ventas, 'result')
+            ?? data_get($ventas, 'Content')
+            ?? [];
+
+        if (!is_array($data)) {
+            $data = [];
+        }
+
+        $data = array_map(function ($row) {
+            if (!is_array($row)) {
+                return [];
+            }
+
+            $terminalCodigo = $row['terminal_codigo'] ?? $row['agencia_id'] ?? null;
+            $juegoId = $row['juego_id'] ?? $row['producto_id'] ?? null;
+            $juegoDesc = $row['juego_desc'] ?? $row['descripcion'] ?? null;
+            $montoJugado = $row['monto_jugado'] ?? $row['monto'] ?? null;
+
+            return array_merge($row, [
+                'agencia_id' => $terminalCodigo,
+                'producto_id' => $juegoId,
+                'descripcion' => $juegoDesc,
+                'monto' => $montoJugado,
+            ]);
+        }, $data);
+
+        return [
+            'ok' => true,
+            'status' => 200,
+            'message' => data_get($ventas, 'message') ?: data_get($ventas, 'msg') ?: '',
+            'data' => $data,
+        ];
+    }
     public function deleteVentasProductosLotonet(Request $request)
     {
         header('Content-Type: application/json');

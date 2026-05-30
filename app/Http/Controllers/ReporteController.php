@@ -199,7 +199,7 @@ class ReporteController extends Controller
             'resumen' => [
                 'sistema' => match ($validated['sistema']) {
                     'lotobet' => 'Lotobet Real',
-                    'lotonet' => 'Lotonet',
+                    'lotonet' => 'Lotonet Lotedom',
                     default => 'Todas',
                 },
                 'aotra_bet' => round($totalAotraBet, 2),
@@ -307,7 +307,7 @@ class ReporteController extends Controller
             return [
                 'tipo' => 'net',
                 'tabla' => 'faltantes_net',
-                'nombre' => 'Lotonet',
+                'nombre' => 'Lotonet Lotedom',
             ];
         }
 

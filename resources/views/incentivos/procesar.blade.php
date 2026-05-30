@@ -166,11 +166,11 @@
             { name: 'Plan Agencia', type: 'list', url: '/incentivos/list/plan-agencia', saveUrl: '/incentivos/save/plan-agencia' },
             { name: 'Efectividad', type: 'list', url: '/incentivos/list/efectividad-usuario', saveUrl: '/incentivos/save/efectividad' },
             { name: 'Pago Agente (Lotobet Real)', type: 'list', url: '/incentivos/list/pago-incentivos-agente', saveUrl: '/incentivos/save/pago-incentivos-agente', sistema: 'Lotobet' },
-            { name: 'Pago Agente (Lotonet)', type: 'list', url: '/incentivos/list/pago-incentivos-agente', saveUrl: '/incentivos/save/pago-incentivos-agente', sistema: 'Lotonet' },
+            { name: 'Pago Agente (Lotonet Lotedom)', type: 'list', url: '/incentivos/list/pago-incentivos-agente', saveUrl: '/incentivos/save/pago-incentivos-agente', sistema: 'Lotonet' },
             { name: 'Pago Coordinador (Lotobet Real)', type: 'list', url: '/incentivos/list/pago-incentivos-coordinador', saveUrl: '/incentivos/save/pago-incentivos-coordinador', sistema: 'Lotobet' },
-            { name: 'Pago Coordinador (Lotonet)', type: 'list', url: '/incentivos/list/pago-incentivos-coordinador', saveUrl: '/incentivos/save/pago-incentivos-coordinador', sistema: 'Lotonet' },
+            { name: 'Pago Coordinador (Lotonet Lotedom)', type: 'list', url: '/incentivos/list/pago-incentivos-coordinador', saveUrl: '/incentivos/save/pago-incentivos-coordinador', sistema: 'Lotonet' },
             { name: 'Pago Admin (Lotobet Real)', type: 'list', url: '/incentivos/list/pago-incentivos-admin', saveUrl: '/incentivos/save/pago-incentivos-admin', sistema: 'Lotobet' },
-            { name: 'Pago Admin (Lotonet)', type: 'list', url: '/incentivos/list/pago-incentivos-admin', saveUrl: '/incentivos/save/pago-incentivos-admin', sistema: 'Lotonet' }
+            { name: 'Pago Admin (Lotonet Lotedom)', type: 'list', url: '/incentivos/list/pago-incentivos-admin', saveUrl: '/incentivos/save/pago-incentivos-admin', sistema: 'Lotonet' }
         ];
 
         const logContainer = document.getElementById('logContainer');

@@ -67,7 +67,7 @@
                                         <select id="ni_sistema" class="form-select">
                                             <option value="Todos">Todos</option>
                                             <option value="Lotobet">Lotobet Real</option>
-                                            <option value="Lotonet">Lotonet</option>
+                                            <option value="Lotonet">Lotonet Lotedom</option>
                                         </select>
                                     </div>
                                     <div>

@@ -20,7 +20,6 @@ use App\Http\Controllers\InicioController;
 use App\Http\Controllers\IncentivosController;
 use App\Http\Controllers\IncentivoConfiguracionController;
 use App\Http\Controllers\KpiLotobetController;
-use App\Http\Controllers\MarController;
 use App\Http\Controllers\MetaIncentivoController;
 use App\Http\Controllers\ModuleHubController;
 use App\Http\Controllers\NovedadHorarioController;
@@ -235,14 +234,6 @@ Route::get('/delete-pagos-porotra-empresa-lotonet', [PagoPorOtraEmpresaControlle
 Route::get('/get-asistencias-lotonet', [AsistenciaController::class, 'getAsistenciasLotonet']);
 Route::get('/save-asistencias-lotonet', [AsistenciaController::class, 'saveAsistenciasLotonet']);
 Route::get('/delete-asistencias-lotonet', [AsistenciaController::class, 'deleteAsistenciasLotonet']);
-
-Route::get('/mar-ventas', fn() => view('mar.ventas'));
-
-Route::get('/get-mar-ventas', [MarController::class, 'getVentas']);
-Route::get('/save-mar-ventas', [MarController::class, 'saveVentas']);
-Route::get('/delete-mar-ventas', [MarController::class, 'deleteVentas']);
-Route::get('/ventas-mar-dashboard', [MarController::class, 'dashboardVentasMar']);
-Route::get('/ventas-mar-dashboard/data', [MarController::class, 'dashboardVentasMarData']);
 
 Route::middleware('role_or_permission:superadmin|admin|module.recursos_humanos.view')->group(function () {
     Route::get('/recursos-humanos', [RecursosHumanosController::class, 'index'])->name('recursos-humanos.index');

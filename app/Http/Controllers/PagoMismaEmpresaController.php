@@ -230,7 +230,7 @@ class PagoMismaEmpresaController extends Controller
 
         if ($response === false || $httpCode >= 400) {
             return response()->json([
-                'error' => $curlError !== '' ? $curlError : 'La API de Lotonet respondio con HTTP ' . $httpCode . '.',
+                'error' => $curlError !== '' ? $curlError : 'La API de Lotonet Lotedom respondio con HTTP ' . $httpCode . '.',
             ], $httpCode >= 400 ? $httpCode : 502);
         }
 

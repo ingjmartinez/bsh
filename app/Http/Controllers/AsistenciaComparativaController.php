@@ -420,7 +420,7 @@ class AsistenciaComparativaController extends Controller
         $payload = json_decode((string) $response, true);
         $code = isset($payload['code']) ? (string) $payload['code'] : null;
         if ($code !== null && !in_array(strtolower(trim($code)), ['0', '00', '200', 'ok', 'success'], true)) {
-            $msg = $payload['msg'] ?? $payload['message'] ?? 'Respuesta inválida de API Lotonet';
+            $msg = $payload['msg'] ?? $payload['message'] ?? 'Respuesta inválida de API Lotonet Lotedom';
             throw new \RuntimeException($msg);
         }
 

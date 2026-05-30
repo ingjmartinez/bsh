@@ -10,6 +10,8 @@ use Illuminate\Http\JsonResponse;
 
 class TokenController extends Controller
 {
+    private const LOTEDOM_TOKEN_ID = 3;
+
     public function generateToken(): JsonResponse
     {
         try {
@@ -30,7 +32,7 @@ class TokenController extends Controller
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-            CURLOPT_URL => 'http://contable.apploteka.com/api/finan/sessions',
+            CURLOPT_URL => 'https://lotedom-api.orkapi.net/api/finan/sessions',
             CURLOPT_PROXY => '',
             CURLOPT_NOPROXY => '*',
             CURLOPT_RETURNTRANSFER => true,
@@ -41,27 +43,68 @@ class TokenController extends Controller
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => '{
-                "usuario": {
-                    "username": "fjoselito",
-                    "password": "mnXd5pSyF3HXjCC4"
-                }
-            }',
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_SSL_VERIFYPEER => 0,
+            CURLOPT_POSTFIELDS => json_encode([
+                'usuario' => [
+                    'username' => 'api_contabilidad@bsh',
+                    'password' => 'P4@23498sd$$+',
+                ],
+            ]),
             CURLOPT_HTTPHEADER => array(
                 'Content-Type: application/json',
-                'Cookie: _orkapi_session=RkZLWFpIMnM1UTdUdjRXVzNuMFRmZFZnQ2U5N0JoV0JaSzBheUFlZ21TSVoyUEhWWFc2Y2R4Nzd2SmVhQXJKOGtsSktHWnNmelgzWGsxcmJESEVkcXRlWW5tdGpzU1ZZcXRBZFNva2lqL3pGMFppZFZnZUxPUXBscWxLYVdVcUwzdURYb1V5bGJwanZkeDdJTGUzZndkV3FxNmtiMjdvNkxpU0ZQK2RWRU1nPS0tbkVwL215TXpYTXpLS1lYYXJTR3Y2UT09--7e272c2a327d71d9feb7996870d828122936b682'
+                'Cookie: _orkapi_session=ETstr4v9hJAqMdNCFLXG8h31I%2BgnbAgpck0YOlrh9r3xJ9DFTWYISeLV96ssfQoBQmnoi6zsWrIRDan65X2aW%2BUNtQq1ENV5VvUvIpl%2FD0Nx7TerItjXiT4a6eoN4X%2BxMfCvA%2BiBTbBcTwKT8SocnY00vDc2o%2BU6UGdi9NuvSlGSCAuGZ9SUiwFj%2FDDav1bztzbYgUICd8%2BydXSE2lHdn9BHicT8zQUFCagAfEaeTGW00y%2BAycha23LdOwmkGdaTG3Z4XVA42QnA5S%2BW%2B5%2FwEedRYsfYNLHykSngqut%2FnQ%3D%3D--XraL0AcmmRfoNqf1--ddnMNwA3T6FwVRFyO%2BW3GA%3D%3D',
             ),
         ));
 
         $response = curl_exec($curl);
+        $curlError = curl_error($curl);
+        $httpCode = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
         curl_close($curl);
 
+        if ($response === false || $curlError !== '') {
+            return response()->json([
+                'message' => $curlError !== '' ? $curlError : 'No se pudo conectar con la API de token Lotedom.',
+            ], 502);
+        }
+
+        $data = json_decode($response, true);
+
+        if (!is_array($data)) {
+            return response()->json([
+                'message' => 'La API de token Lotedom devolvio una respuesta invalida.',
+            ], 502);
+        }
+
+        $tokenValue = data_get($data, 'Content.Token')
+            ?? data_get($data, 'content.token')
+            ?? data_get($data, 'token')
+            ?? data_get($data, 'data.token');
+        $fechaString = data_get($data, 'Content.DateExpire')
+            ?? data_get($data, 'content.date_expire')
+            ?? data_get($data, 'content.expire')
+            ?? data_get($data, 'expires_at')
+            ?? data_get($data, 'data.expires_at');
+        $fecha = $this->parseTokenExpiry($fechaString) ?? now()->addHours(12);
+
+        if (!is_string($tokenValue) || trim($tokenValue) === '') {
+            return response()->json([
+                'message' => data_get($data, 'msg')
+                    ?: data_get($data, 'message')
+                    ?: ('No se pudo generar el token Lotedom' . ($httpCode > 0 ? " (HTTP {$httpCode})" : '') . '.'),
+            ], $httpCode >= 400 ? $httpCode : 502);
+        }
+
+        Token::query()->updateOrCreate(['id' => self::LOTEDOM_TOKEN_ID], [
+            'token' => trim($tokenValue),
+            'fecha' => $fecha->format('Y-m-d H:i:s'),
+        ]);
+
         return response()->json([
-            'success' => 'Sesión iniciada correctamente.'
+            'success' => 'Token Lotedom generado y guardado correctamente.'
         ]);
     }
-
     public function loginFlash(): JsonResponse
     {
         $curl = curl_init();

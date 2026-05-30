@@ -20,7 +20,7 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                            <h4 class="mb-sm-0">Procesar Todo Lotonet</h4>
+                            <h4 class="mb-sm-0">Procesar Todo Lotonet Lotedom</h4>
                         </div>
                     </div>
                 </div>
@@ -130,7 +130,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalConfigAutoLabel">Configurar auto proceso Lotonet</h5>
+                    <h5 class="modal-title" id="modalConfigAutoLabel">Configurar auto proceso Lotonet Lotedom</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -378,9 +378,9 @@
             }
         });
 
-        // Eliminar data por fecha para LotoNet
+        // Eliminar data por fecha para LotoNet Lotedom
         async function deleteDate(date, options = { stopOnError: false }) {
-            addLog(`Iniciando eliminación (LotoNet) para ${date}`);
+            addLog(`Iniciando eliminación (LotoNet Lotedom) para ${date}`);
             const results = [];
             modules.forEach(m => setStatus(m.name, 'Pending', '-'));
             for (let i = 0; i < modules.length; i++) {
@@ -418,7 +418,7 @@
                     if (options.stopOnError) break;
                 }
             }
-            addLog(`Finalizado eliminación (LotoNet) para ${date}`);
+            addLog(`Finalizado eliminación (LotoNet Lotedom) para ${date}`);
             const okCount = results.filter(r => r.ok).length;
             const errCount = results.filter(r => !r.ok).length;
             addLog(`Resumen Eliminación: OK=${okCount} Error=${errCount}`);
@@ -498,7 +498,7 @@
             }
         });
 
-        // Eliminar por rango (LotoNet): por cada fecha ejecutar deleteDate de forma secuencial
+        // Eliminar por rango (LotoNet Lotedom): por cada fecha ejecutar deleteDate de forma secuencial
         document.getElementById('btnEliminarRango').addEventListener('click', async () => {
             const inicio = document.getElementById('fechaInicio').value;
             const fin = document.getElementById('fechaFin').value;

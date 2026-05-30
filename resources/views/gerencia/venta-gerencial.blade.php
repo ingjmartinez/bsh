@@ -33,7 +33,7 @@
                                         <select name="sistema" class="form-select">
                                             <option value="todos" {{ ($sistemaSeleccionado ?? 'todos') === 'todos' ? 'selected' : '' }}>Todos</option>
                                             <option value="lotobet" {{ ($sistemaSeleccionado ?? 'todos') === 'lotobet' ? 'selected' : '' }}>Lotobet Real</option>
-                                            <option value="lotonet" {{ ($sistemaSeleccionado ?? 'todos') === 'lotonet' ? 'selected' : '' }}>Lotonet</option>
+                                            <option value="lotonet" {{ ($sistemaSeleccionado ?? 'todos') === 'lotonet' ? 'selected' : '' }}>Lotonet Lotedom</option>
                                         </select>
                                     </div>
                                     <div class="col-12 col-md-4 col-lg-3">

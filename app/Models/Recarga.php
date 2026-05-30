@@ -11,9 +11,16 @@ class Recarga extends Model
     protected $primaryKey = 'recarga_id';
     protected $fillable = [
         'consorcio_id',
+        'consorcio_codigo',
+        'consorcio_nombre',
+        'banca_id',
+        'banca_nombre',
         'producto_id',
+        'producto_nombre',
         'monto',
         'agencia_id',
+        'terminal_codigo',
+        'terminal_nombre',
         'descripcion',
         'distribuidora_id',
         'distribuidora_nombre',
