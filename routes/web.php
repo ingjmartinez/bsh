@@ -341,6 +341,7 @@ Route::post('agencias-incumplimientos-horario/send-mail', [AgenciaController::cl
 
 Route::resource('usuarios', UserController::class)->except(['show']);
 Route::get('usuarios-list', [UserController::class, 'list'])->name('usuarios.list');
+Route::post('usuarios/{usuario}/reset-clave', [UserController::class, 'resetClave'])->name('usuarios.reset-clave');
 Route::get('/superadmin/sesiones', [SuperAdminSesionController::class, 'index'])
     ->middleware('role:superadmin')
     ->name('superadmin.sesiones.index');

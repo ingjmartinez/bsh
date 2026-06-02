@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Mail\NuevoUsuarioMail;
+use App\Mail\ResetClaveUsuarioMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules\Password;
+use Throwable;
 use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
@@ -19,7 +21,7 @@ class UserController extends Controller
         $this->middleware('permission:usuarios.view')->only(['index']);
         $this->middleware('permission:usuarios.list')->only(['list']);
         $this->middleware('permission:usuarios.create')->only(['create', 'store']);
-        $this->middleware('permission:usuarios.edit')->only(['edit', 'update']);
+        $this->middleware('permission:usuarios.edit')->only(['edit', 'update', 'resetClave']);
         $this->middleware('permission:usuarios.delete')->only(['destroy']);
     }
 
@@ -113,6 +115,27 @@ class UserController extends Controller
             ->with('success', 'Usuario actualizado exitosamente.');
     }
 
+    public function resetClave(User $usuario)
+    {
+        $plainPassword = self::DEFAULT_NEW_USER_PASSWORD;
+
+        $usuario->password = Hash::make($plainPassword);
+        $usuario->must_change_password = true;
+        $usuario->save();
+
+        try {
+            Mail::to($usuario->email)->send(new ResetClaveUsuarioMail($usuario, $plainPassword));
+        } catch (Throwable $error) {
+            return redirect()
+                ->route('usuarios.index')
+                ->with('error', 'La clave fue reseteada, pero no se pudo enviar el correo: ' . $error->getMessage());
+        }
+
+        return redirect()
+            ->route('usuarios.index')
+            ->with('success', 'La clave del usuario fue reseteada a 0000 y se envio el correo correctamente.');
+    }
+
     /**
      * Remove the specified resource from storage.
      */
@@ -169,6 +192,7 @@ class UserController extends Controller
                                'name' => $user->name,
                                'email' => $user->email,
                                'roles' => $user->roles->pluck('name')->implode(', '),
+                               'must_change_password' => (bool) $user->must_change_password,
                                'created_at' => $user->created_at?->format('d/m/Y H:i'),
                            ];
                        });

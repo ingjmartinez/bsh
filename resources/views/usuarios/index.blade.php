@@ -102,6 +102,27 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="resetClaveModal" tabindex="-1" aria-labelledby="resetClaveModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="resetClaveModalLabel">Confirmar reseteo de clave</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Se enviara la clave generica 0000 al correo del usuario. Cuando inicie sesion, el sistema le pedira registrar una nueva contrasena.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <form id="resetClaveForm" method="POST" style="display:inline;">
+                        @csrf
+                        <button type="submit" class="btn btn-warning">Reset clave</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('script')
@@ -139,7 +160,10 @@
                             buttons += `
                                 <a href="/usuarios/${row.id}/edit" class="btn btn-sm btn-success" title="Editar">
                                     <i class="ri-pencil-line"></i>
-                                </a>`;
+                                </a>
+                                <button class="btn btn-sm btn-warning btn-reset-clave" data-id="${row.id}" title="Reset clave">
+                                    <i class="ri-lock-password-line"></i>
+                                </button>`;
                         }
 
                         // No mostrar boton eliminar para el usuario actual
@@ -167,6 +191,13 @@
             var form = $('#deleteForm');
             form.attr('action', '/usuarios/' + id);
             $('#deleteModal').modal('show');
+        });
+
+        $('#tableUsuarios').on('click', '.btn-reset-clave', function() {
+            var id = $(this).data('id');
+            var form = $('#resetClaveForm');
+            form.attr('action', '/usuarios/' + id + '/reset-clave');
+            $('#resetClaveModal').modal('show');
         });
 
         // Mostrar mensaje de exito si existe
