@@ -24,6 +24,11 @@ class WhatsAppChatbotService
     private const MENU_MESSAGE = "Hola. Soy el asistente virtual de BSH, comprometido contigo siempre.\n\nPara continuar, escribe solo el numero de la opcion que necesitas:\n\n1-Consultar horario de servicio\n2-Consultar servicios disponibles\n3-Pagar ticket\n4-Anular ticket\n5-Recursos Humanos\n6-Reportar averia\n\nEstoy listo para ayudarte.";
     private const SESSION_CLOSED_MESSAGE = "Gracias por comunicarte con nosotros. Cerramos esta conversacion por inactividad.\n\nEsperamos que te pongas en contacto nuevamente cuando necesites asistencia.";
 
+    public static function sessionClosedMessage(): string
+    {
+        return self::SESSION_CLOSED_MESSAGE;
+    }
+
     public function handleIncoming(string $phone, string $message, ?string $account = null, array $incoming = []): array
     {
         $normalizedPhone = $this->normalizePhone($phone);
@@ -64,7 +69,7 @@ class WhatsAppChatbotService
             $session->message_count = ((int) $session->message_count) + 1;
             $session->save();
 
-            $reply = self::SESSION_CLOSED_MESSAGE . "\n\n" . self::MENU_MESSAGE;
+            $reply = self::MENU_MESSAGE;
 
             Log::debug('WhatsApp chatbot respuesta', [
                 'phone' => $normalizedPhone,

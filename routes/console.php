@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('auto-proceso:run-due')->everyMinute()->withoutOverlapping();
+Schedule::command('chatbot:sessions:expire')->everyMinute()->withoutOverlapping();
