@@ -55,7 +55,7 @@
                                 <tr>
                                     <td style="padding: 15px 20px;">
                                         <p style="color: #856404; font-size: 13px; margin: 0; line-height: 1.5;">
-                                            <strong>Importante:</strong> Por seguridad, te recomendamos cambiar tu contrasena despues de iniciar sesion por primera vez. No compartas estos datos con nadie.
+                                            <strong>Importante:</strong> Esta es una clave generica. Al iniciar sesion por primera vez, el sistema te pedira definir una clave personal antes de continuar.
                                         </p>
                                     </td>
                                 </tr>

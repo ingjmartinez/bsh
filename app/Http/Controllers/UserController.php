@@ -12,6 +12,8 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
+    private const DEFAULT_NEW_USER_PASSWORD = '0000';
+
     public function __construct()
     {
         $this->middleware('permission:usuarios.view')->only(['index']);
@@ -47,13 +49,13 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email',
-            'password' => ['required', 'confirmed', Password::min(8)],
             'roles' => 'nullable|array',
             'roles.*' => 'string|exists:roles,name',
         ]);
 
-        $plainPassword = $validated['password'];
+        $plainPassword = self::DEFAULT_NEW_USER_PASSWORD;
         $validated['password'] = Hash::make($plainPassword);
+        $validated['must_change_password'] = true;
 
         $user = User::create($validated);
 
@@ -69,7 +71,7 @@ class UserController extends Controller
         }
 
         return redirect()->route('usuarios.index')
-            ->with('success', 'Usuario creado exitosamente. Se envió un correo con los datos de acceso.');
+            ->with('success', 'Usuario creado exitosamente. Se envio un correo con la clave generica 0000.');
     }
 
     /**

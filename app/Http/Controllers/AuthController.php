@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 use Throwable;
 
 class AuthController extends Controller
@@ -51,6 +52,10 @@ class AuthController extends Controller
                 }
             }
 
+            if ($user && $user->must_change_password) {
+                return redirect()->route('password.force.show');
+            }
+
             return redirect()->intended('/');
         }
 
@@ -70,6 +75,36 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/login');
+    }
+
+    public function showForcePasswordChange()
+    {
+        return view('auth.force-password-change');
+    }
+
+    public function updateForcePasswordChange(Request $request)
+    {
+        $data = $request->validate([
+            'password' => ['required', 'confirmed', Password::min(8), 'not_in:0000'],
+        ], [
+            'password.confirmed' => 'La confirmacion de contrasena no coincide.',
+            'password.min' => 'La nueva contrasena debe tener al menos 8 caracteres.',
+            'password.not_in' => 'La nueva contrasena no puede ser la clave generica 0000.',
+        ]);
+
+        $user = $request->user();
+        $user->password = Hash::make($data['password']);
+        $user->must_change_password = false;
+        $user->save();
+
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()
+            ->route('login')
+            ->with('status', 'Contrasena actualizada correctamente. Inicia sesion nuevamente.');
     }
 
     /**

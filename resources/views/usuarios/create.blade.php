@@ -61,32 +61,10 @@
                                             @enderror
                                         </div>
 
-                                        <div class="col-12 col-md-6 mb-3">
-                                            <label for="password" class="form-label">Contraseña <span class="text-danger">*</span></label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class="ri-lock-2-line"></i></span>
-                                                <input type="password" class="form-control @error('password') is-invalid @enderror"
-                                                       id="password" name="password"
-                                                       placeholder="Mínimo 8 caracteres" required>
-                                                <button class="btn btn-light" type="button" onclick="togglePassword('password', 'passIcon1')">
-                                                    <i class="ri-eye-off-line" id="passIcon1"></i>
-                                                </button>
-                                            </div>
-                                            @error('password')
-                                                <div class="text-danger small mt-1">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-
-                                        <div class="col-12 col-md-6 mb-3">
-                                            <label for="password_confirmation" class="form-label">Confirmar Contraseña <span class="text-danger">*</span></label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class="ri-lock-check-line"></i></span>
-                                                <input type="password" class="form-control"
-                                                       id="password_confirmation" name="password_confirmation"
-                                                       placeholder="Repite la contraseña" required>
-                                                <button class="btn btn-light" type="button" onclick="togglePassword('password_confirmation', 'passIcon2')">
-                                                    <i class="ri-eye-off-line" id="passIcon2"></i>
-                                                </button>
+                                        <div class="col-12 mb-3">
+                                            <div class="alert alert-info py-2 mb-0">
+                                                <i class="ri-information-line me-1"></i>
+                                                El sistema asignara la clave generica <strong>0000</strong>. En el primer inicio de sesion el usuario debera cambiarla.
                                             </div>
                                         </div>
 

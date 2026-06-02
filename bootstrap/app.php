@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             \App\Http\Middleware\ExpireInactiveSession::class,
+            \App\Http\Middleware\EnsurePasswordHasBeenChanged::class,
         ]);
 
         $middleware->alias([
