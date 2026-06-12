@@ -71,16 +71,21 @@ class TicketSolicitudController extends Controller
                 'stats' => $this->emptyStats(),
                 'dashboard' => $this->emptyDashboardData(),
                 'setupPending' => true,
+                'ticketFeedSignature' => null,
+                'ticketActivityUrl' => null,
             ]);
         }
 
         $baseQuery = TicketSolicitud::query()->filtro($filtros);
+        $ticketFeedSignature = $this->buildFeedSignature($baseQuery);
 
         return view('dashboard.tickets.index', [
             'filtros' => $filtros,
             'stats' => $this->ticketStats($baseQuery),
             'dashboard' => $this->ticketDashboardData($baseQuery),
             'setupPending' => false,
+            'ticketFeedSignature' => $ticketFeedSignature,
+            'ticketActivityUrl' => route('tickets.activity', $filtros),
         ]);
     }
 
@@ -159,6 +164,13 @@ class TicketSolicitudController extends Controller
             && $ticket->estado !== TicketSolicitud::ESTADO_TOKEN_ENVIADO
         ) {
             return back()->withErrors(['tickets' => 'El estado Token enviado solo se asigna despues de enviar el token por WhatsApp.']);
+        }
+
+        if (
+            $validated['estado'] === TicketSolicitud::ESTADO_TOKEN_NO_FUNCIONO
+            && $ticket->estado !== TicketSolicitud::ESTADO_TOKEN_NO_FUNCIONO
+        ) {
+            return back()->withErrors(['tickets' => 'El estado Token No Funciono solo se asigna cuando el cliente indica que el token no le funciono.']);
         }
 
         $estadoAnterior = (string) $ticket->estado;
@@ -245,6 +257,7 @@ class TicketSolicitudController extends Controller
             TicketSolicitud::ESTADO_PENDIENTE,
             TicketSolicitud::ESTADO_PAGADO,
             TicketSolicitud::ESTADO_TOKEN_ENVIADO,
+            TicketSolicitud::ESTADO_TOKEN_NO_FUNCIONO,
             TicketSolicitud::ESTADO_TICKET_PAGADO,
             TicketSolicitud::ESTADO_NULO,
             TicketSolicitud::ESTADO_EN_PROCESO,
@@ -345,6 +358,7 @@ class TicketSolicitudController extends Controller
             'pendientes' => 0,
             'pagados' => 0,
             'nulos' => 0,
+            'token_no_funciono' => 0,
             'pagar' => 0,
             'anular' => 0,
             'averia' => 0,
@@ -369,6 +383,7 @@ class TicketSolicitudController extends Controller
             'pendientes' => (clone $baseQuery)->where('estado', TicketSolicitud::ESTADO_PENDIENTE)->count(),
             'pagados' => (clone $baseQuery)->whereIn('estado', [TicketSolicitud::ESTADO_PAGADO, TicketSolicitud::ESTADO_TICKET_PAGADO])->count(),
             'nulos' => (clone $baseQuery)->where('estado', TicketSolicitud::ESTADO_NULO)->count(),
+            'token_no_funciono' => (clone $baseQuery)->where('estado', TicketSolicitud::ESTADO_TOKEN_NO_FUNCIONO)->count(),
             'pagar' => (clone $baseQuery)->where('categoria', TicketSolicitud::CATEGORIA_PAGAR)->count(),
             'anular' => (clone $baseQuery)->where('categoria', TicketSolicitud::CATEGORIA_ANULAR)->count(),
             'averia' => (clone $baseQuery)->where('categoria', TicketSolicitud::CATEGORIA_AVERIA)->count(),
@@ -411,6 +426,7 @@ class TicketSolicitudController extends Controller
             $query = (clone $baseQuery)->where('categoria', $categoria);
             $total = (clone $query)->count();
             $pendientes = (clone $query)->where('estado', TicketSolicitud::ESTADO_PENDIENTE)->count();
+            $tokenNoFunciono = (clone $query)->where('estado', TicketSolicitud::ESTADO_TOKEN_NO_FUNCIONO)->count();
             $cerrados = (clone $query)->whereIn('estado', $closedStates)->count();
             $enProceso = (clone $query)->where('estado', TicketSolicitud::ESTADO_EN_PROCESO)->count();
             $porcentajeCierre = $total > 0 ? round(($cerrados / $total) * 100) : 0;
@@ -425,6 +441,7 @@ class TicketSolicitudController extends Controller
                 'key' => $categoria,
                 'total' => $total,
                 'pendientes' => $pendientes,
+                'token_no_funciono' => $tokenNoFunciono,
                 'cerrados' => $cerrados,
                 'en_proceso' => $enProceso,
                 'porcentaje_cierre' => $porcentajeCierre,
@@ -479,12 +496,14 @@ class TicketSolicitudController extends Controller
                 TicketSolicitud::ESTADO_PENDIENTE,
                 TicketSolicitud::ESTADO_PAGADO,
                 TicketSolicitud::ESTADO_TOKEN_ENVIADO,
+                TicketSolicitud::ESTADO_TOKEN_NO_FUNCIONO,
                 TicketSolicitud::ESTADO_TICKET_PAGADO,
             ],
             default => [
                 TicketSolicitud::ESTADO_PENDIENTE,
                 TicketSolicitud::ESTADO_PAGADO,
                 TicketSolicitud::ESTADO_TOKEN_ENVIADO,
+                TicketSolicitud::ESTADO_TOKEN_NO_FUNCIONO,
                 TicketSolicitud::ESTADO_TICKET_PAGADO,
                 TicketSolicitud::ESTADO_NULO,
             ],

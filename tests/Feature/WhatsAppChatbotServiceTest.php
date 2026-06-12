@@ -129,7 +129,7 @@ class WhatsAppChatbotServiceTest extends TestCase
         $this->assertStringContainsString('Cliente confirmo que el token funciono', (string) $ticket->notas);
     }
 
-    public function test_respuesta_token_no_funciono_reabre_ticket_para_nuevo_token(): void
+    public function test_respuesta_token_no_funciono_marca_estado_para_nuevo_token(): void
     {
         $ticket = TicketSolicitud::create([
             'phone' => '8095550105',
@@ -145,8 +145,8 @@ class WhatsAppChatbotServiceTest extends TestCase
 
         $ticket->refresh();
 
-        $this->assertStringContainsString('Reabrimos tu solicitud', $reply['reply']);
-        $this->assertSame(TicketSolicitud::ESTADO_PENDIENTE, $ticket->estado);
+        $this->assertStringContainsString('Token No Funciono', $reply['reply']);
+        $this->assertSame(TicketSolicitud::ESTADO_TOKEN_NO_FUNCIONO, $ticket->estado);
         $this->assertNull($ticket->procesado_por_id);
         $this->assertNull($ticket->procesado_at);
         $this->assertStringContainsString('Cliente indico que el token no funciono', (string) $ticket->notas);

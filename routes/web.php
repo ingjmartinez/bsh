@@ -130,6 +130,7 @@ Route::get('/api-centros-costo', [Api::class, 'getCentrosCosto']);
 Route::post('/api-centros-costo/visibilidad', [Api::class, 'updateCentrosCostoVisibilidad']);
 Route::post('/api-centros-costo/sync', [Api::class, 'syncCentrosCosto']);
 
+Route::middleware('role:superadmin|admin')->group(function () {
 Route::get('/generar-token', [TokenController::class, 'generateToken']);
 Route::get('/iniciar-session', [TokenController::class, 'iniciarSession']);
 Route::get('/login-flash', [TokenController::class, 'loginFlash']);
@@ -238,6 +239,7 @@ Route::get('/delete-pagos-porotra-empresa-lotedom', [PagoPorOtraEmpresaControlle
 Route::get('/get-asistencias-lotedom', [AsistenciaController::class, 'getAsistenciasLotedom']);
 Route::get('/save-asistencias-lotedom', [AsistenciaController::class, 'saveAsistenciasLotedom']);
 Route::get('/delete-asistencias-lotedom', [AsistenciaController::class, 'deleteAsistenciasLotedom']);
+});
 
 Route::middleware('role_or_permission:superadmin|admin|module.recursos_humanos.view')->group(function () {
     Route::get('/recursos-humanos', [RecursosHumanosController::class, 'index'])->name('recursos-humanos.index');
@@ -493,6 +495,7 @@ Route::prefix('servicios-generales')->name('servicios-generales.')
             ->name('requerimientos.finalizar');
     });
 
+Route::middleware('role:superadmin|admin')->group(function () {
 Route::get('/generar-lotobet', fn() => view('lotobet.index'));
 Route::get('/generar-lotedom', fn() => view('lotedom.index'));
 
@@ -500,8 +503,12 @@ Route::get('/ventas_delta', [VentasDeltaController::class, 'ventasDelta']);
 Route::get('/get-ventas_delta', [VentasDeltaController::class, 'getVentasDelta']);
 Route::post('/save-ventas_delta', [VentasDeltaController::class, 'saveVentasDelta']);
 Route::get('/delete-ventas_delta', [VentasDeltaController::class, 'deleteVentasDelta']);
-Route::get('/ventas-lotobet-flash-dashboard', [VentasDeltaController::class, 'dashboardFlashLotobet']);
-Route::get('/ventas-lotobet-flash-dashboard/data', [VentasDeltaController::class, 'dashboardFlashLotobetData']);
+});
+Route::middleware('role:superadmin|admin')->group(function () {
+Route::middleware('permission:module.dashboard.item.lotobet_flash.view')->group(function () {
+    Route::get('/ventas-lotobet-flash-dashboard', [VentasDeltaController::class, 'dashboardFlashLotobet']);
+    Route::get('/ventas-lotobet-flash-dashboard/data', [VentasDeltaController::class, 'dashboardFlashLotobetData']);
+});
 
 Route::get('/ventas-flash-lotedom', [VentasDeltaController::class, 'ventasFlashLotedom']);
 Route::get('/get-ventas-flash-lotedom', [VentasDeltaController::class, 'getVentasFlashLotedom']);
@@ -509,19 +516,26 @@ Route::post('/save-ventas-flash-lotedom', [VentasDeltaController::class, 'saveVe
 Route::get('/delete-ventas-flash-lotedom', [VentasDeltaController::class, 'deleteVentasFlashLotedom']);
 
 // dashboard finanzas lotobet
-Route::get('/ventas-lotobet-dashboard', [FinanceDashboardController::class, 'indexLotobet']);
-Route::get('/ventas-lotobet-dashboard/data', [FinanceDashboardController::class, 'data']);
-Route::get('/ventas-lotobet-dashboard/export-agencias-cero-por-dia', [FinanceDashboardController::class, 'exportAgenciasCeroPorDia']);
+Route::middleware('permission:module.dashboard.item.lotobet_ventas.view')->group(function () {
+    Route::get('/ventas-lotobet-dashboard', [FinanceDashboardController::class, 'indexLotobet']);
+    Route::get('/ventas-lotobet-dashboard/data', [FinanceDashboardController::class, 'data']);
+    Route::get('/ventas-lotobet-dashboard/export-agencias-cero-por-dia', [FinanceDashboardController::class, 'exportAgenciasCeroPorDia']);
+});
 
 // dashboard finanzas lotedom
-Route::get('/ventas-lotedom-dashboard', [FinanceDashboardController::class, 'indexLotedom']);
-Route::get('/ventas-lotedom-dashboard/data', [FinanceDashboardController::class, 'data']);
-Route::get('/ventas-lotedom-dashboard/export-agencias-cero-por-dia', [FinanceDashboardController::class, 'exportAgenciasCeroPorDia']);
+Route::middleware('permission:module.dashboard.item.lotonet_ventas.view')->group(function () {
+    Route::get('/ventas-lotedom-dashboard', [FinanceDashboardController::class, 'indexLotedom']);
+    Route::get('/ventas-lotedom-dashboard/data', [FinanceDashboardController::class, 'data']);
+    Route::get('/ventas-lotedom-dashboard/export-agencias-cero-por-dia', [FinanceDashboardController::class, 'exportAgenciasCeroPorDia']);
+});
 
 // KPI Lotobet
-Route::get('/kpi-lotobet', [KpiLotobetController::class, 'index']);
-Route::get('/kpi-lotobet/data', [KpiLotobetController::class, 'getData']);
-Route::get('/kpi-lotobet/productos-agencia', [KpiLotobetController::class, 'getProductosAgencia']);
+Route::middleware('permission:module.dashboard.item.kpi_metas.view')->group(function () {
+    Route::get('/kpi-lotobet', [KpiLotobetController::class, 'index']);
+    Route::get('/kpi-lotobet/data', [KpiLotobetController::class, 'getData']);
+    Route::get('/kpi-lotobet/productos-agencia', [KpiLotobetController::class, 'getProductosAgencia']);
+});
+});
 
 // ═══ Módulo de Tareas ═══
 Route::middleware('role_or_permission:superadmin|admin|module.tareas.view')->group(function () {

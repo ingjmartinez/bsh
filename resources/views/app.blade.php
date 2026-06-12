@@ -965,7 +965,7 @@
                             </li>
                         @endif
 
-                        @if ($canModule('dashboard'))
+                        @if ($showAllModulesForAdmin)
                             <li class="nav-item">
                             <a class="nav-link menu-link collapsed" href="#sidebarApps" data-bs-toggle="collapse"
                                 role="button" aria-expanded="true" aria-controls="sidebarApps">

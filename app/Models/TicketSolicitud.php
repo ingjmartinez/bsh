@@ -18,6 +18,7 @@ class TicketSolicitud extends Model
     public const ESTADO_EN_PROCESO = 'en_proceso';
     public const ESTADO_PAGADO = 'pagado';
     public const ESTADO_TOKEN_ENVIADO = 'token_enviado';
+    public const ESTADO_TOKEN_NO_FUNCIONO = 'token_no_funciono';
     public const ESTADO_TICKET_PAGADO = 'ticket_pagado';
     public const ESTADO_NULO = 'nulo';
     public const ESTADO_AVERIA_CERRADA = 'averia_cerrada';
@@ -86,6 +87,7 @@ class TicketSolicitud extends Model
             self::ESTADO_EN_PROCESO => 'En Proceso',
             self::ESTADO_PAGADO => 'Pagado',
             self::ESTADO_TOKEN_ENVIADO => 'Token enviado',
+            self::ESTADO_TOKEN_NO_FUNCIONO => 'Token No Funciono',
             self::ESTADO_TICKET_PAGADO => 'Ticket pagado Por otra Terminal',
             self::ESTADO_NULO => 'Nulo',
             self::ESTADO_AVERIA_CERRADA => 'Averia Cerrada',
@@ -99,6 +101,7 @@ class TicketSolicitud extends Model
             self::ESTADO_EN_PROCESO => 'info',
             self::ESTADO_PAGADO => 'success',
             self::ESTADO_TOKEN_ENVIADO => 'primary',
+            self::ESTADO_TOKEN_NO_FUNCIONO => 'dark',
             self::ESTADO_TICKET_PAGADO => 'success',
             self::ESTADO_NULO => 'danger',
             self::ESTADO_AVERIA_CERRADA => 'success',

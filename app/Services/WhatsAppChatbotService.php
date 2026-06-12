@@ -434,7 +434,7 @@ class WhatsAppChatbotService
             return "Gracias por confirmar.\n\nNotificamos a soporte para cerrar tu ticket como pagado.";
         }
 
-        $ticket->estado = TicketSolicitud::ESTADO_PENDIENTE;
+        $ticket->estado = TicketSolicitud::ESTADO_TOKEN_NO_FUNCIONO;
         $ticket->procesado_por_id = null;
         $ticket->procesado_at = null;
         $ticket->notas = $this->appendTicketNote(
@@ -445,7 +445,7 @@ class WhatsAppChatbotService
 
         $this->notifySupportForTokenFeedback($ticket, 'El cliente indico que el token no funciono. Enviar un nuevo token.');
 
-        return "Entendido.\n\nReabrimos tu solicitud para que soporte te envie un nuevo token.";
+        return "Entendido.\n\nMarcamos tu solicitud como Token No Funciono para que soporte te envie un nuevo token.";
     }
 
     private function appendTicketNote(string $currentNotes, string $newNote): string

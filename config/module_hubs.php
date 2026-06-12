@@ -12,6 +12,7 @@ return [
                 'icono' => 'ri-dashboard-line',
                 'categoria' => 'Principal',
                 'tags' => ['inicio', 'tablero', 'indicadores', 'ventas'],
+                'permission' => 'module.dashboard.item.tablero_principal.view',
                 'activo' => true,
             ],
             [
@@ -21,6 +22,8 @@ return [
                 'icono' => 'ri-bar-chart-box-line',
                 'categoria' => 'Ventas',
                 'tags' => ['lotobet', 'ventas', 'financiero'],
+                'permission' => 'module.dashboard.item.lotobet_ventas.view',
+                'role' => ['admin', 'superadmin'],
                 'activo' => true,
             ],
             [
@@ -30,6 +33,8 @@ return [
                 'icono' => 'ri-speed-up-line',
                 'categoria' => 'Indicadores',
                 'tags' => ['kpi', 'metas', 'lotobet'],
+                'permission' => 'module.dashboard.item.kpi_metas.view',
+                'role' => ['admin', 'superadmin'],
                 'activo' => true,
             ],
             [
@@ -39,6 +44,8 @@ return [
                 'icono' => 'ri-flashlight-line',
                 'categoria' => 'Ventas',
                 'tags' => ['lotobet', 'flash', 'ventas'],
+                'permission' => 'module.dashboard.item.lotobet_flash.view',
+                'role' => ['admin', 'superadmin'],
                 'activo' => true,
             ],
             [
@@ -48,6 +55,8 @@ return [
                 'icono' => 'ri-line-chart-line',
                 'categoria' => 'Ventas',
                 'tags' => ['lotedom', 'ventas', 'financiero'],
+                'permission' => 'module.dashboard.item.lotonet_ventas.view',
+                'role' => ['admin', 'superadmin'],
                 'activo' => true,
             ],
             [
@@ -57,6 +66,7 @@ return [
                 'icono' => 'ri-ticket-2-line',
                 'categoria' => 'Operaciones',
                 'tags' => ['tickets', 'whatsapp', 'soporte', 'reporte'],
+                'permission' => 'tickets.view',
                 'activo' => true,
             ],
         ],

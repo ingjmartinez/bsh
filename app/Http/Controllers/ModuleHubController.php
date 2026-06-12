@@ -75,8 +75,12 @@ class ModuleHubController extends Controller
                     return false;
                 }
 
-                if (!empty($item['role']) && (! $user || ! method_exists($user, 'hasRole') || ! $user->hasRole($item['role']))) {
-                    return false;
+                if (!empty($item['role'])) {
+                    $roles = is_array($item['role']) ? $item['role'] : [$item['role']];
+
+                    if (! $user || ! method_exists($user, 'hasAnyRole') || ! $user->hasAnyRole($roles)) {
+                        return false;
+                    }
                 }
 
                 return true;

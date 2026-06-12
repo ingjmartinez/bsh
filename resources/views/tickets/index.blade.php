@@ -105,6 +105,10 @@
                                                 <span class="text-muted me-2">Reportar averia</span>
                                                 <strong>{{ number_format($stats['averia'] ?? 0) }}</strong>
                                             </div>
+                                            <div>
+                                                <span class="text-muted me-2">Token No Funciono</span>
+                                                <strong class="text-dark">{{ number_format($stats['token_no_funciono'] ?? 0) }}</strong>
+                                            </div>
                                         </div>
                                         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ticketManualModal">
                                             <i class="ri-add-line me-1"></i>Registro manual
@@ -128,6 +132,7 @@
                                             <option value="pendiente" @selected(($filtros['estado'] ?? '') === 'pendiente')>Pendiente</option>
                                             <option value="pagado" @selected(($filtros['estado'] ?? '') === 'pagado')>Pagado</option>
                                             <option value="token_enviado" @selected(($filtros['estado'] ?? '') === 'token_enviado')>Token enviado</option>
+                                            <option value="token_no_funciono" @selected(($filtros['estado'] ?? '') === 'token_no_funciono')>Token No Funciono</option>
                                             <option value="ticket_pagado" @selected(($filtros['estado'] ?? '') === 'ticket_pagado')>Ticket pagado Por otra Terminal</option>
                                             <option value="nulo" @selected(($filtros['estado'] ?? '') === 'nulo')>Nulo</option>
                                             <option value="en_proceso" @selected(($filtros['estado'] ?? '') === 'en_proceso')>En Proceso</option>
@@ -203,7 +208,9 @@
                                                                     'reportar_averia' => ['pendiente' => 'Pendiente', 'en_proceso' => 'En Proceso', 'averia_cerrada' => 'Averia Cerrada'],
                                                                     default => $solicitud->estado === 'token_enviado'
                                                                         ? ['pendiente' => 'Pendiente', 'pagado' => 'Pagado', 'token_enviado' => 'Token enviado', 'ticket_pagado' => 'Ticket pagado Por otra Terminal']
-                                                                        : ['pendiente' => 'Pendiente', 'pagado' => 'Pagado', 'ticket_pagado' => 'Ticket pagado Por otra Terminal'],
+                                                                        : ($solicitud->estado === 'token_no_funciono'
+                                                                            ? ['pendiente' => 'Pendiente', 'pagado' => 'Pagado', 'token_no_funciono' => 'Token No Funciono', 'ticket_pagado' => 'Ticket pagado Por otra Terminal']
+                                                                            : ['pendiente' => 'Pendiente', 'pagado' => 'Pagado', 'ticket_pagado' => 'Ticket pagado Por otra Terminal']),
                                                                 };
                                                             @endphp
                                                             <form method="POST" action="{{ route('tickets.estado', $solicitud) }}" class="d-flex gap-2 ticket-estado-form" data-current-estado="{{ $solicitud->estado }}">
