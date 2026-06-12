@@ -49,6 +49,10 @@ return [
             'trim',
             explode(',', (string) env('WA_ALLOWED_ACCOUNTS', ''))
         )),
+        'support_recipients' => array_filter(array_map(
+            'trim',
+            explode(',', (string) env('WA_SUPPORT_RECIPIENTS', ''))
+        )),
         'webhook_token' => env('WA_WEBHOOK_TOKEN'),
         'timeout' => env('WA_API_TIMEOUT', 30),
         'verify_ssl' => env('WA_API_VERIFY_SSL', true),

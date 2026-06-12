@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\ChatbotSession;
+use App\Models\TicketSolicitud;
 use App\Services\WhatsAppChatbotService;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Schema\Blueprint;
@@ -28,11 +29,28 @@ class WhatsAppChatbotServiceTest extends TestCase
             $table->timestamps();
             $table->unique(['account', 'phone']);
         });
+
+        Schema::dropIfExists('ticket_solicitudes');
+        Schema::create('ticket_solicitudes', function (Blueprint $table): void {
+            $table->id();
+            $table->string('phone', 32)->index();
+            $table->string('categoria', 40)->index();
+            $table->string('ticket_numero', 80)->index();
+            $table->string('estado', 30)->default('pendiente')->index();
+            $table->text('mensaje_original')->nullable();
+            $table->text('notas')->nullable();
+            $table->text('attachment_url')->nullable();
+            $table->string('attachment_message_id', 120)->nullable();
+            $table->unsignedBigInteger('procesado_por_id')->nullable();
+            $table->timestamp('procesado_at')->nullable();
+            $table->timestamps();
+        });
     }
 
     protected function tearDown(): void
     {
         Schema::dropIfExists('chatbot_sessions');
+        Schema::dropIfExists('ticket_solicitudes');
 
         parent::tearDown();
     }
@@ -90,5 +108,47 @@ class WhatsAppChatbotServiceTest extends TestCase
         $this->assertSame('ticket_imagen', $reply['session']->step);
 
         Carbon::setTestNow();
+    }
+
+    public function test_respuesta_token_funciono_notifica_soporte_sin_cerrar_ticket(): void
+    {
+        $ticket = TicketSolicitud::create([
+            'phone' => '8095550104',
+            'categoria' => TicketSolicitud::CATEGORIA_PAGAR,
+            'ticket_numero' => '07068888',
+            'estado' => TicketSolicitud::ESTADO_TOKEN_ENVIADO,
+            'mensaje_original' => 'Pagar ticket: 07068888',
+        ]);
+
+        $reply = (new WhatsAppChatbotService())->handleIncoming('8095550104', '1');
+
+        $ticket->refresh();
+
+        $this->assertStringContainsString('Notificamos a soporte', $reply['reply']);
+        $this->assertSame(TicketSolicitud::ESTADO_TOKEN_ENVIADO, $ticket->estado);
+        $this->assertStringContainsString('Cliente confirmo que el token funciono', (string) $ticket->notas);
+    }
+
+    public function test_respuesta_token_no_funciono_reabre_ticket_para_nuevo_token(): void
+    {
+        $ticket = TicketSolicitud::create([
+            'phone' => '8095550105',
+            'categoria' => TicketSolicitud::CATEGORIA_PAGAR,
+            'ticket_numero' => '07068888',
+            'estado' => TicketSolicitud::ESTADO_TOKEN_ENVIADO,
+            'mensaje_original' => 'Pagar ticket: 07068888',
+            'procesado_por_id' => 1,
+            'procesado_at' => now(),
+        ]);
+
+        $reply = (new WhatsAppChatbotService())->handleIncoming('8095550105', '2');
+
+        $ticket->refresh();
+
+        $this->assertStringContainsString('Reabrimos tu solicitud', $reply['reply']);
+        $this->assertSame(TicketSolicitud::ESTADO_PENDIENTE, $ticket->estado);
+        $this->assertNull($ticket->procesado_por_id);
+        $this->assertNull($ticket->procesado_at);
+        $this->assertStringContainsString('Cliente indico que el token no funciono', (string) $ticket->notas);
     }
 }

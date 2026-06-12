@@ -215,7 +215,9 @@ class TicketSolicitudController extends Controller
         $message = "Hola, hemos recibido tu solicitud {$ticket->codigo}.\n\n"
             . "Token: {$token}\n"
             . "Codigo terminal: {$ticket->ticket_numero}\n\n"
-            . "Utiliza este token para continuar con la gestion de tu ticket.";
+            . "Utiliza este token para continuar con la gestion de tu ticket.\n\n"
+            . "1- si me funciono ticket pagado\n"
+            . "2- no me funciono solicitar token";
 
         try {
             return $this->whatsAppService->sendText($recipient, $message);

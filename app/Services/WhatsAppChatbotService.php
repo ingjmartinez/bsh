@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class WhatsAppChatbotService
@@ -123,6 +124,14 @@ class WhatsAppChatbotService
             $session->context = [];
 
             return self::SISTEMA_MESSAGE;
+        }
+
+        if (in_array($message, ['1', '2'], true)) {
+            $ticket = $this->latestTokenTicketForPhone($session->phone);
+
+            if ($ticket !== null) {
+                return $this->handleTokenFeedback($session, $ticket, $message);
+            }
         }
 
         if ($session->step === self::STEP_SISTEMA) {
@@ -392,6 +401,97 @@ class WhatsAppChatbotService
         $this->resetSession($session);
 
         return "Solicitud registrada correctamente.\n\nCodigo: {$solicitud->codigo}\nCategoria: {$solicitud->categoria_label}\nTerminal: {$solicitud->ticket_numero}\nImagen: Recibida\nEstado: Pendiente";
+    }
+
+    private function latestTokenTicketForPhone(string $phone): ?TicketSolicitud
+    {
+        if (!Schema::hasTable('ticket_solicitudes')) {
+            return null;
+        }
+
+        return TicketSolicitud::query()
+            ->where('phone', $phone)
+            ->where('categoria', TicketSolicitud::CATEGORIA_PAGAR)
+            ->where('estado', TicketSolicitud::ESTADO_TOKEN_ENVIADO)
+            ->latest()
+            ->first();
+    }
+
+    private function handleTokenFeedback(ChatbotSession $session, TicketSolicitud $ticket, string $message): string
+    {
+        $session->step = self::STEP_INICIO;
+        $session->context = [];
+
+        if ($message === '1') {
+            $ticket->notas = $this->appendTicketNote(
+                (string) $ticket->notas,
+                'Cliente confirmo que el token funciono. Soporte debe cerrar el ticket como pagado.'
+            );
+            $ticket->save();
+
+            $this->notifySupportForTokenFeedback($ticket, 'El cliente confirmo que el token funciono. Cerrar el ticket como pagado.');
+
+            return "Gracias por confirmar.\n\nNotificamos a soporte para cerrar tu ticket como pagado.";
+        }
+
+        $ticket->estado = TicketSolicitud::ESTADO_PENDIENTE;
+        $ticket->procesado_por_id = null;
+        $ticket->procesado_at = null;
+        $ticket->notas = $this->appendTicketNote(
+            (string) $ticket->notas,
+            'Cliente indico que el token no funciono. Se reabre para enviar un nuevo token.'
+        );
+        $ticket->save();
+
+        $this->notifySupportForTokenFeedback($ticket, 'El cliente indico que el token no funciono. Enviar un nuevo token.');
+
+        return "Entendido.\n\nReabrimos tu solicitud para que soporte te envie un nuevo token.";
+    }
+
+    private function appendTicketNote(string $currentNotes, string $newNote): string
+    {
+        $line = now()->format('d/m/Y h:i A') . ' - ' . $newNote;
+        $currentNotes = trim($currentNotes);
+
+        return $currentNotes !== '' ? $currentNotes . "\n" . $line : $line;
+    }
+
+    private function notifySupportForTokenFeedback(TicketSolicitud $ticket, string $detail): void
+    {
+        $recipients = config('services.whatsapp.support_recipients', []);
+
+        if (empty($recipients)) {
+            Log::warning('WhatsApp chatbot soporte sin destinatarios para feedback de token', [
+                'ticket_id' => $ticket->id,
+                'ticket_codigo' => $ticket->codigo,
+                'detail' => $detail,
+            ]);
+
+            return;
+        }
+
+        $message = "Ticket {$ticket->codigo}\n\n"
+            . "{$detail}\n"
+            . "Terminal: {$ticket->ticket_numero}\n"
+            . "Telefono: {$ticket->phone}";
+
+        foreach ($recipients as $recipient) {
+            $recipient = trim((string) $recipient);
+
+            if ($recipient === '') {
+                continue;
+            }
+
+            try {
+                app(WhatsAppService::class)->sendText($recipient, $message);
+            } catch (\Throwable $e) {
+                Log::error('WhatsApp chatbot error notificando soporte por feedback de token', [
+                    'ticket_id' => $ticket->id,
+                    'recipient' => $recipient,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }
     }
 
     private function normalizeAttachmentUrl(mixed $attachment): ?string
