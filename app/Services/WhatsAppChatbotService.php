@@ -14,6 +14,7 @@ use Illuminate\Support\Str;
 class WhatsAppChatbotService
 {
     private const STEP_INICIO = 'inicio';
+    private const STEP_SISTEMA = 'seleccion_sistema';
     private const STEP_MENU = 'consulta_hora_menu';
     private const STEP_TICKET_NUMERO = 'ticket_numero';
     private const STEP_TICKET_IMAGEN = 'ticket_imagen';
@@ -21,6 +22,7 @@ class WhatsAppChatbotService
     private const STEP_SG_TERMINAL = 'servicios_generales_terminal';
     private const STEP_SG_IMAGEN = 'servicios_generales_imagen';
 
+    private const SISTEMA_MESSAGE = "Hola. Selecciona el sistema escribiendo solo el numero:\n\n1- Real\n2- Delta\n3- Lotedom";
     private const MENU_MESSAGE = "Hola. Soy el asistente virtual de BSH, comprometido contigo siempre.\n\nPara continuar, escribe solo el numero de la opcion que necesitas:\n\n1-Consultar horario de servicio\n2-Consultar servicios disponibles\n3-Pagar ticket\n4-Anular ticket\n5-Recursos Humanos\n6-Reportar averia\n\nEstoy listo para ayudarte.";
     private const SESSION_CLOSED_MESSAGE = "Gracias por comunicarte con nosotros. Cerramos esta conversacion por inactividad.\n\nEsperamos que te pongas en contacto nuevamente cuando necesites asistencia.";
 
@@ -62,14 +64,14 @@ class WhatsAppChatbotService
                 'last_interaction_at' => $session->last_interaction_at,
             ]);
 
-            $session->step = self::STEP_MENU;
+            $session->step = $this->isGreeting($message) ? self::STEP_SISTEMA : self::STEP_MENU;
             $session->context = [];
             $session->last_message = $message;
             $session->last_interaction_at = now();
             $session->message_count = ((int) $session->message_count) + 1;
             $session->save();
 
-            $reply = self::MENU_MESSAGE;
+            $reply = $session->step === self::STEP_SISTEMA ? self::SISTEMA_MESSAGE : self::MENU_MESSAGE;
 
             Log::debug('WhatsApp chatbot respuesta', [
                 'phone' => $normalizedPhone,
@@ -114,6 +116,17 @@ class WhatsAppChatbotService
             'phone' => $session->phone,
             'step' => $session->step,
         ]);
+
+        if ($this->isGreeting($message)) {
+            $session->step = self::STEP_SISTEMA;
+            $session->context = [];
+
+            return self::SISTEMA_MESSAGE;
+        }
+
+        if ($session->step === self::STEP_SISTEMA) {
+            return $this->guardarSistemaYMostrarMenu($session, $message);
+        }
 
         if ($session->step === self::STEP_TICKET_NUMERO) {
             return $this->guardarTicketYEsperarImagen($session, $message);
@@ -185,6 +198,24 @@ class WhatsAppChatbotService
         }
 
         $session->step = self::STEP_MENU;
+
+        return self::MENU_MESSAGE;
+    }
+
+    private function guardarSistemaYMostrarMenu(ChatbotSession $session, string $message): string
+    {
+        $sistemas = [
+            '1' => ['sistema' => 'real', 'label' => 'Real'],
+            '2' => ['sistema' => 'delta', 'label' => 'Delta'],
+            '3' => ['sistema' => 'lotedom', 'label' => 'Lotedom'],
+        ];
+
+        if (!isset($sistemas[$message])) {
+            return self::SISTEMA_MESSAGE;
+        }
+
+        $session->step = self::STEP_MENU;
+        $session->context = $sistemas[$message];
 
         return self::MENU_MESSAGE;
     }
@@ -396,6 +427,11 @@ class WhatsAppChatbotService
         $account = trim((string) $account);
 
         return $account !== '' ? $account : 'default';
+    }
+
+    private function isGreeting(string $message): bool
+    {
+        return Str::lower(trim($message)) === 'hola';
     }
 
     private function isExpired(ChatbotSession $session): bool
