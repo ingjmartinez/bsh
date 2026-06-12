@@ -43,6 +43,7 @@ class WhatsAppWebhookController extends Controller
             $message = (string) ($data['message'] ?? $data['text'] ?? $data['body'] ?? '');
             $messageId = $this->extractMessageId((array) $data, $payload);
             $attachmentUrl = $this->extractAttachmentUrl((array) $data, $payload);
+            $attachmentTimestamp = $this->extractAttachmentTimestamp((array) $data, $payload);
             $inboundAccount = $this->extractInboundAccount($payload, (array) $data);
             $sendAccount = $this->extractSendAccount($payload, (array) $data, $routeAccount);
             $sessionAccount = $inboundAccount !== '' ? $inboundAccount : $sendAccount;
@@ -52,11 +53,22 @@ class WhatsAppWebhookController extends Controller
                 $attachmentUrl = $whatsApp->fetchReceivedAttachmentByMessageId($messageId);
             }
 
+            if ($attachmentUrl !== null) {
+                Log::debug('WhatsApp webhook fecha de adjunto', [
+                    'has_attachment_timestamp' => $attachmentTimestamp !== null,
+                    'attachment_timestamp' => $attachmentTimestamp,
+                    'attachment_keys' => $this->extractAttachmentKeys((array) $data, $payload),
+                    'data_keys' => array_keys((array) $data),
+                    'payload_keys' => array_keys($payload),
+                ]);
+            }
+
             Log::debug('WhatsApp webhook datos extraidos', [
                 'phone' => $phone,
                 'message' => $message,
                 'message_id' => $messageId,
                 'attachment_url' => $attachmentUrl,
+                'attachment_timestamp' => $attachmentTimestamp,
                 'inbound_account' => $inboundAccount,
                 'send_account' => $sendAccount,
                 'session_account' => $sessionAccount,
@@ -112,6 +124,7 @@ class WhatsAppWebhookController extends Controller
             $chatbotResult = $chatbot->handleIncoming($phone, $message, $sessionAccount, [
                 'message_id' => $messageId,
                 'attachment_url' => $attachmentUrl,
+                'attachment_timestamp' => $attachmentTimestamp,
             ]);
             $reply = (string) ($chatbotResult['reply'] ?? '');
 
@@ -275,5 +288,53 @@ class WhatsAppWebhookController extends Controller
         }
 
         return $attachment;
+    }
+
+    private function extractAttachmentTimestamp(array $data, array $payload): mixed
+    {
+        $attachment = $data['attachment']
+            ?? $data['media']
+            ?? $data['image']
+            ?? $payload['attachment']
+            ?? $payload['media']
+            ?? $payload['image']
+            ?? null;
+
+        if (is_array($attachment)) {
+            $timestamp = $attachment['timestamp']
+                ?? $attachment['created_at']
+                ?? $attachment['date']
+                ?? $attachment['datetime']
+                ?? null;
+
+            if ($timestamp !== null) {
+                return $timestamp;
+            }
+        }
+
+        return $data['timestamp']
+            ?? $data['created_at']
+            ?? $data['received_at']
+            ?? $data['sent_at']
+            ?? $data['date']
+            ?? $payload['timestamp']
+            ?? $payload['created_at']
+            ?? $payload['received_at']
+            ?? $payload['sent_at']
+            ?? $payload['date']
+            ?? null;
+    }
+
+    private function extractAttachmentKeys(array $data, array $payload): array
+    {
+        $attachment = $data['attachment']
+            ?? $data['media']
+            ?? $data['image']
+            ?? $payload['attachment']
+            ?? $payload['media']
+            ?? $payload['image']
+            ?? null;
+
+        return is_array($attachment) ? array_keys($attachment) : [];
     }
 }

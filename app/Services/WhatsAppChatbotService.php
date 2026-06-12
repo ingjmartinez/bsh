@@ -24,6 +24,7 @@ class WhatsAppChatbotService
 
     private const SISTEMA_MESSAGE = "Hola. Selecciona el sistema escribiendo solo el numero:\n\n1- Real\n2- Delta\n3- Lotedom";
     private const MENU_MESSAGE = "Hola. Soy el asistente virtual de BSH, comprometido contigo siempre.\n\nPara continuar, escribe solo el numero de la opcion que necesitas:\n\n1-Consultar horario de servicio\n2-Consultar servicios disponibles\n3-Pagar ticket\n4-Anular ticket\n5-Recursos Humanos\n6-Reportar averia\n\nEstoy listo para ayudarte.";
+    private const INVALID_YESTERDAY_PHOTO_MESSAGE = 'Foto no valida. Debes enviar una foto tomada hoy.';
     private const SESSION_CLOSED_MESSAGE = "Gracias por comunicarte con nosotros. Cerramos esta conversacion por inactividad.\n\nEsperamos que te pongas en contacto nuevamente cuando necesites asistencia.";
 
     public static function sessionClosedMessage(): string
@@ -292,6 +293,10 @@ class WhatsAppChatbotService
             return 'Necesito que envies una imagen para continuar con el registro de la averia.';
         }
 
+        if ($this->isYesterdayAttachment($incoming['attachment_timestamp'] ?? null)) {
+            return self::INVALID_YESTERDAY_PHOTO_MESSAGE;
+        }
+
         try {
             $requerimiento = ServicioGeneralRequerimiento::create([
                 'user_id' => $this->chatbotUserId(),
@@ -356,6 +361,10 @@ class WhatsAppChatbotService
             return 'Necesito que envies una imagen para continuar con el registro del ticket.';
         }
 
+        if ($this->isYesterdayAttachment($incoming['attachment_timestamp'] ?? null)) {
+            return self::INVALID_YESTERDAY_PHOTO_MESSAGE;
+        }
+
         try {
             $solicitud = TicketSolicitud::create([
                 'phone' => $session->phone,
@@ -409,6 +418,46 @@ class WhatsAppChatbotService
         $messageId = trim((string) $messageId);
 
         return $messageId !== '' ? $messageId : null;
+    }
+
+    private function isYesterdayAttachment(mixed $timestamp): bool
+    {
+        $date = $this->parseAttachmentTimestamp($timestamp);
+
+        return $date !== null && $date->isSameDay(now()->subDay());
+    }
+
+    private function parseAttachmentTimestamp(mixed $timestamp): ?Carbon
+    {
+        if ($timestamp === null || is_array($timestamp)) {
+            return null;
+        }
+
+        if (is_numeric($timestamp)) {
+            $numericTimestamp = (int) $timestamp;
+
+            if ($numericTimestamp <= 0) {
+                return null;
+            }
+
+            if ($numericTimestamp > 9999999999) {
+                $numericTimestamp = intdiv($numericTimestamp, 1000);
+            }
+
+            return Carbon::createFromTimestamp($numericTimestamp);
+        }
+
+        $timestamp = trim((string) $timestamp);
+
+        if ($timestamp === '' || in_array(strtolower($timestamp), ['false', 'null'], true)) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($timestamp);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     private function resetSession(ChatbotSession $session): void

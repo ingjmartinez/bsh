@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\ChatbotSession;
 use App\Services\WhatsAppChatbotService;
+use Illuminate\Support\Carbon;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -67,5 +68,27 @@ class WhatsAppChatbotServiceTest extends TestCase
 
         $this->assertStringContainsString('Selecciona el sistema', $reply['reply']);
         $this->assertSame('seleccion_sistema', ChatbotSession::first()->step);
+    }
+
+    public function test_rechaza_foto_con_fecha_de_ayer_antes_de_registrar_ticket(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-06-12 10:00:00'));
+
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550103', 'hola');
+        $service->handleIncoming('8095550103', '1');
+        $service->handleIncoming('8095550103', '3');
+        $service->handleIncoming('8095550103', 'TERM-123');
+
+        $reply = $service->handleIncoming('8095550103', '', null, [
+            'attachment_url' => 'https://example.com/foto.jpg',
+            'attachment_timestamp' => '2026-06-11 18:30:00',
+        ]);
+
+        $this->assertSame('Foto no valida. Debes enviar una foto tomada hoy.', $reply['reply']);
+        $this->assertSame('ticket_imagen', $reply['session']->step);
+
+        Carbon::setTestNow();
     }
 }
