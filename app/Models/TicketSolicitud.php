@@ -22,6 +22,7 @@ class TicketSolicitud extends Model
     public const ESTADO_TICKET_PAGADO = 'ticket_pagado';
     public const ESTADO_NULO = 'nulo';
     public const ESTADO_AVERIA_CERRADA = 'averia_cerrada';
+    public const ESTADO_RECHAZADO = 'rechazado';
 
     protected $fillable = [
         'phone',
@@ -91,6 +92,7 @@ class TicketSolicitud extends Model
             self::ESTADO_TICKET_PAGADO => 'Ticket pagado Por otra Terminal',
             self::ESTADO_NULO => 'Nulo',
             self::ESTADO_AVERIA_CERRADA => 'Averia Cerrada',
+            self::ESTADO_RECHAZADO => 'Rechazado',
             default => 'Pendiente',
         };
     }
@@ -105,6 +107,7 @@ class TicketSolicitud extends Model
             self::ESTADO_TICKET_PAGADO => 'success',
             self::ESTADO_NULO => 'danger',
             self::ESTADO_AVERIA_CERRADA => 'success',
+            self::ESTADO_RECHAZADO => 'danger',
             default => 'warning',
         };
     }

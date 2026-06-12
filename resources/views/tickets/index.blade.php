@@ -135,6 +135,7 @@
                                             <option value="token_no_funciono" @selected(($filtros['estado'] ?? '') === 'token_no_funciono')>Token No Funciono</option>
                                             <option value="ticket_pagado" @selected(($filtros['estado'] ?? '') === 'ticket_pagado')>Ticket pagado Por otra Terminal</option>
                                             <option value="nulo" @selected(($filtros['estado'] ?? '') === 'nulo')>Nulo</option>
+                                            <option value="rechazado" @selected(($filtros['estado'] ?? '') === 'rechazado')>Rechazado</option>
                                             <option value="en_proceso" @selected(($filtros['estado'] ?? '') === 'en_proceso')>En Proceso</option>
                                             <option value="averia_cerrada" @selected(($filtros['estado'] ?? '') === 'averia_cerrada')>Averia Cerrada</option>
                                         </select>
@@ -211,26 +212,35 @@
                                                                     <i class="ri-check-line me-1"></i>Finalizar
                                                                 </button>
                                                             </form>
-                                                        @elseif (!in_array($solicitud->estado, ['pagado', 'nulo', 'averia_cerrada'], true))
+                                                        @elseif (!in_array($solicitud->estado, ['pagado', 'nulo', 'averia_cerrada', 'rechazado'], true))
                                                             @php
                                                                 $estadosGestion = match ($solicitud->categoria) {
-                                                                    'anular_ticket' => ['pendiente' => 'Pendiente', 'nulo' => 'Nulo'],
+                                                                    'anular_ticket' => ['pendiente' => 'Pendiente', 'nulo' => 'Nulo', 'rechazado' => 'RECHAZAR'],
                                                                     'reportar_averia' => ['pendiente' => 'Pendiente', 'en_proceso' => 'En Proceso', 'averia_cerrada' => 'Averia Cerrada'],
                                                                     default => $solicitud->estado === 'token_enviado'
-                                                                        ? ['pendiente' => 'Pendiente', 'pagado' => 'Pagado', 'token_enviado' => 'Token enviado', 'ticket_pagado' => 'Ticket pagado Por otra Terminal']
+                                                                        ? ['pendiente' => 'Pendiente', 'pagado' => 'Pagado', 'token_enviado' => 'Token enviado', 'ticket_pagado' => 'Ticket pagado Por otra Terminal', 'rechazado' => 'RECHAZAR']
                                                                         : ($solicitud->estado === 'token_no_funciono'
-                                                                            ? ['pendiente' => 'Pendiente', 'pagado' => 'Pagado', 'token_no_funciono' => 'Token No Funciono', 'ticket_pagado' => 'Ticket pagado Por otra Terminal']
-                                                                            : ['pendiente' => 'Pendiente', 'pagado' => 'Pagado', 'ticket_pagado' => 'Ticket pagado Por otra Terminal']),
+                                                                            ? ['pendiente' => 'Pendiente', 'pagado' => 'Pagado', 'token_no_funciono' => 'Token No Funciono', 'ticket_pagado' => 'Ticket pagado Por otra Terminal', 'rechazado' => 'RECHAZAR']
+                                                                            : ['pendiente' => 'Pendiente', 'pagado' => 'Pagado', 'ticket_pagado' => 'Ticket pagado Por otra Terminal', 'rechazado' => 'RECHAZAR']),
                                                                 };
+                                                                $motivosRechazo = $rechazoMotivos[$solicitud->categoria] ?? [];
                                                             @endphp
-                                                            <form method="POST" action="{{ route('tickets.estado', $solicitud) }}" class="d-flex gap-2 ticket-estado-form" data-current-estado="{{ $solicitud->estado }}">
+                                                            <form method="POST" action="{{ route('tickets.estado', $solicitud) }}" class="d-flex flex-wrap gap-2 ticket-estado-form" data-current-estado="{{ $solicitud->estado }}">
                                                                 @csrf
                                                                 @method('PUT')
-                                                                <select class="form-select form-select-sm" name="estado">
+                                                                <select class="form-select form-select-sm ticket-estado-select" name="estado" style="max-width: 210px;">
                                                                     @foreach ($estadosGestion as $estadoValue => $estadoLabel)
                                                                         <option value="{{ $estadoValue }}" @selected($solicitud->estado === $estadoValue)>{{ $estadoLabel }}</option>
                                                                     @endforeach
                                                                 </select>
+                                                                @if (!empty($motivosRechazo))
+                                                                    <select class="form-select form-select-sm ticket-rechazo-select d-none" name="rechazo_motivo" style="min-width: 320px;">
+                                                                        <option value="">Motivo del rechazo</option>
+                                                                        @foreach ($motivosRechazo as $motivo)
+                                                                            <option value="{{ $motivo }}">{{ $motivo }}</option>
+                                                                        @endforeach
+                                                                    </select>
+                                                                @endif
                                                                 <input type="hidden" name="notas" value="">
                                                                 <button class="btn btn-sm btn-success" type="submit">
                                                                     <i class="ri-save-3-line"></i>
@@ -412,8 +422,51 @@
                 return null;
             }
 
+            function toggleRejectReason(form) {
+                const estado = form.querySelector('[name="estado"]')?.value || '';
+                const rechazoSelect = form.querySelector('[name="rechazo_motivo"]');
+
+                if (!rechazoSelect) {
+                    return;
+                }
+
+                const isRejected = estado === 'rechazado';
+                rechazoSelect.classList.toggle('d-none', !isRejected);
+                rechazoSelect.required = isRejected;
+
+                if (!isRejected) {
+                    rechazoSelect.value = '';
+                    rechazoSelect.classList.remove('is-invalid');
+                }
+            }
+
             document.querySelectorAll('.ticket-estado-form').forEach(function (form) {
+                const estadoSelect = form.querySelector('[name="estado"]');
+                if (estadoSelect) {
+                    toggleRejectReason(form);
+                    estadoSelect.addEventListener('change', function () {
+                        toggleRejectReason(form);
+                    });
+                }
+                form.querySelector('[name="rechazo_motivo"]')?.addEventListener('change', function (event) {
+                    event.target.classList.remove('is-invalid');
+                });
+
                 form.addEventListener('submit', function (event) {
+                    const estado = form.querySelector('[name="estado"]')?.value || '';
+                    const rechazoSelect = form.querySelector('[name="rechazo_motivo"]');
+
+                    if (estado === 'rechazado') {
+                        if (!rechazoSelect || rechazoSelect.value.trim() === '') {
+                            event.preventDefault();
+                            rechazoSelect?.classList.add('is-invalid');
+                            rechazoSelect?.focus();
+                            return;
+                        }
+
+                        form.querySelector('[name="notas"]').value = rechazoSelect.value;
+                    }
+
                     const context = modalContextFor(form);
 
                     if (!context || form.dataset.confirmedTerminalPago === '1') {

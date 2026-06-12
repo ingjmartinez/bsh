@@ -11,6 +11,7 @@
             'ticket_pagado' => 'Ticket pagado Por otra Terminal',
             'nulo' => 'Nulo',
             'averia_cerrada' => 'Averia Cerrada',
+            'rechazado' => 'Rechazado',
         ];
 
         $estadoBadges = [
@@ -22,6 +23,7 @@
             'ticket_pagado' => 'success',
             'nulo' => 'danger',
             'averia_cerrada' => 'success',
+            'rechazado' => 'danger',
         ];
 
         $estadoTotal = max(1, array_sum($dashboard['estados'] ?? []));

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ChatbotSession;
 use App\Models\TicketSolicitud;
 use App\Services\WhatsAppService;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,6 +17,26 @@ use Illuminate\View\View;
 
 class TicketSolicitudController extends Controller
 {
+    private const RECHAZO_MOTIVOS_PAGO = [
+        'RECHAZADO: EL TICKET DEBE ESTAR VISIBLE Y COMPLETO.',
+        'RECHAZADO: ESCRIBIR EN EL CENTRO LA PALABRA PAGAR CON LAPICERO.',
+        'RECHAZADO: ESCRIBA SU NUMERO DE TERMINAL CORRECTAMENTE.',
+        'RECHAZADO: TICKET NO TIENE PREMIO.',
+        'RECHAZADO: TICKET YA FUE PAGADO.',
+        'RECHAZADO: TICKET YA POSEE UN TOKEN DE PAGO ACTIVO.',
+        'RECHAZADO: ESCRIBA SU NUMERO DE TERMINAL CORRECTAMENTE.',
+    ];
+
+    private const RECHAZO_MOTIVOS_NULO = [
+        'RECHAZADO: ESCRIBIR EN EL CENTRO LA PALABRA ANULAR CON LAPICERO.',
+        'RECHAZADO: NO HA REALIZADO LA JUGADA OTRA VEZ.',
+        'RECHAZADO: NO MARCO EL TICKET A ANULAR EN LA RELACION DE TICKET.',
+        'RECHAZADO: SOLICITUD TARDIA, SORTEO CERRADO.',
+        'RECHAZADO: NO SE ANULAN RECARGAS.',
+        'RECHAZADO: NO SE ANULAN NO TRADICIONAL.',
+        'RECHAZADO. IMPRIMA UNA RELACION DE TICKET Y MARQUE LA JUGADA QUE DESEA ANULAR',
+    ];
+
     public function __construct(private readonly WhatsAppService $whatsAppService)
     {
         $this->middleware('role_or_permission:superadmin|admin|tickets.view')->only(['index', 'activity', 'dashboard']);
@@ -36,6 +57,7 @@ class TicketSolicitudController extends Controller
                 ]),
                 'stats' => $this->emptyStats(),
                 'setupPending' => true,
+                'rechazoMotivos' => $this->rechazoMotivos(),
             ]);
         }
 
@@ -57,6 +79,7 @@ class TicketSolicitudController extends Controller
             'setupPending' => $setupPending,
             'ticketFeedSignature' => $ticketFeedSignature,
             'ticketActivityUrl' => route('tickets.activity', $filtros),
+            'rechazoMotivos' => $this->rechazoMotivos(),
         ]);
     }
 
@@ -150,9 +173,16 @@ class TicketSolicitudController extends Controller
                 'string',
                 'max:1000',
             ],
+            'rechazo_motivo' => [
+                Rule::requiredIf($this->requiresRejectReason($request)),
+                'nullable',
+                Rule::in($this->rejectReasonsForCategory((string) $ticket->categoria)),
+            ],
         ], [
             'estado.in' => 'El estado seleccionado no es valido para esta categoria de ticket.',
             'notas.required' => 'Debes completar la informacion solicitada antes de actualizar el ticket.',
+            'rechazo_motivo.required' => 'Debes seleccionar el motivo del rechazo.',
+            'rechazo_motivo.in' => 'El motivo de rechazo seleccionado no es valido para esta categoria.',
         ]);
 
         if ($this->isEstadoCerrado($ticket)) {
@@ -183,6 +213,10 @@ class TicketSolicitudController extends Controller
         $estadoAnterior = (string) $ticket->estado;
         $estadoDestino = $validated['estado'];
         $tokenEnviado = false;
+
+        if ($estadoDestino === TicketSolicitud::ESTADO_RECHAZADO) {
+            $validated['notas'] = $validated['rechazo_motivo'];
+        }
 
         if ($this->requiresTokenSend($request, $ticket)) {
             $token = trim((string) ($validated['notas'] ?? ''));
@@ -215,6 +249,10 @@ class TicketSolicitudController extends Controller
         $ticket->save();
         if (!$tokenEnviado) {
             $this->notifyResolutionByWhatsApp($ticket, $estadoAnterior);
+        }
+
+        if ($estadoDestino === TicketSolicitud::ESTADO_RECHAZADO) {
+            $this->closeChatbotSessionForTicket($ticket);
         }
 
         return back()->with('success', 'Estado del ticket actualizado.');
@@ -269,6 +307,7 @@ class TicketSolicitudController extends Controller
             TicketSolicitud::ESTADO_NULO,
             TicketSolicitud::ESTADO_EN_PROCESO,
             TicketSolicitud::ESTADO_AVERIA_CERRADA,
+            TicketSolicitud::ESTADO_RECHAZADO,
         ], true)) {
             return;
         }
@@ -296,6 +335,12 @@ class TicketSolicitudController extends Controller
                 . "Codigo terminal: {$ticket->ticket_numero}\n\n"
                 . "Estado: Finalizado\n\n"
                 . "Gracias por comunicarte con nosotros.";
+        } elseif ($ticket->estado === TicketSolicitud::ESTADO_RECHAZADO) {
+            $message = "Hola, tu solicitud {$ticket->codigo} fue rechazada.\n\n"
+                . "Categoria: {$ticket->categoria_label}\n"
+                . "Codigo terminal: {$ticket->ticket_numero}\n\n"
+                . "Motivo: " . trim((string) $ticket->notas) . "\n\n"
+                . "La sesion fue cerrada para que puedas crear otra solicitud.";
         } else {
             $message = "Hola, tu solicitud {$ticket->codigo} fue actualizada.\n\n"
                 . "Categoria: {$ticket->categoria_label}\n"
@@ -371,6 +416,46 @@ class TicketSolicitudController extends Controller
             && (string) $request->input('estado') === TicketSolicitud::ESTADO_PAGADO;
     }
 
+    private function requiresRejectReason(Request $request): bool
+    {
+        return (string) $request->input('estado') === TicketSolicitud::ESTADO_RECHAZADO;
+    }
+
+    private function rejectReasonsForCategory(string $categoria): array
+    {
+        return match ($categoria) {
+            TicketSolicitud::CATEGORIA_PAGAR => self::RECHAZO_MOTIVOS_PAGO,
+            TicketSolicitud::CATEGORIA_ANULAR => self::RECHAZO_MOTIVOS_NULO,
+            default => [],
+        };
+    }
+
+    private function rechazoMotivos(): array
+    {
+        return [
+            TicketSolicitud::CATEGORIA_PAGAR => self::RECHAZO_MOTIVOS_PAGO,
+            TicketSolicitud::CATEGORIA_ANULAR => self::RECHAZO_MOTIVOS_NULO,
+        ];
+    }
+
+    private function closeChatbotSessionForTicket(TicketSolicitud $ticket): void
+    {
+        $phone = preg_replace('/\D+/', '', (string) $ticket->phone) ?? '';
+
+        if ($phone === '') {
+            return;
+        }
+
+        ChatbotSession::query()
+            ->where('phone', $phone)
+            ->update([
+                'step' => 'inicio',
+                'context' => json_encode([]),
+                'last_message' => 'Sesion cerrada por rechazo de ticket',
+                'last_interaction_at' => now(),
+            ]);
+    }
+
     private function emptyStats(): array
     {
         return [
@@ -378,6 +463,7 @@ class TicketSolicitudController extends Controller
             'pendientes' => 0,
             'pagados' => 0,
             'nulos' => 0,
+            'rechazados' => 0,
             'token_no_funciono' => 0,
             'pagar' => 0,
             'anular' => 0,
@@ -403,6 +489,7 @@ class TicketSolicitudController extends Controller
             'pendientes' => (clone $baseQuery)->where('estado', TicketSolicitud::ESTADO_PENDIENTE)->count(),
             'pagados' => (clone $baseQuery)->whereIn('estado', [TicketSolicitud::ESTADO_PAGADO, TicketSolicitud::ESTADO_TICKET_PAGADO])->count(),
             'nulos' => (clone $baseQuery)->where('estado', TicketSolicitud::ESTADO_NULO)->count(),
+            'rechazados' => (clone $baseQuery)->where('estado', TicketSolicitud::ESTADO_RECHAZADO)->count(),
             'token_no_funciono' => (clone $baseQuery)->where('estado', TicketSolicitud::ESTADO_TOKEN_NO_FUNCIONO)->count(),
             'pagar' => (clone $baseQuery)->where('categoria', TicketSolicitud::CATEGORIA_PAGAR)->count(),
             'anular' => (clone $baseQuery)->where('categoria', TicketSolicitud::CATEGORIA_ANULAR)->count(),
@@ -417,6 +504,7 @@ class TicketSolicitudController extends Controller
             TicketSolicitud::ESTADO_TICKET_PAGADO,
             TicketSolicitud::ESTADO_NULO,
             TicketSolicitud::ESTADO_AVERIA_CERRADA,
+            TicketSolicitud::ESTADO_RECHAZADO,
         ];
 
         $estadoCounts = (clone $baseQuery)
@@ -506,6 +594,7 @@ class TicketSolicitudController extends Controller
             TicketSolicitud::CATEGORIA_ANULAR => [
                 TicketSolicitud::ESTADO_PENDIENTE,
                 TicketSolicitud::ESTADO_NULO,
+                TicketSolicitud::ESTADO_RECHAZADO,
             ],
             TicketSolicitud::CATEGORIA_AVERIA => [
                 TicketSolicitud::ESTADO_PENDIENTE,
@@ -518,6 +607,7 @@ class TicketSolicitudController extends Controller
                 TicketSolicitud::ESTADO_TOKEN_ENVIADO,
                 TicketSolicitud::ESTADO_TOKEN_NO_FUNCIONO,
                 TicketSolicitud::ESTADO_TICKET_PAGADO,
+                TicketSolicitud::ESTADO_RECHAZADO,
             ],
             default => [
                 TicketSolicitud::ESTADO_PENDIENTE,
@@ -526,6 +616,7 @@ class TicketSolicitudController extends Controller
                 TicketSolicitud::ESTADO_TOKEN_NO_FUNCIONO,
                 TicketSolicitud::ESTADO_TICKET_PAGADO,
                 TicketSolicitud::ESTADO_NULO,
+                TicketSolicitud::ESTADO_RECHAZADO,
             ],
         };
     }
@@ -549,6 +640,7 @@ class TicketSolicitudController extends Controller
             TicketSolicitud::ESTADO_PAGADO,
             TicketSolicitud::ESTADO_NULO,
             TicketSolicitud::ESTADO_AVERIA_CERRADA,
+            TicketSolicitud::ESTADO_RECHAZADO,
         ], true);
     }
 }
