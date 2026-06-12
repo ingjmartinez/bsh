@@ -2,7 +2,7 @@
 
 namespace App\Support;
 
-class LotonetRowMapper
+class LotedomRowMapper
 {
     public static function faltante(array $row, string $fecha): array
     {

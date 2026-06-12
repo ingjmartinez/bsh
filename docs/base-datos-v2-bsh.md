@@ -23,7 +23,7 @@ No se encontro directorio `app/Livewire`; por tanto, no hay componentes Livewire
 
 El sistema actual mezcla cuatro responsabilidades en las mismas tablas:
 
-- Tablas crudas importadas desde Lotobet/Lotonet.
+- Tablas crudas importadas desde Lotobet/Lotedom.
 - Tablas usadas directamente por dashboards.
 - Tablas usadas por reporteria pesada.
 - Tablas maestras/catalogos parcialmente normalizadas.
@@ -95,7 +95,7 @@ V2 debe conservar el valor fuente, pero resolver FK interna cuando sea posible. 
 
 ### 3.5 Duplicidad funcional por sistema
 
-Existen pares de tablas para Lotobet y Lotonet:
+Existen pares de tablas para Lotobet y Lotedom:
 
 - `vt_usuarios_bet` / `vt_usuarios_net`
 - `ventas_usuarios_bet` / `ventas_usuarios_net`
@@ -157,7 +157,7 @@ V2 debe precalcular en tablas agregadas por dia, mes, agencia, producto, emplead
 | `mar_ventas` | ventas sistema MAR por SOAP | columnas propias `VentaID`, `Dia`, `BancaID`, quinielas/pales/tripletas/comisiones. |
 | `recargas_bet`, `recargas_net` | recargas por agencia/cedula/producto | `fecha`, `agencia_id`, `cedula`, `monto`, `producto_id`. |
 | `premios_bet`, `premios_net` | premios pagados | `fecha`, `agencia_id`, `producto_id`, `monto`, posiblemente `cedula`. |
-| `paquetico_net` | paquetico Lotonet | `fecha`, `agencia_id`, `producto_id`, `monto`. |
+| `paquetico_net` | paquetico Lotedom | `fecha`, `agencia_id`, `producto_id`, `monto`. |
 | `pagos_misma_empresa_*`, `pagos_aotra_empresa_*`, `pagos_porotra_empresa_*` | pagos entre agencias/empresas | `fecha`, `agencia_id`, `producto_id`, `monto`, contraparte, plataforma. |
 | `faltantes_bet`, `faltantes_net` | faltantes por agencia/cedula | `fecha`, `agencia_id`, `identificacion`, `monto`, `abono`, `balance`. |
 | `asistencias_bet`, `asistencias_net` | asistencia/login/salida | `fecha`, `agencia_id`, `cedula/identificacion`, `primer_login/entrada`, `ultimo_login/salida`. |
@@ -221,7 +221,7 @@ Filtros frecuentes:
 - `producto_id`.
 - `consorcio_id`.
 - `tipo` de juego/producto.
-- `sistema` (`Lotobet`, `Lotonet`, `todos`).
+- `sistema` (`Lotobet`, `Lotedom`, `todos`).
 - `empresa` (`Negosur`, `Joselito`, todas).
 - `estatus`/activo.
 - `mes`, `anio`.
@@ -243,7 +243,7 @@ La V2 debe usar una arquitectura por capas:
 Tablas sugeridas:
 
 - `sistemas`
-  - `id`, `codigo` (`lotobet`, `lotonet`, `mar`), `nombre`, `activo`.
+  - `id`, `codigo` (`lotobet`, `lotedom`, `mar`), `nombre`, `activo`.
 - `empresas`
   - `id`, `codigo`, `nombre`, `activo`.
 - `consorcios`
@@ -290,19 +290,19 @@ Tablas sugeridas:
 - `etl_conflictos`
   - `id`, `etl_run_id`, `tabla_destino`, `tipo`, `clave_fuente`, `motivo`, `payload`, `resuelto`, `resuelto_por_id`, timestamps.
 - `stg_lotobet_ventas_usuarios`
-- `stg_lotonet_ventas_usuarios`
+- `stg_lotedom_ventas_usuarios`
 - `stg_lotobet_ventas_productos`
-- `stg_lotonet_ventas_productos`
+- `stg_lotedom_ventas_productos`
 - `stg_lotobet_recargas`
-- `stg_lotonet_recargas`
+- `stg_lotedom_recargas`
 - `stg_lotobet_premios`
-- `stg_lotonet_premios`
+- `stg_lotedom_premios`
 - `stg_lotobet_faltantes`
-- `stg_lotonet_faltantes`
+- `stg_lotedom_faltantes`
 - `stg_lotobet_asistencias`
-- `stg_lotonet_asistencias`
+- `stg_lotedom_asistencias`
 - `stg_lotobet_pagos_empresas`
-- `stg_lotonet_pagos_empresas`
+- `stg_lotedom_pagos_empresas`
 - `stg_mar_ventas`
 
 Cada `stg_*` debe incluir:
@@ -573,7 +573,7 @@ No se deben reutilizar las migraciones antiguas danadas. Crear una nueva carpeta
 - `2026_05_14_020001_create_etl_control_tables.php`
   - `etl_runs`, `etl_run_items`, `etl_conflictos`.
 - `2026_05_14_020002_create_staging_lotobet_tables.php`
-- `2026_05_14_020003_create_staging_lotonet_tables.php`
+- `2026_05_14_020003_create_staging_lotedom_tables.php`
 - `2026_05_14_020004_create_staging_mar_tables.php`
 
 ### 11.4 Facts
@@ -617,7 +617,7 @@ Estas relaciones aparecen en codigo, pero necesitan confirmacion de negocio o li
 
 - Si `agencias.terminal` es unico global o solo por sistema/empresa.
 - Si `agencia_id` en ventas representa siempre terminal, codigo de agencia o numero externo segun sistema.
-- Si `consorcio_id` puede mapearse a una sola tabla para Lotobet y Lotonet.
+- Si `consorcio_id` puede mapearse a una sola tabla para Lotobet y Lotedom.
 - Si `catalogo_juegos.producto_id` es unico global o por sistema.
 - Si las cedulas de ventas siempre identifican empleados o tambien clientes/usuarios externos.
 - Si `coordinador_operador` y `coordinadores_operador` son la misma entidad o tablas distintas en alguna version.
@@ -643,7 +643,7 @@ Estas relaciones aparecen en codigo, pero necesitan confirmacion de negocio o li
    - finalmente incentivos.
 10. Crear vistas de compatibilidad temporal si el codigo actual debe seguir funcionando:
    - `vt_usuarios_bet` como vista filtrada de `fact_ventas_usuarios` para Lotobet.
-   - `vt_usuarios_net` como vista filtrada para Lotonet.
+   - `vt_usuarios_net` como vista filtrada para Lotedom.
    - `ventas_producto_bet/net` como vistas o aliases controlados.
 11. Retirar compatibilidad cuando todos los controladores apunten a V2.
 

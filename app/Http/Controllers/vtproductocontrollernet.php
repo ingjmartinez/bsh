@@ -25,7 +25,7 @@ class vtproductocontrollernet extends Controller
         return $cedula;
     }
 
-    public function getVentasUsuariosLotonet(Request $request)
+    public function getVentasUsuariosLotedom(Request $request)
     {
         header('Content-Type: application/json');
 
@@ -81,7 +81,7 @@ class vtproductocontrollernet extends Controller
         return response()->json(['ventas' => $data, 'code' => $ventas['code'], 'message' => '']);
     }
 
-    public function saveVentasUsuariosLotonet(Request $request)
+    public function saveVentasUsuariosLotedom(Request $request)
     {
         ini_set('max_execution_time', 300); // 300 segundos = 5 minutos
         set_time_limit(300);                // alternativa equivalente
@@ -151,7 +151,7 @@ class vtproductocontrollernet extends Controller
         ]);
     }
 
-    public function deleteVentasUsuariosLotonet(Request $request)
+    public function deleteVentasUsuariosLotedom(Request $request)
     {
         header('Content-Type: application/json');
 

@@ -5,12 +5,12 @@
         <div class="page-content">
             <div class="container-fluid">
                 <style>
-                    .acciones-lotonet .btn {
+                    .acciones-lotedom .btn {
                         width: auto;
                     }
 
                     @media (max-width: 767.98px) {
-                        .acciones-lotonet .btn {
+                        .acciones-lotedom .btn {
                             width: 100%;
                             min-height: 44px;
                         }
@@ -21,7 +21,7 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                            <h4 class="mb-sm-0">Pagos A Otra Empresa - Lotonet Lotedom</h4>
+                            <h4 class="mb-sm-0">Paquetico Lotedom</h4>
 
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
@@ -41,7 +41,7 @@
                                 <h5 class="card-title mb-0">Configurar Token</h5>
                             </div>
                             <div class="card-body">
-                                <div class="row g-2 mb-3 acciones-lotonet align-items-end">
+                                <div class="row g-2 mb-3 acciones-lotedom align-items-end">
                                     <div class="col-12 col-lg-4 d-grid d-md-flex gap-2">
                                         <button id="btnGenerarToken" class="btn btn-primary">Generar Token</button>
                                         <button id="btnGenerarData" class="btn btn-primary">Generar Data</button>
@@ -60,20 +60,23 @@
                                     </div>
                                 </div>
 
-                                <table id="tableRecargas"
+                                <table id="tableFaltantes"
                                     class="table table-bordered dt-responsive nowrap table-striped align-middle"
                                     style="width:100%">
                                     <thead>
                                         <tr>
-                                            <th>Consorcio</th>
-                                            <th>Producto</th>
-                                            <th>Agencia</th>
-                                            <th>Descripción</th>
-                                            <th>Monto</th>
                                             <th>Fecha</th>
-                                            <th>Importe</th>
-                                            <th>Pagado Consorcio</th>
-                                            <th>Plataforma Pago</th>
+                                            <th>Consorcio</th>
+                                            <th>Agencia</th>
+                                            <th>Identificación</th>
+                                            <th>Monto</th>
+                                            <th>Descripción</th>
+                                            <th>Cargo Servicio</th>
+                                            <th>Cantidad</th>
+                                            <th>Proveedor Nombre</th>
+                                            <th>Proveedor</th>
+                                            <th>Distribuidora</th>
+                                            <th>Distribuidora Nombre</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -156,11 +159,11 @@
                 didOpen: () => Swal.showLoading()
             });
 
-            $('#tableRecargas').DataTable().destroy();
-            const tableBody = document.querySelector('#tableRecargas tbody');
+            $('#tableFaltantes').DataTable().destroy();
+            const tableBody = document.querySelector('#tableFaltantes tbody');
             tableBody.innerHTML = '';
 
-            fetch(`/get-pagos-aotra-empresa-lotonet?fecha=${fecha}`)
+            fetch(`/get-paquetico-lotedom?fecha=${fecha}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.code != 0) {
@@ -178,23 +181,26 @@
 
                         tableBody.innerHTML = ''; // Clear existing rows
 
-                        data.pagos.forEach(item => {
+                        data.paquetico.forEach(item => {
                             const row = document.createElement('tr');
                             row.innerHTML = `
-                                <td>${item.consorcio_id}</td>
-                                <td>${item.producto_id}</td>
-                                <td>${item.agencia_id}</td>
-                                <td>${item.descripcion}</td>
-                                <td>${item.monto}</td>
                                 <td>${fecha}</td>
-                                <td>${item.importe}</td>
-                                <td>${item.pagado_consorcio_id}</td>
-                                <td>${item.plataforma}</td>
+                                <td>${item.consorcio_id}</td>
+                                <td>${item.agencia_id}</td>
+                                <td>${item.identificacion}</td>
+                                <td>${item.monto_pagado}</td>
+                                <td>${item.descripcion}</td>
+                                <td>${item.cargo_servicio}</td>
+                                <td>${item.cantidad}</td>
+                                <td>${item.proveedor_id}</td>
+                                <td>${item.proveedor_nombre}</td>
+                                <td>${item.distribuidora_id}</td>
+                                <td>${item.distribuidora_nombre}</td>
                             `;
                             tableBody.appendChild(row);
                         });
 
-                        $('#tableRecargas').DataTable({
+                        $('#tableFaltantes').DataTable({
                             destroy: true,
                             responsive: true,
                             dom: 'Bfrtip',
@@ -227,7 +233,7 @@
                 timerProgressBar: true,
                 didOpen: () => Swal.showLoading()
             });
-            fetch(`/save-pagos-aotra-empresa-lotonet?fecha=${fecha}`)
+            fetch(`/save-paquetico-lotedom?fecha=${fecha}`)
                 .then(response => response.json())
                 .then(data => {
                     Swal.fire({
@@ -259,7 +265,7 @@
                 timerProgressBar: true,
                 didOpen: () => Swal.showLoading()
             });
-            fetch(`/delete-pagos-aotra-empresa-lotonet?fecha=${fecha}`)
+            fetch(`/delete-paquetico-lotedom?fecha=${fecha}`)
                 .then(response => response.json())
                 .then(data => {
                     Swal.fire({
@@ -291,7 +297,7 @@
             });
         };
 
-        const escapeLotonetHtml = (value) => String(value ?? '')
+        const escapeLotedomHtml = (value) => String(value ?? '')
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
@@ -340,10 +346,10 @@
                     : '-';
                 return `
                     <tr>
-                        <td>${escapeLotonetHtml(result.date)}</td>
-                        <td><span class="badge bg-${badgeClass}">${escapeLotonetHtml(result.label)}</span></td>
-                        <td>${escapeLotonetHtml(result.message)}</td>
-                        <td>${escapeLotonetHtml(total)}</td>
+                        <td>${escapeLotedomHtml(result.date)}</td>
+                        <td><span class="badge bg-${badgeClass}">${escapeLotedomHtml(result.label)}</span></td>
+                        <td>${escapeLotedomHtml(result.message)}</td>
+                        <td>${escapeLotedomHtml(total)}</td>
                     </tr>
                 `;
             }).join('');
@@ -408,7 +414,7 @@
                     const date = dates[i];
                     Swal.update({ html: `Procesando ${date} (${i + 1} / ${dates.length})` });
 
-                    const result = await requestJson(`/save-pagos-aotra-empresa-lotonet?fecha=${date}`);
+                    const result = await requestJson(`/save-paquetico-lotedom?fecha=${date}`);
                     const payload = result.payload || {};
                     const total = payload.total ?? null;
                     let status = result.ok ? 'ok' : 'error';
@@ -470,7 +476,7 @@
                     const date = dates[i];
                     Swal.update({ html: `Eliminando ${date} (${i + 1} / ${dates.length})` });
 
-                    const result = await requestJson(`/delete-pagos-aotra-empresa-lotonet?fecha=${date}`);
+                    const result = await requestJson(`/delete-paquetico-lotedom?fecha=${date}`);
                     const payload = result.payload || {};
                     responses.push({
                         date,

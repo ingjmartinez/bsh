@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 
 class KpiLotobetController extends Controller
 {
+    private const FUENTE_VENTAS = 'ventas_usuarios_bet';
+
     public function index()
     {
         return view('kpi-lotobet.index');
@@ -73,6 +75,9 @@ class KpiLotobetController extends Controller
                 END AS MetaMensual_Rec,
 
                 -- DIAS
+                COALESCE(m.trad_mes,0) AS VentaMes_Tra,
+                COALESCE(m.notrad_mes,0) AS VentaMes_NoTra,
+                COALESCE(m.rec_mes,0) AS VentaMes_Rec,
                 COALESCE(d.dias_cumplido,0) AS Cant_Dias_Cumplido,
                 (? - COALESCE(d.dias_cumplido,0)) AS Cant_No_Cumplido,
 
@@ -87,7 +92,7 @@ class KpiLotobetController extends Controller
             FROM
                 (
                     SELECT DISTINCT agencia_id
-                    FROM vt_usuarios_bet
+                    FROM " . self::FUENTE_VENTAS . "
                     WHERE fecha BETWEEN ? AND ?
                 ) a
 
@@ -95,10 +100,10 @@ class KpiLotobetController extends Controller
                 (
                     SELECT
                         agencia_id,
-                        SUM(CASE WHEN LOWER(tipo) = 'tradicional' THEN monto ELSE 0 END) AS trad_mes,
-                        SUM(CASE WHEN LOWER(tipo) IN ('no tradicional','no_tradicional') THEN monto ELSE 0 END) AS notrad_mes,
-                        SUM(CASE WHEN LOWER(tipo) IN ('recargas','recarga') THEN monto ELSE 0 END) AS rec_mes
-                    FROM vt_usuarios_bet
+                        SUM(CASE WHEN LOWER(TRIM(COALESCE(tipo, ''))) = 'tradicional' THEN monto ELSE 0 END) AS trad_mes,
+                        SUM(CASE WHEN LOWER(TRIM(COALESCE(tipo, ''))) IN ('no tradicional','no_tradicional') THEN monto ELSE 0 END) AS notrad_mes,
+                        SUM(CASE WHEN producto_id = -1 OR LOWER(TRIM(COALESCE(tipo, ''))) IN ('recargas','recarga') THEN monto ELSE 0 END) AS rec_mes
+                    FROM " . self::FUENTE_VENTAS . "
                     WHERE fecha BETWEEN ? AND ?
                     GROUP BY agencia_id
                 ) m
@@ -120,10 +125,10 @@ class KpiLotobetController extends Controller
                         SELECT
                             agencia_id,
                             fecha,
-                            SUM(CASE WHEN LOWER(tipo) = 'tradicional' THEN monto ELSE 0 END) AS trad_d,
-                            SUM(CASE WHEN LOWER(tipo) IN ('no tradicional','no_tradicional') THEN monto ELSE 0 END) AS notrad_d,
-                            SUM(CASE WHEN LOWER(tipo) IN ('recargas','recarga') THEN monto ELSE 0 END) AS rec_d
-                        FROM vt_usuarios_bet
+                            SUM(CASE WHEN LOWER(TRIM(COALESCE(tipo, ''))) = 'tradicional' THEN monto ELSE 0 END) AS trad_d,
+                            SUM(CASE WHEN LOWER(TRIM(COALESCE(tipo, ''))) IN ('no tradicional','no_tradicional') THEN monto ELSE 0 END) AS notrad_d,
+                            SUM(CASE WHEN producto_id = -1 OR LOWER(TRIM(COALESCE(tipo, ''))) IN ('recargas','recarga') THEN monto ELSE 0 END) AS rec_d
+                        FROM " . self::FUENTE_VENTAS . "
                         WHERE fecha BETWEEN ? AND ?
                         GROUP BY agencia_id, fecha
                     ) x
@@ -151,6 +156,9 @@ class KpiLotobetController extends Controller
         $cumplioRec = 0;
         $totalDiasCumplidos = 0;
         $totalDiasNoCumplidos = 0;
+        $totalVentasTrad = 0;
+        $totalVentasNotrad = 0;
+        $totalVentasRec = 0;
         $agenciasCumplieron = 0;
         $agenciasNoCumplieron = 0;
         
@@ -168,6 +176,9 @@ class KpiLotobetController extends Controller
             
             $totalDiasCumplidos += $row->Cant_Dias_Cumplido;
             $totalDiasNoCumplidos += $row->Cant_No_Cumplido;
+            $totalVentasTrad += (float) ($row->VentaMes_Tra ?? 0);
+            $totalVentasNotrad += (float) ($row->VentaMes_NoTra ?? 0);
+            $totalVentasRec += (float) ($row->VentaMes_Rec ?? 0);
             
             // Contar agencias que cumplieron al menos un día
             if ($row->Cant_Dias_Cumplido > 0) {
@@ -205,6 +216,9 @@ class KpiLotobetController extends Controller
                 'pct_cumplio_rec' => $totalAgencias > 0 ? round(($cumplioRec / $totalAgencias) * 100, 2) : 0,
                 'agencias_cumplieron' => $agenciasCumplieron,
                 'agencias_no_cumplieron' => $agenciasNoCumplieron,
+                'total_ventas_trad' => round($totalVentasTrad, 2),
+                'total_ventas_notrad' => round($totalVentasNotrad, 2),
+                'total_ventas_rec' => round($totalVentasRec, 2),
                 'total_dias_cumplidos' => $totalDiasCumplidos,
                 'total_dias_no_cumplidos' => $totalDiasNoCumplidos,
                 'promedio_dias_cumplidos' => $totalAgencias > 0 ? round($totalDiasCumplidos / $totalAgencias, 1) : 0,
@@ -225,36 +239,19 @@ class KpiLotobetController extends Controller
         $ini = date('Y-m-d', strtotime("$anio-$mes-01"));
         $fin = date('Y-m-t', strtotime($ini));
 
-        // Query para obtener ventas por producto (combinando bet y net)
+        // Query para obtener ventas por producto desde la tabla oficial de ventas por usuario.
         $productos = DB::select("
             SELECT 
-                descripcion AS producto,
-                SUM(monto) AS ventas
-            FROM (
-                SELECT descripcion, monto
-                FROM ventas_producto_bet
-                WHERE agencia_id = ?
-                    AND fecha BETWEEN ? AND ?
-                    AND descripcion NOT IN (
-                        '19','42','53','66','41','54','106','55','65','204','205','61','58','107',
-                        '90219','90319','90419','90619','206','207','91119','105','62','64','108',
-                        '109','110','111','63','90119','57'
-                    )
-                UNION ALL
-                SELECT descripcion, monto
-                FROM ventas_producto_net
-                WHERE agencia_id = ?
-                    AND fecha BETWEEN ? AND ?
-                    AND descripcion NOT IN (
-                        '19','42','53','66','41','54','106','55','65','204','205','61','58','107',
-                        '90219','90319','90419','90619','206','207','91119','105','62','64','108',
-                        '109','110','111','63','90119','57'
-                    )
-            ) AS combined
-            GROUP BY descripcion
+                COALESCE(NULLIF(TRIM(descripcion), ''), CONCAT('Producto ', producto_id)) AS producto,
+                SUM(COALESCE(monto, 0)) AS ventas
+            FROM " . self::FUENTE_VENTAS . "
+            WHERE agencia_id = ?
+                AND fecha BETWEEN ? AND ?
+                AND producto_id IS NOT NULL
+            GROUP BY COALESCE(NULLIF(TRIM(descripcion), ''), CONCAT('Producto ', producto_id))
             HAVING ventas > 0
             ORDER BY ventas DESC
-        ", [$agencia, $ini, $fin, $agencia, $ini, $fin]);
+        ", [$agencia, $ini, $fin]);
 
         $totalProductos = count($productos);
 

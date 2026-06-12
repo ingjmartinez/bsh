@@ -51,8 +51,8 @@
                                             <button class="btn btn-dark btn-sm" id="btnGenerarTokenLotobet">
                                                 <i class="ri-key-line me-1"></i> Token Lotobet Real
                                             </button>
-                                            <button class="btn btn-info text-white btn-sm" id="btnGenerarTokenLotonet">
-                                                <i class="ri-shield-keyhole-line me-1"></i> Token Lotonet Lotedom
+                                            <button class="btn btn-info text-white btn-sm" id="btnGenerarTokenLotedom">
+                                                <i class="ri-shield-keyhole-line me-1"></i> Token Lotedom
                                             </button>
                                             <button class="btn btn-success btn-sm" id="btnEnviarCoordinador" disabled>
                                                 <i class="ri-mail-send-line me-1"></i> Enviar a coordinador
@@ -591,19 +591,19 @@
             });
     }
 
-    function generarTokenLotonet() {
+    function generarTokenLotedom() {
         Swal.fire({
-            title: 'Iniciando sesión Lotonet Lotedom...',
+            title: 'Iniciando sesión Lotedom...',
             allowOutsideClick: false,
             didOpen: () => Swal.showLoading(),
         });
 
         $.getJSON(URL_TOKEN_NET)
             .done(function(resp) {
-                Swal.fire('Listo', resp?.success || 'Sesión de Lotonet Lotedom iniciada correctamente.', 'success');
+                Swal.fire('Listo', resp?.success || 'Sesión de Lotedom iniciada correctamente.', 'success');
             })
             .fail(function(xhr) {
-                const msg = xhr?.responseJSON?.message || 'No se pudo iniciar sesión Lotonet Lotedom.';
+                const msg = xhr?.responseJSON?.message || 'No se pudo iniciar sesión Lotedom.';
                 Swal.fire('Error', msg, 'error');
             });
     }
@@ -770,7 +770,7 @@
         });
 
         $('#btnGenerarTokenLotobet').on('click', generarTokenLotobet);
-        $('#btnGenerarTokenLotonet').on('click', generarTokenLotonet);
+        $('#btnGenerarTokenLotedom').on('click', generarTokenLotedom);
         $('#btnEnviarCoordinador').on('click', enviarReporteCoordinador);
         $('#coordinador').on('change', function() {
             actualizarEstadoBotonEnviarCoordinador();

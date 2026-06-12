@@ -20,6 +20,8 @@ use App\Imports\AgenciasImport;
 
 class AgenciaController extends Controller
 {
+    private const FUENTE_VENTAS_USUARIOS = 'ventas_usuarios_bet';
+
     /**
      * Display a listing of the resource.
      */
@@ -684,7 +686,7 @@ class AgenciaController extends Controller
             $terminalesExistentes->put($terminalKey, true);
             $registradas[] = [
                 'id' => $agencia->id,
-                'agencia' => $agencia->agencia,
+                'agencia' => $agencia->agencia ?? $agencia->codigo ?? '',
                 'terminal' => $agencia->terminal,
                 'edit_url' => route('agencias.edit', $agencia),
             ];
@@ -699,16 +701,12 @@ class AgenciaController extends Controller
 
     private function crearAgenciaNoRegistrada(string $terminalOriginal): Agencia
     {
-        $payloadBase = [
-            'agencia' => null,
-            'terminal' => substr(trim($terminalOriginal), 0, 25),
-            'nombre_agencia' => null,
-            'estatus' => 1,
-            'aplica_incentivo' => 1,
-        ];
+        $columns = array_flip(\Schema::getColumnListing('agencias'));
+        $terminal = substr(trim($terminalOriginal), 0, 25);
+        $payloadBase = $this->payloadAgenciaNoRegistrada($columns, $terminal, false);
 
         try {
-            return Agencia::create($payloadBase);
+            return Agencia::query()->create($payloadBase);
         } catch (QueryException $e) {
             if (!$this->esErrorPorNuloNoPermitido($e)) {
                 throw $e;
@@ -716,21 +714,44 @@ class AgenciaController extends Controller
         }
 
         // Compatibilidad con esquemas legacy donde algunos campos string son NOT NULL.
-        return Agencia::create([
-            'agencia' => '',
-            'terminal' => $payloadBase['terminal'],
-            'nombre_agencia' => 'Terminal no registrada',
-            'horario_am' => '',
-            'horario_pm' => '',
-            'sistema' => '',
-            'empresa' => '',
-            'ciudad' => '',
-            'ruta' => '',
-            'operador' => '',
-            'coordinador' => '',
+        return Agencia::query()->create($this->payloadAgenciaNoRegistrada($columns, $terminal, true));
+    }
+
+    private function payloadAgenciaNoRegistrada(array $columns, string $terminal, bool $fallbackCompleto): array
+    {
+        $payload = [
+            'terminal' => $terminal,
             'estatus' => 1,
             'aplica_incentivo' => 1,
-        ]);
+        ];
+
+        if (isset($columns['agencia'])) {
+            $payload['agencia'] = $terminal;
+        } elseif (isset($columns['codigo'])) {
+            $payload['codigo'] = $terminal;
+        }
+
+        if (isset($columns['nombre_agencia'])) {
+            $payload['nombre_agencia'] = 'Terminal no registrada';
+        } elseif (isset($columns['nombre'])) {
+            $payload['nombre'] = 'Terminal no registrada';
+        }
+
+        if (isset($columns['sistema'])) {
+            $payload['sistema'] = 'lotobet';
+        }
+
+        foreach (['horario_am', 'horario_pm', 'empresa', 'ciudad', 'ruta', 'operador', 'coordinador'] as $column) {
+            if ($fallbackCompleto && isset($columns[$column]) && !array_key_exists($column, $payload)) {
+                $payload[$column] = '';
+            }
+        }
+
+        if ($fallbackCompleto && isset($columns['ciudad_id'])) {
+            $payload['ciudad_id'] = null;
+        }
+
+        return $payload;
     }
 
     private function esErrorPorNuloNoPermitido(QueryException $e): bool
@@ -751,7 +772,7 @@ class AgenciaController extends Controller
         $ventasPorTerminal = $this->obtenerVentasPorTerminal($fechaInicio, $fechaFin);
 
         $agencias = Agencia::query()
-            ->select('id', 'agencia', 'terminal', 'nombre_agencia', 'empresa', 'ciudad', 'ruta', 'estatus')
+            ->selectRaw('id, codigo AS agencia, terminal, nombre AS nombre_agencia, empresa, NULL AS ciudad, NULL AS ruta, estatus')
             ->whereNotNull('terminal')
             ->where('estatus', 1)
             ->orderBy('terminal')
@@ -775,7 +796,7 @@ class AgenciaController extends Controller
     private function obtenerAgenciasInactivas(): array
     {
         return Agencia::query()
-            ->select('id', 'agencia', 'terminal', 'nombre_agencia', 'empresa', 'ciudad', 'ruta', 'estatus')
+            ->selectRaw('id, codigo AS agencia, terminal, nombre AS nombre_agencia, empresa, NULL AS ciudad, NULL AS ruta, estatus')
             ->where('estatus', 0)
             ->orderBy('terminal')
             ->get()
@@ -791,7 +812,7 @@ class AgenciaController extends Controller
         $ventasPorTerminal = $this->obtenerVentasPorTerminal($fechaInicio, $fechaFin);
 
         $agencias = Agencia::query()
-            ->select('id', 'agencia', 'terminal', 'nombre_agencia', 'empresa', 'ciudad', 'ruta', 'estatus')
+            ->selectRaw('id, codigo AS agencia, terminal, nombre AS nombre_agencia, empresa, NULL AS ciudad, NULL AS ruta, estatus')
             ->where('estatus', 0)
             ->whereNotNull('terminal')
             ->orderBy('terminal')
@@ -825,17 +846,7 @@ class AgenciaController extends Controller
             ->unique()
             ->flip();
 
-        $ventasBet = DB::table('vt_usuarios_bet')
-            ->selectRaw("COALESCE(NULLIF(TRIM(LEADING '0' FROM TRIM(CAST(agencia_id AS CHAR))), ''), '0') AS terminal_key")
-            ->selectRaw("TRIM(CAST(agencia_id AS CHAR)) AS terminal_original")
-            ->selectRaw('COALESCE(monto, 0) AS monto')
-            ->selectRaw('fecha AS fecha')
-            ->whereNotNull('agencia_id')
-            ->whereDate('fecha', '>=', $fechaInicio)
-            ->whereDate('fecha', '<=', $fechaFin)
-            ->whereRaw('COALESCE(monto, 0) > 0');
-
-        $ventasNet = DB::table('vt_usuarios_net')
+        $ventas = DB::table(self::FUENTE_VENTAS_USUARIOS)
             ->selectRaw("COALESCE(NULLIF(TRIM(LEADING '0' FROM TRIM(CAST(agencia_id AS CHAR))), ''), '0') AS terminal_key")
             ->selectRaw("TRIM(CAST(agencia_id AS CHAR)) AS terminal_original")
             ->selectRaw('COALESCE(monto, 0) AS monto')
@@ -846,7 +857,7 @@ class AgenciaController extends Controller
             ->whereRaw('COALESCE(monto, 0) > 0');
 
         $agencias = DB::query()
-            ->fromSub($ventasBet->unionAll($ventasNet), 'v')
+            ->fromSub($ventas, 'v')
             ->selectRaw('terminal_key')
             ->selectRaw('MIN(NULLIF(terminal_original, "")) AS terminal_original')
             ->selectRaw('COUNT(DISTINCT DATE(fecha)) AS dias_con_venta')
@@ -892,14 +903,7 @@ class AgenciaController extends Controller
 
     private function obtenerVentasPorTerminal(string $fechaInicio, string $fechaFin)
     {
-        $ventasBet = DB::table('vt_usuarios_bet')
-            ->selectRaw("COALESCE(NULLIF(TRIM(LEADING '0' FROM TRIM(CAST(agencia_id AS CHAR))), ''), '0') AS terminal_key")
-            ->whereNotNull('agencia_id')
-            ->whereDate('fecha', '>=', $fechaInicio)
-            ->whereDate('fecha', '<=', $fechaFin)
-            ->whereRaw('COALESCE(monto, 0) > 0');
-
-        $ventasNet = DB::table('vt_usuarios_net')
+        $ventas = DB::table(self::FUENTE_VENTAS_USUARIOS)
             ->selectRaw("COALESCE(NULLIF(TRIM(LEADING '0' FROM TRIM(CAST(agencia_id AS CHAR))), ''), '0') AS terminal_key")
             ->whereNotNull('agencia_id')
             ->whereDate('fecha', '>=', $fechaInicio)
@@ -907,7 +911,7 @@ class AgenciaController extends Controller
             ->whereRaw('COALESCE(monto, 0) > 0');
 
         return DB::query()
-            ->fromSub($ventasBet->unionAll($ventasNet), 'v')
+            ->fromSub($ventas, 'v')
             ->whereRaw('terminal_key <> ?', ['0'])
             ->distinct()
             ->pluck('terminal_key')
@@ -948,7 +952,7 @@ class AgenciaController extends Controller
         $soloIncumplidas = $request->input('solo_incumplidas', '1') === '1';
 
         $agencias = Agencia::query()
-            ->select('id', 'agencia', 'nombre_agencia', 'terminal', 'horario_am', 'horario_pm')
+            ->selectRaw('id, codigo AS agencia, nombre AS nombre_agencia, terminal, horario_am, horario_pm')
             ->whereNotNull('terminal')
             ->where(function ($q) {
                 $q->whereNotNull('horario_am')
@@ -1335,26 +1339,7 @@ class AgenciaController extends Controller
 
         $tiposVentaFija = ['tradicional', 'fija', 'venta fija', 'venta_fija'];
 
-        $ventasBet = DB::table('vt_usuarios_bet')
-            ->selectRaw("COALESCE(NULLIF(TRIM(LEADING '0' FROM TRIM(CAST(agencia_id AS CHAR))), ''), '0') AS terminal_key")
-            ->selectRaw("TRIM(CAST(agencia_id AS CHAR)) AS terminal_original")
-            ->selectRaw('COALESCE(monto, 0) AS monto')
-            ->selectRaw('fecha AS fecha')
-            ->whereNotNull('agencia_id')
-            ->whereBetween('fecha', [$fechaInicio, $fechaFin])
-            ->whereRaw('COALESCE(monto, 0) > 0')
-            ->where(function ($query) use ($tiposVentaFija) {
-                foreach ($tiposVentaFija as $index => $tipo) {
-                    if ($index === 0) {
-                        $query->whereRaw('LOWER(TRIM(COALESCE(tipo, ""))) = ?', [$tipo]);
-                        continue;
-                    }
-
-                    $query->orWhereRaw('LOWER(TRIM(COALESCE(tipo, ""))) = ?', [$tipo]);
-                }
-            });
-
-        $ventasNet = DB::table('vt_usuarios_net')
+        $ventas = DB::table(self::FUENTE_VENTAS_USUARIOS)
             ->selectRaw("COALESCE(NULLIF(TRIM(LEADING '0' FROM TRIM(CAST(agencia_id AS CHAR))), ''), '0') AS terminal_key")
             ->selectRaw("TRIM(CAST(agencia_id AS CHAR)) AS terminal_original")
             ->selectRaw('COALESCE(monto, 0) AS monto')
@@ -1374,7 +1359,7 @@ class AgenciaController extends Controller
             });
 
         $ventasConsolidadas = DB::query()
-            ->fromSub($ventasBet->unionAll($ventasNet), 'v')
+            ->fromSub($ventas, 'v')
             ->selectRaw('terminal_key')
             ->selectRaw('MIN(NULLIF(terminal_original, "")) AS terminal_original')
             ->selectRaw('COUNT(DISTINCT DATE(fecha)) AS dias_con_venta')

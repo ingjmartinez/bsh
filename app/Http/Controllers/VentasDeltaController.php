@@ -3,15 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Token;
+use App\Models\VentasDelta;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
-class VentaFlashController extends Controller
+class VentasDeltaController extends Controller
 {
-    public function ventasFlashLotobet()
+    public function ventasDelta()
     {
-        return view('lotobet.ventas-flash');
+        return view('lotobet.ventas_delta');
     }
 
     public function dashboardFlashLotobet()
@@ -19,12 +19,12 @@ class VentaFlashController extends Controller
         return view('dashboard.lotobet.ventas-flash');
     }
 
-    public function ventasFlashLotonet()
+    public function ventasFlashLotedom()
     {
-        return view('lotonet.ventas-flash');
+        return view('lotedom.ventas-flash');
     }
 
-    public function getVentasLotobet(Request $request)
+    public function getVentasDelta(Request $request)
     {
         header('Content-Type: application/json');
 
@@ -63,7 +63,7 @@ class VentaFlashController extends Controller
         return response()->json(['ventas' => $ventas['Content'], 'code' => $ventas['code'], 'message' => $ventas['msg']]);
     }
 
-    public function saveVentasLotobet(Request $request)
+    public function saveVentasDelta(Request $request)
     {
         ini_set('memory_limit', '1G');
         ini_set('max_execution_time', 360); // 300 segundos = 5 minutos
@@ -83,7 +83,7 @@ class VentaFlashController extends Controller
             return response()->json(['error' => 'El token ha expirado, genere uno nuevo'], 401);
         }
 
-        $existe = DB::table('ventas_flash_bet')->whereDate('fecha', $fecha)->exists();
+        $existe = VentasDelta::query()->whereDate('fecha', $fecha)->exists();
 
         if ($existe) {
             return response()->json(['message' => 'Ya hay data guardada en la fecha: ' . $fecha]);
@@ -130,7 +130,7 @@ class VentaFlashController extends Controller
 
         if (!empty($data)) {
             foreach (array_chunk($data, 5000) as $chunk) {
-                DB::table('ventas_flash_bet')->insert($chunk);
+                VentasDelta::query()->insert($chunk);
             }
         }
 
@@ -140,13 +140,13 @@ class VentaFlashController extends Controller
         ]);
     }
 
-    public function deleteVentasLotobet(Request $request)
+    public function deleteVentasDelta(Request $request)
     {
         header('Content-Type: application/json');
 
         $fecha = $request->query('fecha');
 
-        DB::table('ventas_flash_bet')->whereDate('fecha', $fecha)->delete();
+        VentasDelta::query()->whereDate('fecha', $fecha)->delete();
 
         return response()->json([
             'message' => 'Datos eliminados correctamente',
@@ -173,7 +173,7 @@ class VentaFlashController extends Controller
         $rangeStart = $inicio->format('Y-m-d');
         $rangeEnd = $fin->format('Y-m-d');
 
-        $baseQuery = DB::table('ventas_flash_bet')
+        $baseQuery = VentasDelta::query()
             ->whereBetween('fecha', [$rangeStart, $rangeEnd]);
 
         if ($agenciaId) {
@@ -182,7 +182,7 @@ class VentaFlashController extends Controller
 
         $selectedAgencia = null;
         if ($agenciaId) {
-            $selectedAgencia = DB::table('ventas_flash_bet')
+            $selectedAgencia = VentasDelta::query()
                 ->selectRaw('numero_externo as agencia_id')
                 ->selectRaw("COALESCE(MAX(banca), '') as banca")
                 ->whereBetween('fecha', [$rangeStart, $rangeEnd])
@@ -304,7 +304,7 @@ class VentaFlashController extends Controller
         $mesAnteriorInicio = $inicio->copy()->subMonth()->startOfMonth();
         $mesAnteriorFin = $inicio->copy()->subMonth()->endOfMonth();
 
-        $ventasMesAnteriorQuery = DB::table('ventas_flash_bet')
+        $ventasMesAnteriorQuery = VentasDelta::query()
             ->whereBetween('fecha', [$mesAnteriorInicio->format('Y-m-d'), $mesAnteriorFin->format('Y-m-d')])
             ->selectRaw('fecha')
             ->selectRaw('COALESCE(SUM(venta_loteria), 0) as venta_tradicional')
@@ -349,7 +349,7 @@ class VentaFlashController extends Controller
 
         $agencias = [];
         if (!$agenciaId) {
-            $agencias = DB::table('ventas_flash_bet')
+            $agencias = VentasDelta::query()
                 ->selectRaw('numero_externo as agencia_id')
                 ->selectRaw("COALESCE(MAX(banca), '') as banca")
                 ->selectRaw('COALESCE(SUM(venta_loteria + venta_recarga + ventas_no_tradicional), 0) as total')

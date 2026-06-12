@@ -118,6 +118,15 @@
                 payload = null;
             }
 
+            if (!payload && rawText.trim().startsWith('<')) {
+                return {
+                    ok: false,
+                    status: response.status,
+                    payload,
+                    message: 'La solicitud devolvio una pagina HTML en vez de JSON. Recargue la pantalla e inicie sesion nuevamente si es necesario.'
+                };
+            }
+
             if (!response.ok) {
                 let message = payload?.message || payload?.error || rawText || `Error HTTP ${response.status}`;
 
@@ -195,7 +204,7 @@
             const tableBody = document.querySelector('#tableVentas tbody');
             tableBody.innerHTML = '';
 
-            fetch(`/ventas-usuarios-lotobet?fecha=${fecha}`)
+            fetch(`/ventas-usuarios-lotobet?fecha=${encodeURIComponent(fecha)}`, { cache: 'no-store' })
                 .then(parseApiResponse)
                 .then(result => {
                     if (!result.ok) {
@@ -270,7 +279,7 @@
                 timerProgressBar: true,
                 didOpen: () => Swal.showLoading()
             });
-            fetch(`/save-ventas-usuarios-lotobet?fecha=${fecha}`)
+            fetch(`/save-ventas-usuarios-lotobet?fecha=${encodeURIComponent(fecha)}`, { cache: 'no-store' })
                 .then(parseApiResponse)
                 .then(result => {
                     Swal.fire({
@@ -308,7 +317,7 @@
                 timerProgressBar: true,
                 didOpen: () => Swal.showLoading()
             });
-            fetch(`/delete-ventas-usuarios-lotobet?fecha=${fecha}`)
+            fetch(`/delete-ventas-usuarios-lotobet?fecha=${encodeURIComponent(fecha)}`, { cache: 'no-store' })
                 .then(parseApiResponse)
                 .then(result => {
                     Swal.fire({
@@ -380,7 +389,7 @@
                         html: `Procesando ${date} (${i + 1} / ${dates.length})`
                     });
 
-                    const result = await fetch(`/save-ventas-usuarios-lotobet?fecha=${date}`).then(parseApiResponse);
+                    const result = await fetch(`/save-ventas-usuarios-lotobet?fecha=${encodeURIComponent(date)}`, { cache: 'no-store' }).then(parseApiResponse);
                     if (!result.ok) {
                         throw new Error(result.message || `Error procesando fecha ${date}`);
                     }
@@ -453,6 +462,44 @@
             });
             if (!confirmed.isConfirmed) return;
 
+            btnEliminarDataFecha.disabled = true;
+            try {
+                Swal.fire({
+                    title: "Eliminando informacion ...",
+                    html: `Procesando ${fechaInicio} - ${fechaFin}`,
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                const url = `/delete-ventas-usuarios-lotobet?fecha_inicio=${encodeURIComponent(fechaInicio)}&fecha_fin=${encodeURIComponent(fechaFin)}`;
+                const result = await fetch(url, { cache: 'no-store' }).then(parseApiResponse);
+                if (!result.ok) {
+                    throw new Error(result.message || `Error eliminando desde ${fechaInicio} hasta ${fechaFin}`);
+                }
+
+                const data = result.payload || null;
+                if (data && data.code !== undefined && data.code !== 0) {
+                    throw new Error(data.message || `Error eliminando desde ${fechaInicio} hasta ${fechaFin}`);
+                }
+
+                document.getElementById('btnClose').click();
+                Swal.fire({
+                    title: "Listo",
+                    text: data?.message || 'Datos eliminados correctamente.',
+                    icon: "success"
+                });
+            } catch (error) {
+                Swal.fire({
+                    title: "Error",
+                    text: error.message || "Ocurrio un error al procesar las fechas",
+                    icon: "error"
+                });
+            } finally {
+                btnEliminarDataFecha.disabled = false;
+            }
+            return;
+
             let responses = [];
             let currentDate = new Date(startDate);
             const dates = [];
@@ -478,7 +525,7 @@
                         html: `Eliminando ${date} (${i + 1} / ${dates.length})`
                     });
 
-                    const result = await fetch(`/delete-ventas-usuarios-lotobet?fecha=${date}`).then(parseApiResponse);
+                    const result = await fetch(`/delete-ventas-usuarios-lotobet?fecha=${encodeURIComponent(date)}`, { cache: 'no-store' }).then(parseApiResponse);
                     if (!result.ok) {
                         throw new Error(result.message || `Error eliminando fecha ${date}`);
                     }

@@ -99,6 +99,7 @@
                                         <h6 class="card-title text-muted mb-2">Meta Tradicional</h6>
                                         <h3 id="kpi-meta-trad" style="color: #FF6384;" class="mb-0">0</h3>
                                         <p class="text-muted mb-0"><small id="kpi-meta-trad-pct">0%</small> de agencias</p>
+                                        <small class="text-muted d-block">Ventas: <span id="kpi-ventas-trad">RD$ 0</span></small>
                                     </div>
                                     <div class="avatar-sm">
                                         <div class="avatar-title rounded-circle fs-3" style="background-color: rgba(255, 99, 132, 0.2); color: #FF6384;">
@@ -117,6 +118,7 @@
                                         <h6 class="card-title text-muted mb-2">Meta No Tradicional</h6>
                                         <h3 id="kpi-meta-notrad" style="color: #36A2EB;" class="mb-0">0</h3>
                                         <p class="text-muted mb-0"><small id="kpi-meta-notrad-pct">0%</small> de agencias</p>
+                                        <small class="text-muted d-block">Ventas: <span id="kpi-ventas-notrad">RD$ 0</span></small>
                                     </div>
                                     <div class="avatar-sm">
                                         <div class="avatar-title rounded-circle fs-3" style="background-color: rgba(54, 162, 235, 0.2); color: #36A2EB;">
@@ -135,6 +137,7 @@
                                         <h6 class="card-title text-muted mb-2">Meta Recargas</h6>
                                         <h3 id="kpi-meta-rec" style="color: #FFCE56;" class="mb-0">0</h3>
                                         <p class="text-muted mb-0"><small id="kpi-meta-rec-pct">0%</small> de agencias</p>
+                                        <small class="text-muted d-block">Ventas: <span id="kpi-ventas-rec">RD$ 0</span></small>
                                     </div>
                                     <div class="avatar-sm">
                                         <div class="avatar-title rounded-circle fs-3" style="background-color: rgba(255, 206, 86, 0.2); color: #FFCE56;">
@@ -554,6 +557,9 @@
                 document.getElementById('kpi-meta-notrad-pct').textContent = data.kpis.pct_cumplio_notrad + '%';
                 document.getElementById('kpi-meta-rec').textContent = data.kpis.cumplio_rec;
                 document.getElementById('kpi-meta-rec-pct').textContent = data.kpis.pct_cumplio_rec + '%';
+                document.getElementById('kpi-ventas-trad').textContent = formatCurrency(data.kpis.total_ventas_trad);
+                document.getElementById('kpi-ventas-notrad').textContent = formatCurrency(data.kpis.total_ventas_notrad);
+                document.getElementById('kpi-ventas-rec').textContent = formatCurrency(data.kpis.total_ventas_rec);
 
                 // Actualizar KPIs de días
                 document.getElementById('kpi-agencias-cumplieron').textContent = data.kpis.agencias_cumplieron;

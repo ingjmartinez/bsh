@@ -2,6 +2,7 @@
 
 namespace App\Services\Lotobet;
 
+use App\Support\InicioVentasCache;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -34,6 +35,8 @@ class LotobetIngestionService
             return [
                 'message' => 'Ya hay data guardada en la fecha: ' . $fecha,
                 'total' => 0,
+                'table' => $table,
+                'fecha' => $fecha,
             ];
         }
 
@@ -56,13 +59,19 @@ class LotobetIngestionService
             }
         }
 
-        foreach (array_chunk($data, 5000) as $chunk) {
-            DB::table($table)->insert($chunk);
-        }
+        DB::transaction(function () use ($table, $data) {
+            foreach (array_chunk($data, 5000) as $chunk) {
+                DB::table($table)->insert($chunk);
+            }
+        });
+
+        InicioVentasCache::bust();
 
         return [
             'message' => 'Datos guardados correctamente. Total insertados: ' . count($data),
             'total' => count($data),
+            'table' => $table,
+            'fecha' => $fecha,
         ];
     }
 
@@ -88,11 +97,23 @@ class LotobetIngestionService
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            'recargas', 'ventas_usuarios' => [
+            'recargas' => [
                 'agencia_id' => $this->stringValue($row['agencia_id'] ?? $row['agencia'] ?? null),
                 'cedula' => $this->normalizeCedula($row['cedula'] ?? $row['identificacion'] ?? null),
                 'monto' => $this->decimalValue($row['monto'] ?? 0),
                 'fecha' => $row['fecha'] ?? $fecha,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            'ventas_usuarios' => [
+                'consorcio_id' => $this->intValue($this->rowValue($row, ['consorcio_id', 'ConsorcioId', 'ConsorcioID', 'consorcio', 'Consorcio'])),
+                'agencia_id' => $this->stringValue($this->rowValue($row, ['agencia_id', 'AgenciaId', 'AgenciaID', 'agencia', 'Agencia'])),
+                'producto_id' => $productoId = $this->intValue($this->rowValue($row, ['producto_id', 'ProductoId', 'ProductoID', 'producto', 'Producto'])),
+                'descripcion' => $productoId === -1 ? 'RECARGAS' : $this->stringValue($this->rowValue($row, ['descripcion', 'Descripcion', 'descripción', 'Descripción'])),
+                'tipo' => $this->stringValue($this->rowValue($row, ['tipo', 'Tipo'])),
+                'cedula' => $this->normalizeCedula($this->rowValue($row, ['cedula', 'Cedula', 'cédula', 'Cédula', 'identificacion', 'Identificacion', 'Identificación'])),
+                'monto' => $this->decimalValue($this->rowValue($row, ['monto', 'Monto']) ?? 0),
+                'fecha' => $this->rowValue($row, ['fecha', 'Fecha']) ?? $fecha,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -137,5 +158,16 @@ class LotobetIngestionService
         }
 
         return (int) $value;
+    }
+
+    private function rowValue(array $row, array $keys): mixed
+    {
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $row)) {
+                return $row[$key];
+            }
+        }
+
+        return null;
     }
 }

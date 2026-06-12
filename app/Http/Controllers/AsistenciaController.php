@@ -147,7 +147,7 @@ class AsistenciaController extends Controller
         ]);
     }
 
-    public function getAsistenciasLotonet(Request $request)
+    public function getAsistenciasLotedom(Request $request)
     {
         header('Content-Type: application/json');
 
@@ -190,7 +190,7 @@ class AsistenciaController extends Controller
         return response()->json(['asistencias' => $data, 'code' => $ventas['code'], 'message' => '']);
     }
 
-    public function saveAsistenciasLotonet(Request $request)
+    public function saveAsistenciasLotedom(Request $request)
     {
         ini_set('memory_limit', '1G'); // Aumentar el límite de memoria a 512MB
         ini_set('max_execution_time', 300); // 300 segundos = 5 minutos
@@ -257,7 +257,7 @@ class AsistenciaController extends Controller
         ]);
     }
 
-    public function deleteAsistenciasLotonet(Request $request)
+    public function deleteAsistenciasLotedom(Request $request)
     {
         header('Content-Type: application/json');
 

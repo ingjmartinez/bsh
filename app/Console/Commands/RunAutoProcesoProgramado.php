@@ -14,7 +14,7 @@ class RunAutoProcesoProgramado extends Command
 {
     protected $signature = 'auto-proceso:run-due {--force}';
 
-    protected $description = 'Ejecuta auto proceso de lotobet y lotonet segun configuracion';
+    protected $description = 'Ejecuta auto proceso de lotobet y lotedom segun configuracion';
 
     public function handle(AutoProcesoService $service): int
     {

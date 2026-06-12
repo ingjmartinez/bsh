@@ -15,7 +15,9 @@ class Agencia extends Model
 
     protected $fillable = [
         'agencia',
+        'codigo',
         'nombre_agencia',
+        'nombre',
         'terminal',
         'horario_am',
         'horario_pm',

@@ -9,6 +9,7 @@ use App\Models\VtUsuarioNet;
 use App\Support\InicioVentasCache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class VentasController extends Controller
 {
@@ -62,56 +63,26 @@ class VentasController extends Controller
         header('Content-Type: application/json');
 
         $fecha = $request->query('fecha');
-
-        return response()->json(app(\App\Services\Lotobet\LotobetIngestionService::class)->save('ventas_usuarios', $fecha));
-
-        $existe = VtUsuarioBet::whereDate('fecha', $fecha)->exists();
-
-        if ($existe) {
-            return response()->json(['message' => 'Ya hay data guardada en la fecha: ' . $fecha]);
-        }
-
-        $apiResult = $this->fetchVentasUsuariosLotobetApi($fecha);
-
-        if (!$apiResult['ok']) {
+        if (empty($fecha)) {
             return response()->json([
                 'code' => 1,
-                'message' => $apiResult['message'],
-            ], $apiResult['status']);
+                'message' => 'Debe indicar una fecha para guardar la data.',
+            ], 422);
         }
 
-        $data = [];
-
-        if (empty($apiResult['rows'])) {
-            return response()->json([
-                'message' => 'No hay datos para guardar en la fecha: ' . $fecha,
-                'total' => 0,
+        try {
+            return response()->json(app(\App\Services\Lotobet\LotobetIngestionService::class)->save('ventas_usuarios', $fecha));
+        } catch (\Throwable $e) {
+            Log::error('Error guardando ventas por usuario Lotobet', [
+                'fecha' => $fecha,
+                'message' => $e->getMessage(),
             ]);
+
+            return response()->json([
+                'code' => 1,
+                'message' => 'No se pudo guardar la data: ' . $e->getMessage(),
+            ], 500);
         }
-
-        foreach ($apiResult['rows'] as $v) {
-            $data[] = [
-                'agencia_id'    => $v['agencia_id'] ?? null,
-                'cedula'        => $this->normalizeCedula($v['cedula'] ?? null),
-                'monto'         => $v['monto'] ?? 0,
-                'fecha'         => $fecha,
-                'created_at'    => now(),
-                'updated_at'    => now(),
-            ];
-        }
-
-        if (!empty($data)) {
-            foreach (array_chunk($data, 5000) as $chunk) {
-                DB::table('ventas_usuarios_bet')->insert($chunk);
-            }
-
-            InicioVentasCache::bust();
-        }
-
-        return response()->json([
-            'message' => 'Datos guardados correctamente. Total insertados: ' . count($data),
-            'total' => count($data),
-        ]);
     }
 
     public function deleteVentasUsuariosLotobet(Request $request)
@@ -119,21 +90,48 @@ class VentasController extends Controller
         header('Content-Type: application/json');
 
         $fecha = $request->query('fecha');
+        $fechaInicio = $request->query('fecha_inicio', $request->query('fechaInicio', $fecha));
+        $fechaFin = $request->query('fecha_fin', $request->query('fechaFin', $fechaInicio));
 
-        VtUsuarioBet::whereDate('fecha', $fecha)->delete();
+        if (empty($fechaInicio) || empty($fechaFin)) {
+            return response()->json([
+                'code' => 1,
+                'message' => 'Debe indicar una fecha para eliminar la data.',
+            ], 422);
+        }
+
+        if ($fechaInicio > $fechaFin) {
+            return response()->json([
+                'code' => 1,
+                'message' => 'La fecha inicial no puede ser mayor que la fecha final.',
+            ], 422);
+        }
+
+        $query = DB::table('ventas_usuarios_bet');
+        if ($fechaInicio === $fechaFin) {
+            $query->whereDate('fecha', $fechaInicio);
+        } else {
+            $query->whereBetween('fecha', [$fechaInicio, $fechaFin]);
+        }
+
+        $deleted = $query->delete();
         InicioVentasCache::bust();
 
         return response()->json([
-            'message' => 'Datos eliminados correctamente',
+            'message' => 'Datos eliminados correctamente. Total eliminados: ' . $deleted,
+            'total' => $deleted,
+            'table' => 'ventas_usuarios_bet',
+            'fecha_inicio' => $fechaInicio,
+            'fecha_fin' => $fechaFin,
         ]);
     }
 
-    public function getVentasUsuariosLotonet(Request $request)
+    public function getVentasUsuariosLotedom(Request $request)
     {
         header('Content-Type: application/json');
 
         $fecha = $request->query('fecha');
-        $apiResult = $this->fetchVentasUsuariosLotonetApi($fecha);
+        $apiResult = $this->fetchVentasUsuariosLotedomApi($fecha);
 
         if (!$apiResult['ok']) {
             return response()->json([
@@ -161,7 +159,7 @@ class VentasController extends Controller
         ]);
     }
 
-    public function saveVentasUsuariosLotonet(Request $request)
+    public function saveVentasUsuariosLotedom(Request $request)
     {
         ini_set('memory_limit', '1G');
         ini_set('max_execution_time', 360); // 300 segundos = 5 minutos
@@ -176,7 +174,7 @@ class VentasController extends Controller
             return response()->json(['message' => 'Ya hay data guardada en la fecha: ' . $fecha]);
         }
 
-        $apiResult = $this->fetchVentasUsuariosLotonetApi($fecha);
+        $apiResult = $this->fetchVentasUsuariosLotedomApi($fecha);
 
         if (!$apiResult['ok']) {
             return response()->json([
@@ -212,7 +210,7 @@ class VentasController extends Controller
         ]);
     }
 
-    public function deleteVentasUsuariosLotonet(Request $request)
+    public function deleteVentasUsuariosLotedom(Request $request)
     {
         header('Content-Type: application/json');
 
@@ -344,7 +342,7 @@ class VentasController extends Controller
         ];
     }
 
-    private function fetchVentasUsuariosLotonetApi(?string $fecha): array
+    private function fetchVentasUsuariosLotedomApi(?string $fecha): array
     {
         $fecha = trim((string) $fecha);
 
@@ -393,7 +391,7 @@ class VentasController extends Controller
             return [
                 'ok' => false,
                 'status' => 502,
-                'message' => $curlError !== '' ? $curlError : 'No se pudo conectar con la API de Lotonet Lotedom.',
+                'message' => $curlError !== '' ? $curlError : 'No se pudo conectar con la API de Lotedom.',
                 'rows' => [],
             ];
         }
@@ -404,7 +402,7 @@ class VentasController extends Controller
             return [
                 'ok' => false,
                 'status' => 502,
-                'message' => 'La API de Lotonet Lotedom devolvio una respuesta invalida.',
+                'message' => 'La API de Lotedom devolvio una respuesta invalida.',
                 'rows' => [],
             ];
         }
@@ -417,7 +415,7 @@ class VentasController extends Controller
             return [
                 'ok' => false,
                 'status' => $httpCode,
-                'message' => $message !== '' ? $message : ('La API de Lotonet Lotedom respondio con HTTP ' . $httpCode . '.'),
+                'message' => $message !== '' ? $message : ('La API de Lotedom respondio con HTTP ' . $httpCode . '.'),
                 'rows' => [],
             ];
         }
@@ -426,7 +424,7 @@ class VentasController extends Controller
             return [
                 'ok' => false,
                 'status' => 502,
-                'message' => $message !== '' ? $message : 'La API de Lotonet Lotedom no devolvio el listado esperado.',
+                'message' => $message !== '' ? $message : 'La API de Lotedom no devolvio el listado esperado.',
                 'rows' => [],
             ];
         }
@@ -435,7 +433,7 @@ class VentasController extends Controller
             return [
                 'ok' => false,
                 'status' => 422,
-                'message' => $message !== '' ? $message : 'La API de Lotonet Lotedom devolvio un error.',
+                'message' => $message !== '' ? $message : 'La API de Lotedom devolvio un error.',
                 'rows' => [],
             ];
         }

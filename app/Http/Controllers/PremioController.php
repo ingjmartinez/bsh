@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Token;
 use App\Models\Premio;
 use App\Models\PremioNet;
-use App\Support\LotonetRowMapper;
+use App\Support\LotedomRowMapper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -149,7 +149,7 @@ class PremioController extends Controller
         ]);
     }
 
-    public function getPremiosLotonet(Request $request)
+    public function getPremiosLotedom(Request $request)
     {
         header('Content-Type: application/json');
 
@@ -192,7 +192,7 @@ class PremioController extends Controller
         return response()->json(['premios' => $data, 'code' => $items['code'], 'message' => '']);
     }
 
-    public function savePremiosLotonet(Request $request)
+    public function savePremiosLotedom(Request $request)
     {
         ini_set('memory_limit', '1G');
         ini_set('max_execution_time', 300); // 300 segundos = 5 minutos
@@ -238,7 +238,7 @@ class PremioController extends Controller
         $items = json_decode($response, true);
 
         $data = array_map(
-            fn (array $row): array => LotonetRowMapper::premio($row, $fecha),
+            fn (array $row): array => LotedomRowMapper::premio($row, $fecha),
             $items['data']['result'] ?? []
         );
 
@@ -254,7 +254,7 @@ class PremioController extends Controller
         ]);
     }
 
-    public function deletePremiosLotonet(Request $request)
+    public function deletePremiosLotedom(Request $request)
     {
         header('Content-Type: application/json');
         $fecha = $request->query('fecha');

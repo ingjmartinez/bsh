@@ -432,14 +432,14 @@ class ComercialController extends Controller
             $mes = now()->format('Y-m');
         }
 
-        $sistemas = ['Lotonet', 'Lotobet'];
-        $sistema = trim((string) $request->query('sistema', 'Lotonet'));
+        $sistemas = ['Lotedom', 'Lotobet'];
+        $sistema = trim((string) $request->query('sistema', 'Lotedom'));
         if (!in_array($sistema, $sistemas, true)) {
-            $sistema = 'Lotonet';
+            $sistema = 'Lotedom';
         }
 
         $tablaPorSistema = [
-            'Lotonet' => 'vt_usuarios_net',
+            'Lotedom' => 'vt_usuarios_net',
             'Lotobet' => 'vt_usuarios_bet',
         ];
 

@@ -886,7 +886,7 @@
                         @if ($canModule('dashboard'))
                             <li class="nav-item">
                                 <a href="{{ route('dashboard.index') }}"
-                                    class="nav-link menu-link {{ request()->routeIs('inicio.index') || request()->is('dashboard*') || request()->is('ventas-lotobet-dashboard*') || request()->is('ventas-lotonet-dashboard*') || request()->is('ventas-lotobet-flash-dashboard*') || request()->is('kpi-lotobet*') ? 'active' : '' }}">
+                                    class="nav-link menu-link {{ request()->routeIs('inicio.index') || request()->is('dashboard*') || request()->is('ventas-lotobet-dashboard*') || request()->is('ventas-lotedom-dashboard*') || request()->is('ventas-lotobet-flash-dashboard*') || request()->is('kpi-lotobet*') ? 'active' : '' }}">
                                     <i class="ri-apps-2-line"></i> <span data-key="t-apps">Dashboard</span>
                                 </a>
                             </li>
@@ -979,8 +979,8 @@
                                         </a>
                                     </li>
                                     <li class="nav-item">
-                                        <a href="{{ url('/generar-lotonet') }}" class="nav-link">
-                                            <span data-key="t-dashboards">Generar Lotonet Lotedom</span>
+                                        <a href="{{ url('/generar-lotedom') }}" class="nav-link">
+                                            <span data-key="t-dashboards">Generar Lotedom</span>
                                         </a>
                                     </li>
 
@@ -1040,52 +1040,52 @@
                                         <a href="#sidebarInvoices" class="nav-link collapsed"
                                             data-bs-toggle="collapse" role="button" aria-expanded="false"
                                             aria-controls="sidebarInvoices" data-key="t-invoices">
-                                            Lotonet Lotedom
+                                            Lotedom
                                         </a>
                                         <div class="collapse menu-dropdown" id="sidebarInvoices">
                                             <ul class="nav nav-sm flex-column">
                                                 <li class="nav-item">
-                                                    <a href="{{ url('/ventas-por-usuario-lotonet') }}"
+                                                    <a href="{{ url('/ventas-por-usuario-lotedom') }}"
                                                         class="nav-link" data-key="t-mailbox"> Ventas por usuario </a>
                                                 </li>
                                                 <li class="nav-item">
-                                                    <a href="{{ url('/faltantes-lotonet') }}" class="nav-link"
+                                                    <a href="{{ url('/faltantes-lotedom') }}" class="nav-link"
                                                         data-key="t-mailbox"> Faltantes </a>
                                                 </li>
                                                 <li class="nav-item">
-                                                    <a href="{{ url('/paquetico-lotonet') }}" class="nav-link"
+                                                    <a href="{{ url('/paquetico-lotedom') }}" class="nav-link"
                                                         data-key="t-mailbox"> Paquetico </a>
                                                 </li>
                                                 <li class="nav-item">
-                                                    <a href="{{ url('/recargas-lotonet') }}" class="nav-link"
+                                                    <a href="{{ url('/recargas-lotedom') }}" class="nav-link"
                                                         data-key="t-mailbox"> Recargas </a>
                                                 </li>
                                                 <li class="nav-item">
-                                                    <a href="{{ url('/ventas-por-producto-lotonet') }}"
+                                                    <a href="{{ url('/ventas-por-producto-lotedom') }}"
                                                         class="nav-link" data-key="t-mailbox"> Ventas Por Producto
                                                     </a>
                                                 </li>
                                                 <li class="nav-item">
-                                                    <a href="{{ url('/premios-lotonet') }}" class="nav-link"
+                                                    <a href="{{ url('/premios-lotedom') }}" class="nav-link"
                                                         data-key="t-mailbox"> Premios </a>
                                                 </li>
                                                 <li class="nav-item">
-                                                    <a href="{{ url('/pagos-misma-empresa-lotonet') }}"
+                                                    <a href="{{ url('/pagos-misma-empresa-lotedom') }}"
                                                         class="nav-link" data-key="t-mailbox"> Pagos Misma Empresa
                                                     </a>
                                                 </li>
                                                 <li class="nav-item">
-                                                    <a href="{{ url('/pagos-aotra-empresa-lotonet') }}"
+                                                    <a href="{{ url('/pagos-aotra-empresa-lotedom') }}"
                                                         class="nav-link" data-key="t-mailbox"> Pagos A Otra Empresa
                                                     </a>
                                                 </li>
                                                 <li class="nav-item">
-                                                    <a href="{{ url('/pagos-porotra-empresa-lotonet') }}"
+                                                    <a href="{{ url('/pagos-porotra-empresa-lotedom') }}"
                                                         class="nav-link" data-key="t-mailbox"> Pagos Por Otra Empresa
                                                     </a>
                                                 </li>
                                                 <li class="nav-item">
-                                                    <a href="{{ url('/asistencias-lotonet') }}" class="nav-link"
+                                                    <a href="{{ url('/asistencias-lotedom') }}" class="nav-link"
                                                         data-key="t-mailbox"> Asistencias
                                                     </a>
                                                 </li>
@@ -1093,13 +1093,13 @@
                                         </div>
                                     </li>
                                     <li class="nav-item">
-                                        <a href="{{ url('/ventas-flash-lotobet') }}" class="nav-link">
-                                            <span data-key="t-dashboards">Ventas Flash Lotobet Real</span>
+                                        <a href="{{ url('/ventas_delta') }}" class="nav-link">
+                                            <span data-key="t-dashboards">Ventas Delta</span>
                                         </a>
                                     </li>
                                     <li class="nav-item d-none">
-                                        <a href="{{ url('/ventas-flash-lotonet') }}" class="nav-link">
-                                            <span data-key="t-dashboards">Ventas Flash Lotonet Lotedom</span>
+                                        <a href="{{ url('/ventas-flash-lotedom') }}" class="nav-link">
+                                            <span data-key="t-dashboards">Ventas Flash Lotedom</span>
                                         </a>
                                     </li>
                                 </ul>

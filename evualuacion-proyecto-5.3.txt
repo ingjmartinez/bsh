@@ -188,7 +188,7 @@ Lo que esta mal:
   - save-recargas-lotobet
   - save-ventas-usuarios-lotobet
   - save-ventas-producto-lotobet
-  - equivalentes Lotonet y otros procesos.
+  - equivalentes Lotedom y otros procesos.
 - generar-token, iniciar-session y login-flash estan como GET.
 - Muchas rutas de negocio solo tienen auth, pero no permisos por modulo.
 - routes/api.php existe pero no se esta usando realmente; las rutas tipo api-cuentas viven en web.php
@@ -531,7 +531,7 @@ Comandos detectados:
 
 Lo que esta bien:
 - Existe un scheduler para automatizar procesos.
-- AutoProcesoService centraliza varios pasos por Lotobet/Lotonet.
+- AutoProcesoService centraliza varios pasos por Lotobet/Lotedom.
 - Hay envio de correo resumen y registro en logs.
 
 Lo que esta mal:
@@ -542,7 +542,7 @@ Lo que esta mal:
 Que mejorar:
 - Convertir cada integracion externa en Service dedicado:
   - LotobetClient
-  - LotonetClient
+  - LotedomClient
   - ContabilidadClient
 - Convertir cada importacion en Job:
   - SyncAsistenciasJob
@@ -686,7 +686,7 @@ Fase 3 - Pruebas automaticas minimas:
 
 Fase 4 - Arquitectura sin cambio funcional:
 1. Extraer Services para clientes externos:
-   LotobetClient, LotonetClient, ContabilidadClient.
+   LotobetClient, LotedomClient, ContabilidadClient.
 2. Extraer Jobs para sincronizaciones:
    SyncAsistenciasJob, SyncFaltantesJob, SyncPremiosJob, SyncRecargasJob, SyncVentasProductoJob.
 3. Extraer Form Requests en controladores grandes.

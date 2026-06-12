@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS `agencias` (
   `codigo` varchar(25) COLLATE utf8mb4_unicode_ci NOT NULL,
   `terminal` varchar(25) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `nombre` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `sistema` enum('lotobet','lotonet','ambos') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `sistema` enum('lotobet','lotedom','ambos') COLLATE utf8mb4_unicode_ci NOT NULL,
   `empresa` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `ciudad_id` bigint unsigned DEFAULT NULL,
   `horario_am` varchar(35) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -195,7 +195,7 @@ CREATE TABLE IF NOT EXISTS `catalogo_juegos` (
   `producto_id` int NOT NULL,
   `descripcion` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `tipo` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `sistema` enum('lotobet','lotonet','ambos') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ambos',
+  `sistema` enum('lotobet','lotedom','ambos') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ambos',
   `activo` tinyint(1) NOT NULL DEFAULT '1',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -694,7 +694,7 @@ CREATE TABLE IF NOT EXISTS `faltantes_net` (
 
 CREATE TABLE IF NOT EXISTS `importaciones_diarias` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `sistema` enum('lotobet','lotonet','ambos') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `sistema` enum('lotobet','lotedom','ambos') COLLATE utf8mb4_unicode_ci NOT NULL,
   `modulo` varchar(80) COLLATE utf8mb4_unicode_ci NOT NULL,
   `fecha` date NOT NULL,
   `estado` enum('pendiente','ejecutando','completado','fallido','cancelado') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pendiente',
@@ -1657,7 +1657,7 @@ CREATE TABLE IF NOT EXISTS `ventas_usuarios_net` (
   KEY `ventas_usuarios_net_fecha_cedula_idx` (`fecha`,`cedula`)
 ) ENGINE=InnoDB AUTO_INCREMENT=14279 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE OR REPLACE VIEW `vw_ventas_por_producto` AS select `v`.`producto_id` AS `producto_id`,coalesce(`c`.`descripcion`,concat('Producto ',`v`.`producto_id`)) AS `descripcion_producto`,coalesce(`c`.`tipo`,'Sin tipo') AS `tipo_producto`,`v`.`sistema` AS `sistema`,sum(`v`.`monto`) AS `total_ventas`,count(0) AS `total_registros` from ((select `ventas_producto_bet`.`producto_id` AS `producto_id`,`ventas_producto_bet`.`monto` AS `monto`,'lotobet' AS `sistema` from `ventas_producto_bet` union all select `ventas_producto_net`.`producto_id` AS `producto_id`,`ventas_producto_net`.`monto` AS `monto`,'lotonet' AS `sistema` from `ventas_producto_net`) `v` left join `catalogo_juegos` `c` on((`c`.`producto_id` = `v`.`producto_id`))) group by `v`.`producto_id`,`c`.`descripcion`,`c`.`tipo`,`v`.`sistema`;
+CREATE OR REPLACE VIEW `vw_ventas_por_producto` AS select `v`.`producto_id` AS `producto_id`,coalesce(`c`.`descripcion`,concat('Producto ',`v`.`producto_id`)) AS `descripcion_producto`,coalesce(`c`.`tipo`,'Sin tipo') AS `tipo_producto`,`v`.`sistema` AS `sistema`,sum(`v`.`monto`) AS `total_ventas`,count(0) AS `total_registros` from ((select `ventas_producto_bet`.`producto_id` AS `producto_id`,`ventas_producto_bet`.`monto` AS `monto`,'lotobet' AS `sistema` from `ventas_producto_bet` union all select `ventas_producto_net`.`producto_id` AS `producto_id`,`ventas_producto_net`.`monto` AS `monto`,'lotedom' AS `sistema` from `ventas_producto_net`) `v` left join `catalogo_juegos` `c` on((`c`.`producto_id` = `v`.`producto_id`))) group by `v`.`producto_id`,`c`.`descripcion`,`c`.`tipo`,`v`.`sistema`;
 
 SQL);
 

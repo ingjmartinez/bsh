@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\FaltantesBet;
 use App\Models\FaltantesNet;
 use App\Models\Token;
-use App\Support\LotonetRowMapper;
+use App\Support\LotedomRowMapper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -148,7 +148,7 @@ class FaltantesController extends Controller
         ]);
     }
 
-    public function getFaltantesLotonet(Request $request)
+    public function getFaltantesLotedom(Request $request)
     {
         header('Content-Type: application/json');
 
@@ -187,13 +187,13 @@ class FaltantesController extends Controller
         $data = [];
 
         foreach (($faltantes['data']['result'] ?? []) as $v) {
-            $data[] = LotonetRowMapper::faltante($v, $fecha);
+            $data[] = LotedomRowMapper::faltante($v, $fecha);
         }
 
         return response()->json(['faltantes' => $data, 'code' => $faltantes['code'], 'message' => 'Resultas obtenidos correctamente']);
     }
 
-    public function saveFaltantesLotonet(Request $request)
+    public function saveFaltantesLotedom(Request $request)
     {
         ini_set('memory_limit', '1G'); // 300 segundos = 5 minutos
         ini_set('max_execution_time', 300); // 300 segundos = 5 minutos
@@ -241,7 +241,7 @@ class FaltantesController extends Controller
         $data = [];
 
         foreach (($faltantes['data']['result'] ?? []) as $v) {
-            $data[] = LotonetRowMapper::faltante($v, $fecha);
+            $data[] = LotedomRowMapper::faltante($v, $fecha);
         }
 
         if (!empty($data)) {
@@ -256,7 +256,7 @@ class FaltantesController extends Controller
         ]);
     }
 
-    public function deleteFaltantesLotonet(Request $request)
+    public function deleteFaltantesLotedom(Request $request)
     {
         header('Content-Type: application/json');
 

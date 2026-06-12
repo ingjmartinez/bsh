@@ -5,12 +5,12 @@
         <div class="page-content">
             <div class="container-fluid">
                 <style>
-                    .acciones-lotonet .btn {
+                    .acciones-lotedom .btn {
                         width: auto;
                     }
 
                     @media (max-width: 767.98px) {
-                        .acciones-lotonet .btn {
+                        .acciones-lotedom .btn {
                             width: 100%;
                             min-height: 44px;
                         }
@@ -20,7 +20,7 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                            <h4 class="mb-sm-0">Procesar Todo Lotonet Lotedom</h4>
+                            <h4 class="mb-sm-0">Procesar Todo Lotedom</h4>
                         </div>
                     </div>
                 </div>
@@ -32,7 +32,7 @@
                                 <h5 class="card-title mb-0">Ejecutar todas las tareas por fecha</h5>
                             </div>
                             <div class="card-body">
-                                <div class="row g-2 mb-3 acciones-lotonet align-items-end">
+                                <div class="row g-2 mb-3 acciones-lotedom align-items-end">
                                     <div class="col-12 col-lg-2 d-grid">
                                         <button id="btnGenerarToken" class="btn btn-secondary">Iniciar Sesión</button>
                                     </div>
@@ -130,43 +130,43 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalConfigAutoLabel">Configurar auto proceso Lotonet Lotedom</h5>
+                    <h5 class="modal-title" id="modalConfigAutoLabel">Configurar auto proceso Lotedom</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" id="cfgEnabledLotonet">
-                        <label class="form-check-label" for="cfgEnabledLotonet">Habilitar ejecucion automatica</label>
+                        <input class="form-check-input" type="checkbox" id="cfgEnabledLotedom">
+                        <label class="form-check-label" for="cfgEnabledLotedom">Habilitar ejecucion automatica</label>
                     </div>
                     <div class="mb-3">
-                        <label for="cfgHoraLotonet" class="form-label">Hora</label>
-                        <input type="time" class="form-control" id="cfgHoraLotonet">
+                        <label for="cfgHoraLotedom" class="form-label">Hora</label>
+                        <input type="time" class="form-control" id="cfgHoraLotedom">
                     </div>
                     <div class="mb-0">
-                        <label for="cfgCorreoLotonet" class="form-label">Correo destino</label>
-                        <input type="email" class="form-control" id="cfgCorreoLotonet" placeholder="correo@dominio.com">
+                        <label for="cfgCorreoLotedom" class="form-label">Correo destino</label>
+                        <input type="email" class="form-control" id="cfgCorreoLotedom" placeholder="correo@dominio.com">
                     </div>
                     <div class="mt-3">
-                        <label for="cfgMaxSecondsLotonet" class="form-label">Tiempo maximo</label>
-                        <input type="number" class="form-control" id="cfgMaxSecondsLotonet" min="60" max="7200" step="60">
+                        <label for="cfgMaxSecondsLotedom" class="form-label">Tiempo maximo</label>
+                        <input type="number" class="form-control" id="cfgMaxSecondsLotedom" min="60" max="7200" step="60">
                         <small class="text-muted">En segundos. Usa 1800 para permitir hasta 30 minutos.</small>
                     </div>
                     <div class="mt-3">
-                        <label for="cfgDiaLotonet" class="form-label">Fecha a procesar</label>
-                        <select class="form-select" id="cfgDiaLotonet">
+                        <label for="cfgDiaLotedom" class="form-label">Fecha a procesar</label>
+                        <select class="form-select" id="cfgDiaLotedom">
                             <option value="0">Mismo dia</option>
                             <option value="-1">Dia de ayer</option>
                         </select>
                     </div>
                     <div class="mt-3">
-                        <label for="cfgFechaEspecificaLotonet" class="form-label">Fecha especifica (opcional)</label>
-                        <input type="date" class="form-control" id="cfgFechaEspecificaLotonet">
+                        <label for="cfgFechaEspecificaLotedom" class="form-label">Fecha especifica (opcional)</label>
+                        <input type="date" class="form-control" id="cfgFechaEspecificaLotedom">
                         <small class="text-muted">Si defines una fecha especifica, tiene prioridad sobre "Fecha a procesar".</small>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button>
-                    <button type="button" id="btnGuardarConfigLotonet" class="btn btn-primary">Guardar</button>
+                    <button type="button" id="btnGuardarConfigLotedom" class="btn btn-primary">Guardar</button>
                 </div>
             </div>
         </div>
@@ -176,21 +176,21 @@
 
 @section('script')
     <script>
-        // Lista de endpoints save en el orden de ejecución (Lotonet)
+        // Lista de endpoints save en el orden de ejecución (Lotedom)
         const modules = [
-            { name: 'Asistencias', url: '/save-asistencias-lotonet' },
-            { name: 'Faltantes', url: '/save-faltantes-lotonet' },
-            { name: 'Pagos a otra empresa', url: '/save-pagos-aotra-empresa-lotonet' },
-            { name: 'Pagos misma empresa', url: '/save-pagos-misma-empresa-lotonet' },
-            { name: 'Pagos por otra empresa', url: '/save-pagos-porotra-empresa-lotonet' },
-            { name: 'Paquetico', url: '/save-paquetico-lotonet' },
-            { name: 'Premios', url: '/save-premios-lotonet' },
-            { name: 'Recargas', url: '/save-recargas-lotonet' },
-            { name: 'Ventas por producto', url: '/save-ventas-producto-lotonet' },
-            { name: 'Ventas por usuario', url: '/save-ventas-usuarios-lotonet' }
+            { name: 'Asistencias', url: '/save-asistencias-lotedom' },
+            { name: 'Faltantes', url: '/save-faltantes-lotedom' },
+            { name: 'Pagos a otra empresa', url: '/save-pagos-aotra-empresa-lotedom' },
+            { name: 'Pagos misma empresa', url: '/save-pagos-misma-empresa-lotedom' },
+            { name: 'Pagos por otra empresa', url: '/save-pagos-porotra-empresa-lotedom' },
+            { name: 'Paquetico', url: '/save-paquetico-lotedom' },
+            { name: 'Premios', url: '/save-premios-lotedom' },
+            { name: 'Recargas', url: '/save-recargas-lotedom' },
+            { name: 'Ventas por producto', url: '/save-ventas-producto-lotedom' },
+            { name: 'Ventas por usuario', url: '/save-ventas-usuarios-lotedom' }
         ];
 
-        const sistemaAuto = 'lotonet';
+        const sistemaAuto = 'lotedom';
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
 
         const logContainer = document.getElementById('logContainer');
@@ -241,12 +241,12 @@
             try {
                 const res = await fetch(`/auto-proceso/${sistemaAuto}/config`);
                 const cfg = await res.json();
-                document.getElementById('cfgEnabledLotonet').checked = !!cfg.enabled;
-                document.getElementById('cfgHoraLotonet').value = cfg.hora ? String(cfg.hora).slice(0, 5) : '';
-                document.getElementById('cfgCorreoLotonet').value = cfg.correo || '';
-                document.getElementById('cfgMaxSecondsLotonet').value = cfg.max_seconds || 1800;
-                document.getElementById('cfgDiaLotonet').value = String(cfg.process_day_offset ?? 0);
-                document.getElementById('cfgFechaEspecificaLotonet').value = cfg.process_date ? String(cfg.process_date).slice(0, 10) : '';
+                document.getElementById('cfgEnabledLotedom').checked = !!cfg.enabled;
+                document.getElementById('cfgHoraLotedom').value = cfg.hora ? String(cfg.hora).slice(0, 5) : '';
+                document.getElementById('cfgCorreoLotedom').value = cfg.correo || '';
+                document.getElementById('cfgMaxSecondsLotedom').value = cfg.max_seconds || 1800;
+                document.getElementById('cfgDiaLotedom').value = String(cfg.process_day_offset ?? 0);
+                document.getElementById('cfgFechaEspecificaLotedom').value = cfg.process_date ? String(cfg.process_date).slice(0, 10) : '';
             } catch (e) {
                 addLog('No se pudo cargar la configuracion automatica: ' + e.message, 'error');
             }
@@ -254,12 +254,12 @@
 
         async function saveAutoConfig() {
             const payload = {
-                enabled: document.getElementById('cfgEnabledLotonet').checked,
-                hora: document.getElementById('cfgHoraLotonet').value || null,
-                correo: document.getElementById('cfgCorreoLotonet').value || null,
-                max_seconds: Number(document.getElementById('cfgMaxSecondsLotonet').value || 1800),
-                process_day_offset: Number(document.getElementById('cfgDiaLotonet').value || 0),
-                process_date: document.getElementById('cfgFechaEspecificaLotonet').value || null,
+                enabled: document.getElementById('cfgEnabledLotedom').checked,
+                hora: document.getElementById('cfgHoraLotedom').value || null,
+                correo: document.getElementById('cfgCorreoLotedom').value || null,
+                max_seconds: Number(document.getElementById('cfgMaxSecondsLotedom').value || 1800),
+                process_day_offset: Number(document.getElementById('cfgDiaLotedom').value || 0),
+                process_date: document.getElementById('cfgFechaEspecificaLotedom').value || null,
             };
 
             const res = await fetch(`/auto-proceso/${sistemaAuto}/config`, {
@@ -293,7 +293,7 @@
         }
 
         document.getElementById('btnConfigAuto').addEventListener('click', loadAutoConfig);
-        document.getElementById('btnGuardarConfigLotonet').addEventListener('click', async () => {
+        document.getElementById('btnGuardarConfigLotedom').addEventListener('click', async () => {
             try {
                 await saveAutoConfig();
             } catch (e) {
@@ -378,9 +378,9 @@
             }
         });
 
-        // Eliminar data por fecha para LotoNet Lotedom
+        // Eliminar data por fecha para Lotedom
         async function deleteDate(date, options = { stopOnError: false }) {
-            addLog(`Iniciando eliminación (LotoNet Lotedom) para ${date}`);
+            addLog(`Iniciando eliminación (Lotedom) para ${date}`);
             const results = [];
             modules.forEach(m => setStatus(m.name, 'Pending', '-'));
             for (let i = 0; i < modules.length; i++) {
@@ -418,7 +418,7 @@
                     if (options.stopOnError) break;
                 }
             }
-            addLog(`Finalizado eliminación (LotoNet Lotedom) para ${date}`);
+            addLog(`Finalizado eliminación (Lotedom) para ${date}`);
             const okCount = results.filter(r => r.ok).length;
             const errCount = results.filter(r => !r.ok).length;
             addLog(`Resumen Eliminación: OK=${okCount} Error=${errCount}`);
@@ -498,7 +498,7 @@
             }
         });
 
-        // Eliminar por rango (LotoNet Lotedom): por cada fecha ejecutar deleteDate de forma secuencial
+        // Eliminar por rango (Lotedom): por cada fecha ejecutar deleteDate de forma secuencial
         document.getElementById('btnEliminarRango').addEventListener('click', async () => {
             const inicio = document.getElementById('fechaInicio').value;
             const fin = document.getElementById('fechaFin').value;

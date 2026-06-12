@@ -5,12 +5,12 @@
         <div class="page-content">
             <div class="container-fluid">
                 <style>
-                    .acciones-lotonet .btn {
+                    .acciones-lotedom .btn {
                         width: auto;
                     }
 
                     @media (max-width: 767.98px) {
-                        .acciones-lotonet .btn {
+                        .acciones-lotedom .btn {
                             width: 100%;
                             min-height: 44px;
                         }
@@ -21,7 +21,7 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                            <h4 class="mb-sm-0">Premios - Lotonet Lotedom</h4>
+                            <h4 class="mb-sm-0">Recargas Lotedom</h4>
 
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
@@ -41,7 +41,7 @@
                                 <h5 class="card-title mb-0">Configurar Token</h5>
                             </div>
                             <div class="card-body">
-                                <div class="row g-2 mb-3 acciones-lotonet align-items-end">
+                                <div class="row g-2 mb-3 acciones-lotedom align-items-end">
                                     <div class="col-12 col-lg-4 d-grid d-md-flex gap-2">
                                         <button id="btnGenerarToken" class="btn btn-primary">Generar Token</button>
                                         <button id="btnGenerarData" class="btn btn-primary">Generar Data</button>
@@ -65,12 +65,17 @@
                                     style="width:100%">
                                     <thead>
                                         <tr>
+                                            <th>Fecha</th>
                                             <th>Consorcio</th>
                                             <th>Producto</th>
-                                            <th>Agencia</th>
                                             <th>Descripción</th>
+                                            <th>Agencia</th>
+                                            <th>Identificación</th>
                                             <th>Monto</th>
-                                            <th>Fecha</th>
+                                            <th>Proveedor Nombre</th>
+                                            <th>Proveedor Id</th>
+                                            <th>Distribuidora Id</th>
+                                            <th>Distribuidora Nombre</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -157,7 +162,7 @@
             const tableBody = document.querySelector('#tableRecargas tbody');
             tableBody.innerHTML = '';
 
-            fetch(`/get-premios-lotonet?fecha=${fecha}`)
+            fetch(`/get-recargas-lotedom?fecha=${fecha}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.code != 0) {
@@ -175,15 +180,20 @@
 
                         tableBody.innerHTML = ''; // Clear existing rows
 
-                        data.premios.forEach(item => {
+                        data.recargas.forEach(item => {
                             const row = document.createElement('tr');
                             row.innerHTML = `
+                                <td>${item.fecha}</td>
                                 <td>${item.consorcio_id}</td>
                                 <td>${item.producto_id}</td>
-                                <td>${item.agencia_id}</td>
                                 <td>${item.descripcion}</td>
+                                <td>${item.agencia_id}</td>
+                                <td>${item.identificacion}</td>
                                 <td>${item.monto}</td>
-                                <td>${fecha}</td>
+                                <td>${item.proveedor_nombre}</td>
+                                <td>${item.proveedor_id}</td>
+                                <td>${item.distribuidora_id}</td>
+                                <td>${item.distribuidora_nombre}</td>
                             `;
                             tableBody.appendChild(row);
                         });
@@ -221,7 +231,7 @@
                 timerProgressBar: true,
                 didOpen: () => Swal.showLoading()
             });
-            fetch(`/save-premios-lotonet?fecha=${fecha}`)
+            fetch(`/save-recargas-lotedom?fecha=${fecha}`)
                 .then(response => response.json())
                 .then(data => {
                     Swal.fire({
@@ -253,7 +263,7 @@
                 timerProgressBar: true,
                 didOpen: () => Swal.showLoading()
             });
-            fetch(`/delete-premios-lotonet?fecha=${fecha}`)
+            fetch(`/delete-recargas-lotedom?fecha=${fecha}`)
                 .then(response => response.json())
                 .then(data => {
                     Swal.fire({
@@ -285,7 +295,7 @@
             });
         };
 
-        const escapeLotonetHtml = (value) => String(value ?? '')
+        const escapeLotedomHtml = (value) => String(value ?? '')
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
@@ -334,10 +344,10 @@
                     : '-';
                 return `
                     <tr>
-                        <td>${escapeLotonetHtml(result.date)}</td>
-                        <td><span class="badge bg-${badgeClass}">${escapeLotonetHtml(result.label)}</span></td>
-                        <td>${escapeLotonetHtml(result.message)}</td>
-                        <td>${escapeLotonetHtml(total)}</td>
+                        <td>${escapeLotedomHtml(result.date)}</td>
+                        <td><span class="badge bg-${badgeClass}">${escapeLotedomHtml(result.label)}</span></td>
+                        <td>${escapeLotedomHtml(result.message)}</td>
+                        <td>${escapeLotedomHtml(total)}</td>
                     </tr>
                 `;
             }).join('');
@@ -402,7 +412,7 @@
                     const date = dates[i];
                     Swal.update({ html: `Procesando ${date} (${i + 1} / ${dates.length})` });
 
-                    const result = await requestJson(`/save-premios-lotonet?fecha=${date}`);
+                    const result = await requestJson(`/save-recargas-lotedom?fecha=${date}`);
                     const payload = result.payload || {};
                     const total = payload.total ?? null;
                     let status = result.ok ? 'ok' : 'error';
@@ -464,7 +474,7 @@
                     const date = dates[i];
                     Swal.update({ html: `Eliminando ${date} (${i + 1} / ${dates.length})` });
 
-                    const result = await requestJson(`/delete-premios-lotonet?fecha=${date}`);
+                    const result = await requestJson(`/delete-recargas-lotedom?fecha=${date}`);
                     const payload = result.payload || {};
                     responses.push({
                         date,

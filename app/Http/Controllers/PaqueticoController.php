@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Paquetico;
-use App\Support\LotonetRowMapper;
+use App\Support\LotedomRowMapper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -101,7 +101,7 @@ class PaqueticoController extends Controller
         $items = json_decode($response, true);
 
         $data = array_map(
-            fn (array $row): array => LotonetRowMapper::recarga($row, $fecha),
+            fn (array $row): array => LotedomRowMapper::recarga($row, $fecha),
             $items['data']['result'] ?? []
         );
 

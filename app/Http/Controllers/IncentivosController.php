@@ -290,7 +290,7 @@ class IncentivosController extends Controller
                 GROUP BY vb.agencia_id, vb.cedula, e.empleadoid, vb.tipo
             ) bet ON bet.agencia_id = it.agencia_id AND bet.tipo = it.tipo_producto AND it.sistema = bet.sistema
             LEFT JOIN (
-                SELECT agencia_id, n.cedula, e.empleadoid, SUM(monto) AS monto_cedula, c.tipo, 'Lotonet' AS sistema
+                SELECT agencia_id, n.cedula, e.empleadoid, SUM(monto) AS monto_cedula, c.tipo, 'Lotedom' AS sistema
                 FROM vt_usuarios_net n
                 INNER JOIN empleados e ON n.cedula = e.cedula
                 LEFT JOIN catalogo_juegos c ON CAST(n.producto_id AS SIGNED) = c.producto_id
@@ -854,7 +854,7 @@ class IncentivosController extends Controller
         $request->validate([
             'fecha_ini' => 'required|date',
             'fecha_fin' => 'required|date|after_or_equal:fecha_ini',
-            'sistema' => 'nullable|in:Todos,Lotobet,Lotonet',
+            'sistema' => 'nullable|in:Todos,Lotobet,Lotedom',
             'minimo_agencia' => 'nullable|numeric|min:0',
             'min_dias_venta' => 'nullable|integer|min:1',
             'filtro_cumplimiento' => 'nullable|in:todos,cumplidos,no_cumplidos',
@@ -890,14 +890,14 @@ class IncentivosController extends Controller
                 ->whereBetween('fecha', [$desde, $hasta]);
 
             $netQuery = DB::table('vt_usuarios_net')
-                ->selectRaw("cedula, monto, fecha, 'Lotonet' as sistema")
+                ->selectRaw("cedula, monto, fecha, 'Lotedom' as sistema")
                 ->whereBetween('fecha', [$desde, $hasta]);
 
             if ($sistema === 'Lotobet') {
                 return $betQuery;
             }
 
-            if ($sistema === 'Lotonet') {
+            if ($sistema === 'Lotedom') {
                 return $netQuery;
             }
 
@@ -1030,7 +1030,7 @@ class IncentivosController extends Controller
         $request->validate([
             'fecha_ini' => 'required|date',
             'fecha_fin' => 'required|date|after_or_equal:fecha_ini',
-            'sistema' => 'nullable|in:Todos,Lotobet,Lotonet',
+            'sistema' => 'nullable|in:Todos,Lotobet,Lotedom',
             'min_dias_venta' => 'nullable|integer|min:1',
             'filtro_cumplimiento' => 'nullable|in:todos,cumplidos,no_cumplidos',
             'tramo_activo' => 'nullable|in:tramo1,tramo2',
@@ -1120,14 +1120,14 @@ class IncentivosController extends Controller
                 ->whereBetween('fecha', [$desde, $hasta]);
 
             $netQuery = DB::table('vt_usuarios_net')
-                ->selectRaw("cedula, monto, fecha, 'Lotonet' as sistema")
+                ->selectRaw("cedula, monto, fecha, 'Lotedom' as sistema")
                 ->whereBetween('fecha', [$desde, $hasta]);
 
             if ($sistema === 'Lotobet') {
                 return $betQuery;
             }
 
-            if ($sistema === 'Lotonet') {
+            if ($sistema === 'Lotedom') {
                 return $netQuery;
             }
 
@@ -1169,7 +1169,7 @@ class IncentivosController extends Controller
 
             if ($sistema === 'Lotobet') {
                 $terminalSourceQuery = $buildAgencyTerminalQuery('vt_usuarios_bet');
-            } elseif ($sistema === 'Lotonet') {
+            } elseif ($sistema === 'Lotedom') {
                 $terminalSourceQuery = $buildAgencyTerminalQuery('vt_usuarios_net');
             } else {
                 $terminalSourceQuery = $buildAgencyTerminalQuery('vt_usuarios_bet')
@@ -1426,7 +1426,7 @@ class IncentivosController extends Controller
 
             if ($sistema === 'Lotobet') {
                 $validTerminalQuery = $buildAgencyQuery('vt_usuarios_bet');
-            } elseif ($sistema === 'Lotonet') {
+            } elseif ($sistema === 'Lotedom') {
                 $validTerminalQuery = $buildAgencyQuery('vt_usuarios_net');
             } else {
                 $validTerminalQuery = $buildAgencyQuery('vt_usuarios_bet')

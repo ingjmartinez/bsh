@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class InicioController extends Controller
 {
@@ -139,41 +140,47 @@ class InicioController extends Controller
         $resumen = $this->emptyResumenVentas();
         $catalogoProductos = $this->getCatalogoProductos();
         $agenciasActivasMap = $this->getAgenciasActivasMap($empresa);
-        $resumenLotobet = $this->getResumenVentasPorTabla('vt_usuarios_bet', $fechaInicio, $fechaFin, $catalogoProductos, $agenciasActivasMap);
-        $resumenLotonet = $this->getResumenVentasPorTabla('vt_usuarios_net', $fechaInicio, $fechaFin, $catalogoProductos, $agenciasActivasMap);
+        $tablaLotobet = $this->resolveVentasProductoTabla('ventas_usuarios_bet', 'vt_usuarios_bet');
+        $tablaLotedom = $this->resolveVentasProductoTabla('vt_usuarios_net', 'ventas_producto_net');
+        $resumenLotobet = $this->getResumenVentasPorTabla($tablaLotobet, $fechaInicio, $fechaFin, $catalogoProductos, $agenciasActivasMap);
+        $resumenLotedom = $this->getResumenVentasPorTabla($tablaLotedom, $fechaInicio, $fechaFin, $catalogoProductos, $agenciasActivasMap);
 
         $resumen['sistemas']['Lotobet Real'] = $resumenLotobet;
-        $resumen['sistemas']['Lotonet'] = $resumenLotonet;
+        $resumen['sistemas']['Lotedom'] = $resumenLotedom;
 
         foreach (['tradicional', 'no_tradicional', 'recargas', 'otros'] as $tipo) {
             $resumen['tipos'][$tipo]['total'] =
                 (float) ($resumenLotobet['tipos'][$tipo]['total'] ?? 0) +
-                (float) ($resumenLotonet['tipos'][$tipo]['total'] ?? 0);
+                (float) ($resumenLotedom['tipos'][$tipo]['total'] ?? 0);
             $resumen['tipos'][$tipo]['registros'] =
                 (int) ($resumenLotobet['tipos'][$tipo]['registros'] ?? 0) +
-                (int) ($resumenLotonet['tipos'][$tipo]['registros'] ?? 0);
+                (int) ($resumenLotedom['tipos'][$tipo]['registros'] ?? 0);
             $resumen['tipos'][$tipo]['agencias'] =
                 (int) ($resumenLotobet['tipos'][$tipo]['agencias'] ?? 0) +
-                (int) ($resumenLotonet['tipos'][$tipo]['agencias'] ?? 0);
+                (int) ($resumenLotedom['tipos'][$tipo]['agencias'] ?? 0);
         }
 
         $resumen['total_general'] =
             (float) ($resumenLotobet['total_general'] ?? 0) +
-            (float) ($resumenLotonet['total_general'] ?? 0);
+            (float) ($resumenLotedom['total_general'] ?? 0);
         $resumen['registros'] =
             (int) ($resumenLotobet['registros'] ?? 0) +
-            (int) ($resumenLotonet['registros'] ?? 0);
+            (int) ($resumenLotedom['registros'] ?? 0);
 
         $agenciasConVentaIds = collect(array_merge(
             $resumenLotobet['agencias_con_venta_ids'] ?? [],
-            $resumenLotonet['agencias_con_venta_ids'] ?? []
+            $resumenLotedom['agencias_con_venta_ids'] ?? []
         ))->unique()->values()->all();
 
         $agenciasConVenta = 0;
 
-        foreach ($agenciasConVentaIds as $agenciaId) {
-            if (isset($agenciasActivasMap[$agenciaId])) {
-                $agenciasConVenta++;
+        if (empty($agenciasActivasMap)) {
+            $agenciasConVenta = count($agenciasConVentaIds);
+        } else {
+            foreach ($agenciasConVentaIds as $agenciaId) {
+                if (isset($agenciasActivasMap[$agenciaId])) {
+                    $agenciasConVenta++;
+                }
             }
         }
 
@@ -206,7 +213,7 @@ class InicioController extends Controller
             ->all();
 
         $productosCombinados = [];
-        foreach ([$resumenLotobet['productos'] ?? [], $resumenLotonet['productos'] ?? []] as $productosSistema) {
+        foreach ([$resumenLotobet['productos'] ?? [], $resumenLotedom['productos'] ?? []] as $productosSistema) {
             foreach ($productosSistema as $productoId => $producto) {
                 $key = (string) $productoId;
 
@@ -298,29 +305,24 @@ class InicioController extends Controller
             $cursor->addDay();
         }
 
-        if (empty($agenciasActivasMap)) {
-            return [
-                'dias' => $dias,
-                'ingresos' => $ingresos,
-                'gastos' => $gastos,
-                'margen' => $margen,
-                'periodo' => [
-                    'inicio' => $inicioMes->toDateString(),
-                    'fin' => $finMes->toDateString(),
-                ],
-            ];
-        }
-
         $agenciasActivas = array_keys($agenciasActivasMap);
         $totalesPorFechaTipo = [];
 
-        foreach (['vt_usuarios_bet', 'vt_usuarios_net'] as $tabla) {
+        foreach (array_filter([
+            $this->resolveVentasProductoTabla('ventas_usuarios_bet', 'vt_usuarios_bet'),
+            $this->resolveVentasProductoTabla('vt_usuarios_net', 'ventas_producto_net'),
+        ]) as $tabla) {
+            $tipoSelect = Schema::hasColumn($tabla, 'tipo') ? 'MAX(v.tipo)' : "''";
+
             $rows = DB::table($tabla . ' as v')
                 ->selectRaw('DATE(v.fecha) AS fecha')
                 ->selectRaw('v.producto_id')
+                ->selectRaw("{$tipoSelect} AS tipo")
                 ->selectRaw('SUM(COALESCE(v.monto, 0)) AS total')
                 ->whereBetween('v.fecha', [$inicioMes->toDateTimeString(), $finMes->toDateTimeString()])
-                ->whereIn(DB::raw('TRIM(CAST(v.agencia_id AS CHAR))'), $agenciasActivas)
+                ->when(!empty($agenciasActivas), function ($query) use ($agenciasActivas) {
+                    $query->whereIn(DB::raw('TRIM(CAST(v.agencia_id AS CHAR))'), $agenciasActivas);
+                })
                 ->groupByRaw('DATE(v.fecha), v.producto_id')
                 ->get();
 
@@ -331,8 +333,8 @@ class InicioController extends Controller
                 }
 
                 $productoId = (string) ($row->producto_id ?? '');
-                $tipoBase = (string) ($catalogoProductos[$productoId]['tipo'] ?? 'otros');
-                $tipo = $this->normalizeTipo($tipoBase);
+                $tipoBase = (string) ($catalogoProductos[$productoId]['tipo'] ?? (string) ($row->tipo ?? 'otros'));
+                $tipo = $this->normalizarTipoProducto($productoId, $tipoBase);
 
                 if (!in_array($tipo, ['tradicional', 'no_tradicional', 'recargas'], true)) {
                     continue;
@@ -371,10 +373,16 @@ class InicioController extends Controller
 
     private function getResumenVentasPorTabla(string $tabla, Carbon $fechaInicio, Carbon $fechaFin, array $catalogoProductos, array $agenciasActivasMap): array
     {
+        if ($tabla === '' || !Schema::hasTable($tabla)) {
+            return $this->emptyResumenSistemaVentas();
+        }
+
+        $tipoSelect = Schema::hasColumn($tabla, 'tipo') ? 'MAX(v.tipo)' : "''";
+
         $rows = DB::table($tabla . ' as v')
             ->selectRaw("TRIM(CAST(v.agencia_id AS CHAR)) AS agencia_id")
             ->selectRaw('v.producto_id')
-            ->selectRaw('MAX(v.tipo) AS tipo')
+            ->selectRaw("{$tipoSelect} AS tipo")
             ->selectRaw('SUM(COALESCE(v.monto, 0)) AS total')
             ->selectRaw('COUNT(*) AS registros')
             ->whereBetween('v.fecha', [$fechaInicio->toDateTimeString(), $fechaFin->toDateTimeString()])
@@ -409,7 +417,7 @@ class InicioController extends Controller
                 'descripcion' => 'Producto ' . ($productoId !== '' ? $productoId : 'N/D'),
             ];
             $tipoBase = (string) ($catalogo['tipo'] ?? (string) ($row->tipo ?? 'otros'));
-            $tipoKey = $this->normalizeTipo($tipoBase);
+            $tipoKey = $this->normalizarTipoProducto($productoId, $tipoBase);
             $total = (float) ($row->total ?? 0);
             $registros = (int) ($row->registros ?? 0);
             $agencias = 0;
@@ -420,7 +428,7 @@ class InicioController extends Controller
                 $nombreProducto = 'Producto ' . ($productoId !== '' ? $productoId : 'N/D');
             }
 
-            if ($agenciaId === '' || !isset($agenciasActivasMap[$agenciaId])) {
+            if ($agenciaId === '' || (!empty($agenciasActivasMap) && !isset($agenciasActivasMap[$agenciaId]))) {
                 continue;
             }
 
@@ -458,6 +466,35 @@ class InicioController extends Controller
         return $resumen;
     }
 
+    private function resolveVentasProductoTabla(string $preferred, string $fallback): string
+    {
+        if (Schema::hasTable($preferred)) {
+            return $preferred;
+        }
+
+        if (Schema::hasTable($fallback)) {
+            return $fallback;
+        }
+
+        return '';
+    }
+
+    private function emptyResumenSistemaVentas(): array
+    {
+        return [
+            'total_general' => 0,
+            'registros' => 0,
+            'agencias_con_venta_ids' => [],
+            'productos' => [],
+            'tipos' => [
+                'tradicional' => ['label' => 'Tradicional', 'total' => 0, 'registros' => 0, 'agencias' => 0],
+                'no_tradicional' => ['label' => 'No Tradicional', 'total' => 0, 'registros' => 0, 'agencias' => 0],
+                'recargas' => ['label' => 'Recargas', 'total' => 0, 'registros' => 0, 'agencias' => 0],
+                'otros' => ['label' => 'Otros', 'total' => 0, 'registros' => 0, 'agencias' => 0],
+            ],
+        ];
+    }
+
     private function getCatalogoProductos(): array
     {
         return DB::table('catalogo_juegos')
@@ -490,6 +527,18 @@ class InicioController extends Controller
 
     private function getAgenciasActivasMap(string $empresa = 'todos'): array
     {
+        $hasNombreAgencia = Schema::hasColumn('agencias', 'nombre_agencia');
+        $hasAgencia = Schema::hasColumn('agencias', 'agencia');
+        $hasNombre = Schema::hasColumn('agencias', 'nombre');
+
+        $nombreAgenciaExpression = $hasNombreAgencia
+            ? "TRIM(COALESCE(nombre_agencia, ''))"
+            : ($hasNombre ? "TRIM(COALESCE(nombre, ''))" : "''");
+
+        $agenciaExpression = $hasAgencia
+            ? "TRIM(COALESCE(agencia, ''))"
+            : ($hasNombre ? "TRIM(COALESCE(nombre, ''))" : "''");
+
         $query = DB::table('agencias')
             ->where('estatus', 1)
             ->whereNotNull('terminal')
@@ -501,8 +550,8 @@ class InicioController extends Controller
 
         return $query
             ->selectRaw("TRIM(CAST(terminal AS CHAR)) AS agencia_id")
-            ->selectRaw("TRIM(COALESCE(nombre_agencia, '')) AS nombre_agencia")
-            ->selectRaw("TRIM(COALESCE(agencia, '')) AS agencia")
+            ->selectRaw("{$nombreAgenciaExpression} AS nombre_agencia")
+            ->selectRaw("{$agenciaExpression} AS agencia")
             ->selectRaw("TRIM(CAST(terminal AS CHAR)) AS terminal")
             ->get()
             ->mapWithKeys(function ($row) {
@@ -543,6 +592,15 @@ class InicioController extends Controller
         return 'otros';
     }
 
+    private function normalizarTipoProducto(string $productoId, string $tipo): string
+    {
+        if ((int) $productoId === -1) {
+            return 'recargas';
+        }
+
+        return $this->normalizeTipo($tipo);
+    }
+
     private function emptyResumenVentas(): array
     {
         $tipos = [
@@ -574,7 +632,7 @@ class InicioController extends Controller
                     'registros' => 0,
                     'tipos' => $tipos,
                 ],
-                'Lotonet' => [
+                'Lotedom' => [
                     'total_general' => 0,
                     'registros' => 0,
                     'tipos' => $tipos,

@@ -16,7 +16,7 @@ class NovedadHorarioController extends Controller
     public function list(Request $request)
     {
         $validated = $request->validate([
-            'sistema' => ['required', 'in:todos,lotobet,lotonet'],
+            'sistema' => ['required', 'in:todos,lotobet,lotedom'],
             'fecha_inicio' => ['required', 'date'],
             'fecha_fin' => ['required', 'date', 'after_or_equal:fecha_inicio'],
         ]);
@@ -75,7 +75,7 @@ class NovedadHorarioController extends Controller
             $bindings[] = $validated['fecha_fin'];
         }
 
-        if (in_array($validated['sistema'], ['todos', 'lotonet'], true)) {
+        if (in_array($validated['sistema'], ['todos', 'lotedom'], true)) {
             $uniones[] = "
                 SELECT
                     TRIM(CAST(COALESCE(NULLIF(an.terminal, ''), an.agencia) AS CHAR)) AS terminal,

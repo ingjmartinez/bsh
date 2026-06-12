@@ -5,12 +5,12 @@
         <div class="page-content">
             <div class="container-fluid">
                 <style>
-                    .acciones-lotonet .btn {
+                    .acciones-lotedom .btn {
                         width: auto;
                     }
 
                     @media (max-width: 767.98px) {
-                        .acciones-lotonet .btn {
+                        .acciones-lotedom .btn {
                             width: 100%;
                             min-height: 44px;
                         }
@@ -21,7 +21,7 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                            <h4 class="mb-sm-0">Ventas por Usuario Lotonet Lotedom</h4>
+                            <h4 class="mb-sm-0">Ventas por Usuario Lotedom</h4>
 
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
@@ -41,7 +41,7 @@
                                 <h5 class="card-title mb-0">Configurar Token</h5>
                             </div>
                             <div class="card-body">
-                                <div class="row g-2 mb-3 acciones-lotonet align-items-end">
+                                <div class="row g-2 mb-3 acciones-lotedom align-items-end">
                                     <div class="col-12 col-lg-4 d-grid d-md-flex gap-2">
                                         <button id="btnGenerarToken" class="btn btn-primary">Iniciar Sesión</button>
                                         <button id="btnGenerarData" class="btn btn-primary">Generar Data</button>
@@ -147,7 +147,7 @@
             });
         };
 
-        const escapeLotonetHtml = (value) => String(value ?? '')
+        const escapeLotedomHtml = (value) => String(value ?? '')
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
@@ -226,14 +226,14 @@
             ventas.forEach((item) => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${escapeLotonetHtml(item.consorcio_id)}</td>
-                    <td>${escapeLotonetHtml(item.agencia_id)}</td>
-                    <td>${escapeLotonetHtml(item.producto_id)}</td>
-                    <td>${escapeLotonetHtml(item.cedula)}</td>
-                    <td>${escapeLotonetHtml(item.descripcion)}</td>
-                    <td>${escapeLotonetHtml(item.tipo)}</td>
-                    <td>${escapeLotonetHtml(item.monto)}</td>
-                    <td>${escapeLotonetHtml(fecha)}</td>
+                    <td>${escapeLotedomHtml(item.consorcio_id)}</td>
+                    <td>${escapeLotedomHtml(item.agencia_id)}</td>
+                    <td>${escapeLotedomHtml(item.producto_id)}</td>
+                    <td>${escapeLotedomHtml(item.cedula)}</td>
+                    <td>${escapeLotedomHtml(item.descripcion)}</td>
+                    <td>${escapeLotedomHtml(item.tipo)}</td>
+                    <td>${escapeLotedomHtml(item.monto)}</td>
+                    <td>${escapeLotedomHtml(fecha)}</td>
                 `;
                 tableBody.appendChild(row);
             });
@@ -259,10 +259,10 @@
 
                 return `
                     <tr>
-                        <td>${escapeLotonetHtml(result.date)}</td>
-                        <td><span class="badge bg-${badgeClass}">${escapeLotonetHtml(result.label)}</span></td>
-                        <td>${escapeLotonetHtml(result.message)}</td>
-                        <td>${escapeLotonetHtml(total)}</td>
+                        <td>${escapeLotedomHtml(result.date)}</td>
+                        <td><span class="badge bg-${badgeClass}">${escapeLotedomHtml(result.label)}</span></td>
+                        <td>${escapeLotedomHtml(result.message)}</td>
+                        <td>${escapeLotedomHtml(total)}</td>
                     </tr>
                 `;
             }).join('');
@@ -343,7 +343,7 @@
             destroyVentasTable();
 
             try {
-                const result = await requestJson(`/ventas-usuarios-lotonet?fecha=${fecha}`);
+                const result = await requestJson(`/ventas-usuarios-lotedom?fecha=${fecha}`);
 
                 if (!result.ok) {
                     Swal.fire({
@@ -392,7 +392,7 @@
                 didOpen: () => Swal.showLoading()
             });
             try {
-                const result = await requestJson(`/save-ventas-usuarios-lotonet?fecha=${fecha}`);
+                const result = await requestJson(`/save-ventas-usuarios-lotedom?fecha=${fecha}`);
                 Swal.fire({
                     title: result.ok ? 'Listo' : 'Error',
                     text: result.message,
@@ -428,7 +428,7 @@
                 didOpen: () => Swal.showLoading()
             });
             try {
-                const result = await requestJson(`/delete-ventas-usuarios-lotonet?fecha=${fecha}`);
+                const result = await requestJson(`/delete-ventas-usuarios-lotedom?fecha=${fecha}`);
                 Swal.fire({
                     title: result.ok ? 'Listo' : 'Error',
                     text: result.message,
@@ -497,7 +497,7 @@
                         html: `Procesando ${date} (${i + 1} / ${dates.length})`
                     });
 
-                    const response = await fetch(`/save-ventas-usuarios-lotonet?fecha=${date}`);
+                    const response = await fetch(`/save-ventas-usuarios-lotedom?fecha=${date}`);
                     if (!response.ok) {
                         const text = await response.text().catch(() => null);
                         throw new Error(text || `Error HTTP ${response.status}`);
@@ -596,7 +596,7 @@
                         html: `Eliminando ${date} (${i + 1} / ${dates.length})`
                     });
 
-                    const response = await fetch(`/delete-ventas-usuarios-lotonet?fecha=${date}`);
+                    const response = await fetch(`/delete-ventas-usuarios-lotedom?fecha=${date}`);
                     if (!response.ok) {
                         const text = await response.text().catch(() => null);
                         throw new Error(text || `Error HTTP ${response.status}`);
@@ -688,7 +688,7 @@
                             html: `Procesando ${date} (${i + 1} / ${dates.length})`
                         });
 
-                        const result = await requestJson(`/save-ventas-usuarios-lotonet?fecha=${date}`);
+                        const result = await requestJson(`/save-ventas-usuarios-lotedom?fecha=${date}`);
                         const payload = result.payload || {};
                         const total = payload.total ?? null;
                         let status = result.ok ? 'ok' : 'error';
@@ -773,7 +773,7 @@
                             html: `Eliminando ${date} (${i + 1} / ${dates.length})`
                         });
 
-                        const result = await requestJson(`/delete-ventas-usuarios-lotonet?fecha=${date}`);
+                        const result = await requestJson(`/delete-ventas-usuarios-lotedom?fecha=${date}`);
                         const payload = result.payload || {};
                         responses.push({
                             date,

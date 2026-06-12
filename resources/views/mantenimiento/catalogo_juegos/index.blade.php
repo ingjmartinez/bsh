@@ -251,7 +251,7 @@
                 <div class="modal-body">
                     <div class="alert alert-info py-2 mb-3">
                         <div><strong>Consulta:</strong> <span id="texto-periodo-comparativo-sql">-</span></div>
-                        <div class="small mt-1"><strong>Totales:</strong> BET <span id="total-bet-sql">-</span> | NET <span id="total-net-sql">-</span> | Catálogo <span id="total-catalogo-sql">-</span> | No en catálogo <span id="total-no-catalogo-sql">-</span></div>
+                        <div class="small mt-1"><strong>Totales:</strong> ventas_usuarios_bet <span id="total-bet-sql">-</span> | No en catálogo <span id="total-no-catalogo-sql">-</span></div>
                     </div>
                     <div id="comparativo-sql-loader" class="text-center py-4 d-none">
                         <div class="spinner-border text-primary" role="status"></div>
@@ -613,7 +613,7 @@
                     }
                     if (textoDebugDeteccion) {
                         const dbg = payload?.debug || {};
-                        textoDebugDeteccion.textContent = `todo=${String(dbg?.todo ?? '-')}, anio=${String(dbg?.anio ?? '-')}, mes=${String(dbg?.mes ?? '-')}, nuevos=${String(dbg?.nuevos_count ?? '-')}, max_net=${String(dbg?.max_fecha_net ?? '-')}, max_bet=${String(dbg?.max_fecha_bet ?? '-')}`;
+                        textoDebugDeteccion.textContent = `fuente=${String(dbg?.tabla_fuente ?? '-')}, todo=${String(dbg?.todo ?? '-')}, anio=${String(dbg?.anio ?? '-')}, mes=${String(dbg?.mes ?? '-')}, nuevos=${String(dbg?.nuevos_count ?? '-')}, max_fecha=${String(dbg?.max_fecha_fuente ?? '-')}`;
                     }
 
                     detectarLoader.classList.add('d-none');
@@ -751,9 +751,9 @@
                     if (textoPeriodoComparativoSql) {
                         textoPeriodoComparativoSql.textContent = String(payload?.periodo_texto || '-');
                     }
-                    if (totalBetSql) totalBetSql.textContent = String(payload?.totales?.bet ?? '-');
-                    if (totalNetSql) totalNetSql.textContent = String(payload?.totales?.net ?? '-');
-                    if (totalCatalogoSql) totalCatalogoSql.textContent = String(payload?.totales?.catalogo ?? '-');
+                    if (totalBetSql) totalBetSql.textContent = String(payload?.totales?.fuente ?? '-');
+                    if (totalNetSql) totalNetSql.textContent = '-';
+                    if (totalCatalogoSql) totalCatalogoSql.textContent = '-';
                     if (totalNoCatalogoSql) totalNoCatalogoSql.textContent = String(payload?.totales?.no_en_catalogo ?? '-');
                     if (btnInsertarMasivoComparativo) {
                         btnInsertarMasivoComparativo.disabled = rows.length === 0;

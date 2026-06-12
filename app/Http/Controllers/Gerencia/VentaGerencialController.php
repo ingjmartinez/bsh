@@ -263,7 +263,7 @@ class VentaGerencialController extends Controller
     {
         $valor = strtolower(trim((string) $sistema));
 
-        if (!in_array($valor, ['todos', 'lotobet', 'lotonet'], true)) {
+        if (!in_array($valor, ['todos', 'lotobet', 'lotedom'], true)) {
             return 'todos';
         }
 
@@ -314,7 +314,7 @@ class VentaGerencialController extends Controller
             ];
         }
 
-        if ($sistema === 'lotonet') {
+        if ($sistema === 'lotedom') {
             return [[
                 'ventas' => 'vt_usuarios_net',
                 'premios' => 'premios_net',

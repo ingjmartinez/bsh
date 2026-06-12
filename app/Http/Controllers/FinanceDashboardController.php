@@ -13,15 +13,15 @@ class FinanceDashboardController extends Controller
         return view('dashboard.lotobet.ventas');
     }
 
-    public function indexLotonet()
+    public function indexLotedom()
     {
-        return view('dashboard.lotonet.ventas');
+        return view('dashboard.lotedom.ventas');
     }
 
     public function data(Request $request)
     {
         $plataforma = $request->get('plataforma', 'bet');
-        $tabla = $plataforma === 'net' ? 'vt_usuarios_net' : 'vt_usuarios_bet';
+        $tabla = $plataforma === 'net' ? 'vt_usuarios_net' : 'ventas_usuarios_bet';
         // dd($tabla);
         $agencia_id = $request->get('agencia_id', null);
         $empresaFilter = $this->normalizeEmpresaFilter((string) $request->get('empresa', 'todas'));
@@ -57,7 +57,7 @@ class FinanceDashboardController extends Controller
         
         $agenciasCatalogoSub = DB::table('agencias')
             ->selectRaw("TRIM(CAST(terminal AS CHAR)) AS agencia_id")
-            ->selectRaw("MAX(TRIM(COALESCE(nombre_agencia, ''))) AS nombre_agencia")
+            ->selectRaw("MAX(TRIM(COALESCE(nombre, ''))) AS nombre_agencia")
             ->whereNotNull('terminal')
             ->whereRaw("TRIM(CAST(terminal AS CHAR)) <> ''")
             ->when($empresaFilter !== 'todas', function ($query) use ($empresaFilter) {
@@ -104,7 +104,10 @@ class FinanceDashboardController extends Controller
         $agenciasEnCero = $agenciasCero->count();
 
         // Expresión única para normalizar "tipo"
-        $tipoExpr = "COALESCE(NULLIF(TRIM(c.tipo),''),'Sin tipo')";
+        $tipoExpr = "CASE
+            WHEN v.producto_id = -1 THEN 'recargas'
+            ELSE COALESCE(NULLIF(TRIM(c.tipo),''), NULLIF(TRIM(v.tipo),''), 'Sin tipo')
+        END";
 
         // 1) Subquery: aquí sí se agrupa
         $sub = DB::table($tabla . ' as v')
@@ -140,7 +143,7 @@ class FinanceDashboardController extends Controller
         $ventasDiariasPorTipoQuery = DB::table($tabla . ' as v')
             ->leftJoin('catalogo_juegos as c', 'v.producto_id', '=', 'c.producto_id')
             ->leftJoin('agencias as a_emp', DB::raw("TRIM(CAST(a_emp.terminal AS CHAR))"), '=', DB::raw("TRIM(CAST(v.agencia_id AS CHAR))"))
-            ->selectRaw("DATE(v.fecha) as fecha, COALESCE(NULLIF(TRIM(c.tipo),''),'Sin tipo') as tipo, SUM(v.monto) as total")
+            ->selectRaw("DATE(v.fecha) as fecha, {$tipoExpr} as tipo, SUM(v.monto) as total")
             ->whereBetween('v.fecha', [$inicio, $fin])
             ->when($empresaFilter !== 'todas', function ($q) use ($empresaFilter) {
                 $this->applyEmpresaFilter($q, $empresaFilter, 'a_emp.empresa');
@@ -180,7 +183,7 @@ class FinanceDashboardController extends Controller
         $ventasMesAnteriorPorTipoQuery = DB::table($tabla . ' as v')
             ->leftJoin('catalogo_juegos as c', 'v.producto_id', '=', 'c.producto_id')
             ->leftJoin('agencias as a_emp', DB::raw("TRIM(CAST(a_emp.terminal AS CHAR))"), '=', DB::raw("TRIM(CAST(v.agencia_id AS CHAR))"))
-            ->selectRaw("DATE(v.fecha) as fecha, COALESCE(NULLIF(TRIM(c.tipo),''),'Sin tipo') as tipo, SUM(v.monto) as total")
+            ->selectRaw("DATE(v.fecha) as fecha, {$tipoExpr} as tipo, SUM(v.monto) as total")
             ->whereBetween('v.fecha', [$mesAnteriorInicio, $mesAnteriorFin])
             ->when($empresaFilter !== 'todas', function ($q) use ($empresaFilter) {
                 $this->applyEmpresaFilter($q, $empresaFilter, 'a_emp.empresa');
@@ -191,7 +194,7 @@ class FinanceDashboardController extends Controller
         }
 
         $ventasMesAnteriorPorTipo = $ventasMesAnteriorPorTipoQuery
-            ->groupByRaw("DATE(v.fecha), COALESCE(NULLIF(TRIM(c.tipo),''),'Sin tipo')")
+            ->groupByRaw("DATE(v.fecha), {$tipoExpr}")
             ->get();
 
         // Calcular promedios por tipo del mes anterior
@@ -341,7 +344,7 @@ class FinanceDashboardController extends Controller
     public function exportAgenciasCeroPorDia(Request $request)
     {
         $plataforma = $request->get('plataforma', 'bet');
-        $tabla = $plataforma === 'net' ? 'vt_usuarios_net' : 'vt_usuarios_bet';
+        $tabla = $plataforma === 'net' ? 'vt_usuarios_net' : 'ventas_usuarios_bet';
         $empresaFilter = $this->normalizeEmpresaFilter((string) $request->get('empresa', 'todas'));
 
         $fechaInicio = (string) $request->get('fecha_inicio', Carbon::today()->format('Y-m-d'));

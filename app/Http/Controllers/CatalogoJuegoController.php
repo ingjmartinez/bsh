@@ -11,6 +11,8 @@ use Illuminate\Support\Collection;
 
 class CatalogoJuegoController extends Controller
 {
+    private const FUENTE_VENTAS = 'ventas_usuarios_bet';
+
     public function index()
     {
         $juegos = CatalogoJuego::query()
@@ -23,7 +25,7 @@ class CatalogoJuegoController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'producto_id' => ['required', 'integer', 'min:1', 'unique:catalogo_juegos,producto_id'],
+            'producto_id' => ['required', 'integer', 'not_in:0', 'unique:catalogo_juegos,producto_id'],
             'tipo' => ['required', 'string', 'max:50'],
             'descripcion' => ['required', 'string', 'max:255'],
         ]);
@@ -44,7 +46,7 @@ class CatalogoJuegoController extends Controller
             'producto_id' => [
                 'required',
                 'integer',
-                'min:1',
+                'not_in:0',
                 Rule::unique('catalogo_juegos', 'producto_id')->ignore($catalogoJuego->id),
             ],
             'tipo' => ['required', 'string', 'max:50'],
@@ -112,8 +114,8 @@ class CatalogoJuegoController extends Controller
                 'anio' => $anio,
                 'mes' => $mes,
                 'nuevos_count' => $data->count(),
-                'max_fecha_net' => DB::table('ventas_producto_net')->max('fecha'),
-                'max_fecha_bet' => DB::table('ventas_producto_bet')->max('fecha'),
+                'tabla_fuente' => self::FUENTE_VENTAS,
+                'max_fecha_fuente' => DB::table(self::FUENTE_VENTAS)->max('fecha'),
             ],
         ]);
     }
@@ -156,9 +158,12 @@ class CatalogoJuegoController extends Controller
             })->values(),
             'periodo_texto' => $periodoTexto,
             'totales' => [
-                'bet' => null,
-                'net' => null,
-                'catalogo' => null,
+                'fuente' => DB::table(self::FUENTE_VENTAS)
+                    ->when(!$todo, fn ($query) => $query->whereBetween('fecha', [$fechaInicio, $fechaFin]))
+                    ->whereNotNull('producto_id')
+                    ->where('producto_id', '<>', 0)
+                    ->distinct('producto_id')
+                    ->count('producto_id'),
                 'no_en_catalogo' => $nuevos->count(),
             ],
         ]);
@@ -168,7 +173,7 @@ class CatalogoJuegoController extends Controller
     {
         $validated = $request->validate([
             'productos' => ['required', 'array', 'min:1'],
-            'productos.*.producto_id' => ['required', 'integer', 'min:1'],
+            'productos.*.producto_id' => ['required', 'integer', 'not_in:0'],
             'productos.*.tipo' => ['required', 'string', 'max:50'],
             'productos.*.descripcion' => ['required', 'string', 'max:255'],
         ]);
@@ -182,7 +187,7 @@ class CatalogoJuegoController extends Controller
                 ];
             })
             ->filter(function ($item) {
-                return $item['producto_id'] > 0 && $item['tipo'] !== '' && $item['descripcion'] !== '';
+                return $item['producto_id'] !== 0 && $item['tipo'] !== '' && $item['descripcion'] !== '';
             })
             ->unique('producto_id')
             ->filter()
@@ -238,45 +243,30 @@ class CatalogoJuegoController extends Controller
             $fechaFin = Carbon::create($anio, $mes, 1)->endOfMonth()->toDateString();
         }
 
-        $whereFechaNet = '';
         $whereFechaBet = '';
         $bindings = [];
 
         if ($fechaInicio && $fechaFin) {
-            $whereFechaNet = ' AND fecha BETWEEN ? AND ?';
             $whereFechaBet = ' AND fecha BETWEEN ? AND ?';
-            $bindings[] = $fechaInicio;
-            $bindings[] = $fechaFin;
             $bindings[] = $fechaInicio;
             $bindings[] = $fechaFin;
         }
 
         $sql = "
             SELECT
-                u.producto_id,
-                CONCAT('Producto ', u.producto_id) AS descripcion,
-                'pendiente' AS tipos,
-                GROUP_CONCAT(DISTINCT u.origen ORDER BY u.origen SEPARATOR ', ') AS origenes_texto
-            FROM (
-                SELECT CAST(producto_id AS UNSIGNED) AS producto_id, 'lotonet' AS origen
-                FROM ventas_producto_net
-                WHERE producto_id IS NOT NULL
-                  AND producto_id > 0
-                  {$whereFechaNet}
-
-                UNION ALL
-
-                SELECT CAST(producto_id AS UNSIGNED) AS producto_id, 'lotobet' AS origen
-                FROM ventas_producto_bet
-                WHERE producto_id IS NOT NULL
-                  AND producto_id > 0
-                  {$whereFechaBet}
-            ) u
+                CAST(v.producto_id AS SIGNED) AS producto_id,
+                GROUP_CONCAT(DISTINCT NULLIF(TRIM(v.descripcion), '') ORDER BY v.descripcion SEPARATOR '||') AS descripciones,
+                GROUP_CONCAT(DISTINCT NULLIF(TRIM(v.tipo), '') ORDER BY v.tipo SEPARATOR '||') AS tipos,
+                'lotobet' AS origenes_texto
+            FROM " . self::FUENTE_VENTAS . " v
             LEFT JOIN catalogo_juegos c
-                ON c.producto_id = u.producto_id
+                ON c.producto_id = CAST(v.producto_id AS SIGNED)
             WHERE c.id IS NULL
-            GROUP BY u.producto_id
-            ORDER BY u.producto_id
+              AND v.producto_id IS NOT NULL
+              AND v.producto_id <> 0
+              {$whereFechaBet}
+            GROUP BY CAST(v.producto_id AS SIGNED)
+            ORDER BY CAST(v.producto_id AS SIGNED)
         ";
 
         $rows = collect(DB::select($sql, $bindings));
@@ -284,6 +274,13 @@ class CatalogoJuegoController extends Controller
         return $rows
             ->map(function ($row) {
                 $productoId = trim((string) ($row->producto_id ?? ''));
+                $descripcionesDetectadas = collect(explode('||', (string) ($row->descripciones ?? '')))
+                    ->map(fn($descripcion) => trim((string) $descripcion))
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
+
                 $tiposDetectados = collect(explode('||', (string) ($row->tipos ?? '')))
                     ->map(fn($tipo) => trim((string) $tipo))
                     ->filter()
@@ -292,6 +289,7 @@ class CatalogoJuegoController extends Controller
                     ->all();
 
                 $tipoSugerido = $tiposDetectados[0] ?? 'pendiente';
+                $descripcionSugerida = $descripcionesDetectadas[0] ?? ('Producto ' . $productoId);
 
                 $listaOrigenes = collect(explode(', ', (string) ($row->origenes_texto ?? '')))
                     ->map(fn($origen) => trim((string) $origen))
@@ -303,7 +301,7 @@ class CatalogoJuegoController extends Controller
 
                 return [
                     'producto_id' => $productoId,
-                    'descripcion' => trim((string) ($row->descripcion ?? '')),
+                    'descripcion' => $descripcionSugerida,
                     'tipo_sugerido' => $tipoSugerido,
                     'tipos_detectados' => $tiposDetectados,
                     'origenes' => $listaOrigenes,
@@ -316,10 +314,9 @@ class CatalogoJuegoController extends Controller
 
     private function obtenerUltimoPeriodoConDatos(): array
     {
-        $maxNet = DB::table('ventas_producto_net')->max('fecha');
-        $maxBet = DB::table('ventas_producto_bet')->max('fecha');
+        $maxBet = DB::table(self::FUENTE_VENTAS)->max('fecha');
 
-        $fechas = collect([$maxNet, $maxBet])
+        $fechas = collect([$maxBet])
             ->filter()
             ->map(function ($fecha) {
                 try {

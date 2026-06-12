@@ -149,7 +149,7 @@ CREATE TABLE agencias (
   codigo VARCHAR(50) NOT NULL UNIQUE,
   terminal VARCHAR(50) NULL UNIQUE,
   nombre VARCHAR(150) NOT NULL,
-  sistema ENUM('lotobet','lotonet','ambos') NOT NULL DEFAULT 'ambos',
+  sistema ENUM('lotobet','lotedom','ambos') NOT NULL DEFAULT 'ambos',
   empresa VARCHAR(120) NULL,
   horario_am VARCHAR(40) NULL,
   horario_pm VARCHAR(40) NULL,
@@ -298,7 +298,7 @@ CREATE TABLE productos (
 
 CREATE TABLE ventas_usuarios (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  sistema ENUM('lotobet','lotonet') NOT NULL,
+  sistema ENUM('lotobet','lotedom') NOT NULL,
   fecha DATE NOT NULL,
   agencia_id BIGINT UNSIGNED NULL,
   empleado_id BIGINT UNSIGNED NULL,
@@ -321,7 +321,7 @@ CREATE TABLE ventas_usuarios (
 
 CREATE TABLE ventas_productos (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  sistema ENUM('lotobet','lotonet') NOT NULL,
+  sistema ENUM('lotobet','lotedom') NOT NULL,
   fecha DATE NOT NULL,
   agencia_id BIGINT UNSIGNED NULL,
   producto_id BIGINT UNSIGNED NULL,
@@ -345,7 +345,7 @@ CREATE TABLE ventas_productos (
 
 CREATE TABLE premios (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  sistema ENUM('lotobet','lotonet') NOT NULL,
+  sistema ENUM('lotobet','lotedom') NOT NULL,
   fecha DATE NOT NULL,
   consorcio_id BIGINT UNSIGNED NULL,
   agencia_id BIGINT UNSIGNED NULL,
@@ -365,7 +365,7 @@ CREATE TABLE premios (
 
 CREATE TABLE pagos_empresas (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  sistema ENUM('lotobet','lotonet') NOT NULL,
+  sistema ENUM('lotobet','lotedom') NOT NULL,
   tipo ENUM('a_otra_empresa','misma_empresa','por_otra_empresa') NOT NULL,
   fecha DATE NOT NULL,
   consorcio_id BIGINT UNSIGNED NULL,
@@ -391,7 +391,7 @@ CREATE TABLE pagos_empresas (
 
 CREATE TABLE recargas (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  sistema ENUM('lotobet','lotonet') NOT NULL,
+  sistema ENUM('lotobet','lotedom') NOT NULL,
   fecha DATE NOT NULL,
   consorcio_id BIGINT UNSIGNED NULL,
   agencia_id BIGINT UNSIGNED NULL,
@@ -415,7 +415,7 @@ CREATE TABLE recargas (
 
 CREATE TABLE asistencias (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  sistema ENUM('lotobet','lotonet') NOT NULL,
+  sistema ENUM('lotobet','lotedom') NOT NULL,
   fecha DATE NOT NULL,
   agencia_id BIGINT UNSIGNED NULL,
   empleado_id BIGINT UNSIGNED NULL,
@@ -437,7 +437,7 @@ CREATE TABLE asistencias (
 
 CREATE TABLE faltantes (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  sistema ENUM('lotobet','lotonet') NOT NULL,
+  sistema ENUM('lotobet','lotedom') NOT NULL,
   fecha DATE NOT NULL,
   consorcio_id BIGINT UNSIGNED NULL,
   agencia_id BIGINT UNSIGNED NULL,

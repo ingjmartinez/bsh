@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Token;
 use App\Models\Recarga;
 use App\Models\RecargaNet;
-use App\Support\LotonetRowMapper;
+use App\Support\LotedomRowMapper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -272,7 +272,7 @@ class RecargasController extends Controller
         return is_string($fecha) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha) === 1;
     }
 
-    public function getRecargasLotonet(Request $request)
+    public function getRecargasLotedom(Request $request)
     {
         header('Content-Type: application/json');
 
@@ -320,7 +320,7 @@ class RecargasController extends Controller
         return response()->json(['recargas' => $data, 'code' => $items['code'], 'message' => '']);
     }
 
-    public function saveRecargasLotonet(Request $request)
+    public function saveRecargasLotedom(Request $request)
     {
         ini_set('memory_limit', '1G');
         ini_set('max_execution_time', 300); // 300 segundos = 5 minutos
@@ -366,7 +366,7 @@ class RecargasController extends Controller
         $items = json_decode($response, true);
 
         $data = array_map(
-            fn (array $row): array => LotonetRowMapper::recarga($row, $fecha),
+            fn (array $row): array => LotedomRowMapper::recarga($row, $fecha),
             $items['data']['result'] ?? []
         );
 
@@ -382,7 +382,7 @@ class RecargasController extends Controller
         ]);
     }
 
-    public function deleteRecargasLotonet(Request $request)
+    public function deleteRecargasLotedom(Request $request)
     {
         header('Content-Type: application/json');
 

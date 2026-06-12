@@ -82,15 +82,15 @@ CREATE  PROCEDURE `CalculoIncentivo` (IN `_mes` INT, IN `_anio` INT, IN `_exclui
             v.sistema,
             SUM(IFNULL(v.monto, 0)) AS total_trimestre
         FROM (
-            SELECT agencia_id, producto_id, monto, fecha, 'Lotonet' AS sistema FROM ventas_producto_net WHERE (_excluidos IS NULL OR FIND_IN_SET(producto_id, _excluidos) = 0)
+            SELECT agencia_id, producto_id, monto, fecha, 'Lotedom' AS sistema FROM ventas_producto_net WHERE (_excluidos IS NULL OR FIND_IN_SET(producto_id, _excluidos) = 0)
             UNION ALL
             SELECT agencia_id, producto_id, monto, fecha, 'Lotobet' AS sistema FROM ventas_producto_bet WHERE (_excluidos IS NULL OR FIND_IN_SET(producto_id, _excluidos) = 0)
             UNION ALL
-            SELECT agencia_id, producto_id, monto, fecha, 'Lotonet' AS sistema FROM recargas_net
+            SELECT agencia_id, producto_id, monto, fecha, 'Lotedom' AS sistema FROM recargas_net
             UNION ALL
             SELECT agencia_id, producto_id, monto, fecha, 'Lotobet' AS sistema FROM recargas_bet
             UNION ALL
-            SELECT agencia_id, producto_id, monto_pagado AS monto, fecha, 'Lotonet' AS sistema FROM paquetico_net
+            SELECT agencia_id, producto_id, monto_pagado AS monto, fecha, 'Lotedom' AS sistema FROM paquetico_net
         ) v
         LEFT JOIN catalogo_juegos c ON CAST(v.producto_id AS SIGNED) = c.producto_id
         WHERE v.fecha BETWEEN _fecha_inicio AND _fecha_fin
@@ -105,15 +105,15 @@ CREATE  PROCEDURE `CalculoIncentivo` (IN `_mes` INT, IN `_anio` INT, IN `_exclui
             SUM(IFNULL(v.monto, 0)) AS total_mes,
             MONTH(v.fecha) AS mes
         FROM (
-            SELECT agencia_id, producto_id, monto, fecha, 'Lotonet' AS sistema FROM ventas_producto_net WHERE (_excluidos IS NULL OR FIND_IN_SET(producto_id, _excluidos) = 0)
+            SELECT agencia_id, producto_id, monto, fecha, 'Lotedom' AS sistema FROM ventas_producto_net WHERE (_excluidos IS NULL OR FIND_IN_SET(producto_id, _excluidos) = 0)
             UNION ALL
             SELECT agencia_id, producto_id, monto, fecha, 'Lotobet' AS sistema FROM ventas_producto_bet WHERE (_excluidos IS NULL OR FIND_IN_SET(producto_id, _excluidos) = 0)
             UNION ALL
-            SELECT agencia_id, producto_id, monto, fecha, 'Lotonet' AS sistema FROM recargas_net
+            SELECT agencia_id, producto_id, monto, fecha, 'Lotedom' AS sistema FROM recargas_net
             UNION ALL
             SELECT agencia_id, producto_id, monto, fecha, 'Lotobet' AS sistema FROM recargas_bet
             UNION ALL
-            SELECT agencia_id, producto_id, monto_pagado AS monto, fecha, 'Lotonet' AS sistema FROM paquetico_net
+            SELECT agencia_id, producto_id, monto_pagado AS monto, fecha, 'Lotedom' AS sistema FROM paquetico_net
         ) v
         LEFT JOIN catalogo_juegos c ON CAST(v.producto_id AS SIGNED) = c.producto_id
         WHERE MONTH(v.fecha) = _mes AND YEAR(v.fecha) = _anio_actual

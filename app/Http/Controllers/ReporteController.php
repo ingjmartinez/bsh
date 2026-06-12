@@ -60,7 +60,7 @@ class ReporteController extends Controller
     public function listCompensacion(Request $request)
     {
         $validated = $request->validate([
-            'sistema' => 'required|in:todos,lotobet,lotonet',
+            'sistema' => 'required|in:todos,lotobet,lotedom',
             'fecha_inicio' => 'required|date',
             'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
         ]);
@@ -100,7 +100,7 @@ class ReporteController extends Controller
             $bindings[] = $fechaFin;
         }
 
-        if (in_array($validated['sistema'], ['todos', 'lotonet'], true)) {
+        if (in_array($validated['sistema'], ['todos', 'lotedom'], true)) {
             $uniones[] = "
                 SELECT
                     CAST(NULLIF(TRIM(pagado_a_consorcio_id), '') AS UNSIGNED) AS consorcio_id,
@@ -199,7 +199,7 @@ class ReporteController extends Controller
             'resumen' => [
                 'sistema' => match ($validated['sistema']) {
                     'lotobet' => 'Lotobet Real',
-                    'lotonet' => 'Lotonet Lotedom',
+                    'lotedom' => 'Lotedom',
                     default => 'Todas',
                 },
                 'aotra_bet' => round($totalAotraBet, 2),
@@ -207,7 +207,7 @@ class ReporteController extends Controller
                 'porotra_bet' => round($totalPorotraBet, 2),
                 'porotra_net' => round($totalPorotraNet, 2),
                 'total_lotobet' => round($totalAotraBet + $totalPorotraBet, 2),
-                'total_lotonet' => round($totalAotraNet + $totalPorotraNet, 2),
+                'total_lotedom' => round($totalAotraNet + $totalPorotraNet, 2),
                 'total_general' => round($totalGeneral, 2),
                 'registros' => count($data),
             ],
@@ -307,7 +307,7 @@ class ReporteController extends Controller
             return [
                 'tipo' => 'net',
                 'tabla' => 'faltantes_net',
-                'nombre' => 'Lotonet Lotedom',
+                'nombre' => 'Lotedom',
             ];
         }
 
@@ -659,7 +659,7 @@ class ReporteController extends Controller
                 ->whereRaw("REPLACE(REPLACE(cedula, '-', ''), ' ', '') = ?", [$cedula]);
         };
 
-        if ($sistema === 'lotonet') {
+        if ($sistema === 'lotedom') {
             $ventasUnificadas = $buildConsultaBase('ventas_usuarios_net');
         } elseif ($sistema === 'lotobet') {
             $ventasUnificadas = $buildConsultaBase('ventas_usuarios_bet');
@@ -840,7 +840,7 @@ class ReporteController extends Controller
     {
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
-        $sistema = $request->input('sistema', 'todos'); // todos, lotobet, lotonet
+        $sistema = $request->input('sistema', 'todos'); // todos, lotobet, lotedom
 
         if (!$fechaInicio || !$fechaFin) {
             return response()->json([]);
@@ -985,7 +985,7 @@ class ReporteController extends Controller
             $resultados = array_filter($resultados, function($item) use ($sistema) {
                 if ($sistema === 'lotobet') {
                     return $item->horas_bet > 0 || $item->cant_faltantes_bet > 0;
-                } elseif ($sistema === 'lotonet') {
+                } elseif ($sistema === 'lotedom') {
                     return $item->horas_net > 0 || $item->cant_faltantes_net > 0;
                 }
                 return true;
@@ -1124,7 +1124,7 @@ class ReporteController extends Controller
             $resultados = array_filter($resultados, function($item) use ($sistema) {
                 if ($sistema === 'lotobet') {
                     return $item->horas_bet > 0 || $item->cant_faltantes_bet > 0;
-                } elseif ($sistema === 'lotonet') {
+                } elseif ($sistema === 'lotedom') {
                     return $item->horas_net > 0 || $item->cant_faltantes_net > 0;
                 }
                 return true;

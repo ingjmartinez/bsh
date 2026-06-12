@@ -61,7 +61,7 @@ return [
         'url' => '/reportes-cruce-usuarios',
         'icono' => 'ri-arrow-left-right-line',
         'categoria' => 'Auditoria',
-        'tags' => ['cruce', 'usuarios', 'lotobet', 'lotonet'],
+        'tags' => ['cruce', 'usuarios', 'lotobet', 'lotedom'],
         'activo' => true,
     ],
     [
@@ -70,7 +70,7 @@ return [
         'url' => '/reportes-compensacion',
         'icono' => 'ri-exchange-dollar-line',
         'categoria' => 'Finanza',
-        'tags' => ['compensacion', 'finanza', 'pagos', 'lotobet', 'lotonet'],
+        'tags' => ['compensacion', 'finanza', 'pagos', 'lotobet', 'lotedom'],
         'activo' => true,
     ],
     [

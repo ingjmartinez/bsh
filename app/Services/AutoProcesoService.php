@@ -23,7 +23,7 @@ class AutoProcesoService
         $startedAt = microtime(true);
         $sistema = strtolower($sistema);
 
-        if (!in_array($sistema, ['lotobet', 'lotonet'], true)) {
+        if (!in_array($sistema, ['lotobet', 'lotedom'], true)) {
             return [
                 'ok' => false,
                 'message' => 'Sistema no soportado',
@@ -205,16 +205,16 @@ class AutoProcesoService
         }
 
         return [
-            ['modulo' => 'Asistencias', 'controller' => AsistenciaController::class, 'method' => 'saveAsistenciasLotonet'],
-            ['modulo' => 'Faltantes', 'controller' => FaltantesController::class, 'method' => 'saveFaltantesLotonet'],
-            ['modulo' => 'Pagos a otra empresa', 'controller' => PagoAOtraEmpresaController::class, 'method' => 'savePagosLotonet'],
-            ['modulo' => 'Pagos misma empresa', 'controller' => PagoMismaEmpresaController::class, 'method' => 'savePagosLotonet'],
-            ['modulo' => 'Pagos por otra empresa', 'controller' => PagoPorOtraEmpresaController::class, 'method' => 'savePagosLotonet'],
+            ['modulo' => 'Asistencias', 'controller' => AsistenciaController::class, 'method' => 'saveAsistenciasLotedom'],
+            ['modulo' => 'Faltantes', 'controller' => FaltantesController::class, 'method' => 'saveFaltantesLotedom'],
+            ['modulo' => 'Pagos a otra empresa', 'controller' => PagoAOtraEmpresaController::class, 'method' => 'savePagosLotedom'],
+            ['modulo' => 'Pagos misma empresa', 'controller' => PagoMismaEmpresaController::class, 'method' => 'savePagosLotedom'],
+            ['modulo' => 'Pagos por otra empresa', 'controller' => PagoPorOtraEmpresaController::class, 'method' => 'savePagosLotedom'],
             ['modulo' => 'Paquetico', 'controller' => PaqueticoController::class, 'method' => 'save'],
-            ['modulo' => 'Premios', 'controller' => PremioController::class, 'method' => 'savePremiosLotonet'],
-            ['modulo' => 'Recargas', 'controller' => RecargasController::class, 'method' => 'saveRecargasLotonet'],
-            ['modulo' => 'Ventas por producto', 'controller' => VentasProductosController::class, 'method' => 'saveVentasProductosLotonet'],
-            ['modulo' => 'Ventas por usuario', 'controller' => VentasController::class, 'method' => 'saveVentasUsuariosLotonet'],
+            ['modulo' => 'Premios', 'controller' => PremioController::class, 'method' => 'savePremiosLotedom'],
+            ['modulo' => 'Recargas', 'controller' => RecargasController::class, 'method' => 'saveRecargasLotedom'],
+            ['modulo' => 'Ventas por producto', 'controller' => VentasProductosController::class, 'method' => 'saveVentasProductosLotedom'],
+            ['modulo' => 'Ventas por usuario', 'controller' => VentasController::class, 'method' => 'saveVentasUsuariosLotedom'],
         ];
     }
 }

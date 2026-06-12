@@ -8,7 +8,7 @@ use App\Models\VtProducto;
 use App\Models\VtProductoNet;
 use App\Services\Etl\LotobetVentasProductoEtlService;
 use App\Services\Lotobet\LotobetSessionService;
-use App\Support\LotonetRowMapper;
+use App\Support\LotedomRowMapper;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -261,7 +261,7 @@ class VentasProductosController extends Controller
         ]);
     }
 
-    public function getVentasProductosLotonet(Request $request)
+    public function getVentasProductosLotedom(Request $request)
     {
         header('Content-Type: application/json');
 
@@ -279,7 +279,7 @@ class VentasProductosController extends Controller
             ], 422);
         }
 
-        $apiResult = $this->fetchVentasProductosLotonetApi($fecha);
+        $apiResult = $this->fetchVentasProductosLotedomApi($fecha);
 
         if (!$apiResult['ok']) {
             return response()->json([
@@ -292,7 +292,7 @@ class VentasProductosController extends Controller
         return response()->json(['ventas' => $apiResult['data'], 'code' => 0, 'message' => '']);
     }
 
-    public function saveVentasProductosLotonet(Request $request)
+    public function saveVentasProductosLotedom(Request $request)
     {
         ini_set('memory_limit', '1G');
         ini_set('max_execution_time', 300);
@@ -317,7 +317,7 @@ class VentasProductosController extends Controller
             return response()->json(['message' => 'Ya hay data guardada en la fecha: ' . $fecha]);
         }
 
-        $apiResult = $this->fetchVentasProductosLotonetApi($fecha);
+        $apiResult = $this->fetchVentasProductosLotedomApi($fecha);
 
         if (!$apiResult['ok']) {
             return response()->json([
@@ -326,7 +326,7 @@ class VentasProductosController extends Controller
         }
 
         $data = array_map(
-            fn (array $row): array => LotonetRowMapper::ventaProducto($row, $fecha),
+            fn (array $row): array => LotedomRowMapper::ventaProducto($row, $fecha),
             $apiResult['data']
         );
 
@@ -342,7 +342,7 @@ class VentasProductosController extends Controller
         ]);
     }
 
-    private function fetchVentasProductosLotonetApi(string $fecha): array
+    private function fetchVentasProductosLotedomApi(string $fecha): array
     {
         $token = Token::find(self::LOTEDOM_TOKEN_ID);
 
@@ -457,7 +457,7 @@ class VentasProductosController extends Controller
             'data' => $data,
         ];
     }
-    public function deleteVentasProductosLotonet(Request $request)
+    public function deleteVentasProductosLotedom(Request $request)
     {
         header('Content-Type: application/json');
 

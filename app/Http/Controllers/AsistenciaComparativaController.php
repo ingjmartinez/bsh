@@ -257,7 +257,7 @@ class AsistenciaComparativaController extends Controller
     private function consolidarAsistenciasPorTerminalDesdeApi(string $fecha): array
     {
         $bet = $this->obtenerAsistenciaLotobetApi($fecha);
-        $net = $this->obtenerAsistenciaLotonetApi($fecha);
+        $net = $this->obtenerAsistenciaLotedomApi($fecha);
 
         $map = [];
 
@@ -389,7 +389,7 @@ class AsistenciaComparativaController extends Controller
         return $payload['Content'] ?? [];
     }
 
-    private function obtenerAsistenciaLotonetApi(string $fecha): array
+    private function obtenerAsistenciaLotedomApi(string $fecha): array
     {
         $curl = curl_init();
         curl_setopt_array($curl, [
@@ -420,7 +420,7 @@ class AsistenciaComparativaController extends Controller
         $payload = json_decode((string) $response, true);
         $code = isset($payload['code']) ? (string) $payload['code'] : null;
         if ($code !== null && !in_array(strtolower(trim($code)), ['0', '00', '200', 'ok', 'success'], true)) {
-            $msg = $payload['msg'] ?? $payload['message'] ?? 'Respuesta inválida de API Lotonet Lotedom';
+            $msg = $payload['msg'] ?? $payload['message'] ?? 'Respuesta inválida de API Lotedom';
             throw new \RuntimeException($msg);
         }
 

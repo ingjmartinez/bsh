@@ -36,7 +36,7 @@
                                         <select class="form-select" id="tipo_faltante">
                                             <option value="all" selected>Todos</option>
                                             <option value="bet">Lotobet Real</option>
-                                            <option value="net">Lotonet Lotedom</option>
+                                            <option value="net">Lotedom</option>
                                         </select>
                                     </div>
 
@@ -175,7 +175,7 @@
         const nombresSistema = {
             all: 'Todos los sistemas',
             bet: 'Lotobet Real',
-            net: 'Lotonet Lotedom'
+            net: 'Lotedom'
         };
 
         document.addEventListener('DOMContentLoaded', function() {

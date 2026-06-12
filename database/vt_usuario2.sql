@@ -666,7 +666,7 @@ LEFT JOIN (
     GROUP BY agencia_id, cedula, tipo
 ) bet ON bet.agencia_id = it.agencia_id AND bet.tipo = it.tipo_producto AND it.sistema = bet.sistema
 LEFT JOIN (
-    SELECT agencia_id, cedula, SUM(monto) AS monto_cedula, c.tipo, 'Lotonet' AS sistema
+    SELECT agencia_id, cedula, SUM(monto) AS monto_cedula, c.tipo, 'Lotedom' AS sistema
     FROM vt_usuarios_net n
     LEFT JOIN catalogo_juegos c ON n.producto_id = c.producto_id
     WHERE MONTH(fecha) = 10 AND YEAR(fecha) = 2025 AND agencia_id IN ('050007', '050245')

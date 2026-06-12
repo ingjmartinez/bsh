@@ -45,7 +45,7 @@ use App\Http\Controllers\TecnologiaSolicitudController;
 use App\Http\Controllers\TicketSolicitudController;
 use App\Http\Controllers\TokenController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\VentaFlashController;
+use App\Http\Controllers\VentasDeltaController;
 use App\Http\Controllers\VentasController;
 use App\Http\Controllers\VentasProductosController;
 use Illuminate\Support\Facades\Route;
@@ -137,7 +137,7 @@ Route::post('/auto-proceso/{sistema}/config', [AutoProcesoConfigController::clas
 
 Route::get('/ventas-por-usuario-lotobet', fn() => view('lotobet.ventas-usuario'));
 Route::get('/faltantes-lotobet', fn() => view('lotobet.faltantes'));
-Route::get('/faltantes-lotonet', fn() => view('lotonet.faltantes'));
+Route::get('/faltantes-lotedom', fn() => view('lotedom.faltantes'));
 Route::get('/ventas-por-producto-lotobet', fn() => view('lotobet.ventas-productos'));
 Route::get('/recargas-lotobet', fn() => view('lotobet.recargas'));
 Route::get('/premios-lotobet', fn() => view('lotobet.premios'));
@@ -182,61 +182,61 @@ Route::get('/get-asistencias-lotobet', [AsistenciaController::class, 'getAsisten
 Route::get('/save-asistencias-lotobet', [AsistenciaController::class, 'saveAsistenciasLotobet']);
 Route::get('/delete-asistencias-lotobet', [AsistenciaController::class, 'deleteAsistenciasLotobet']);
 
-// Nueva vista para comparar asistencias (lotonet vs lotobet)
+// Nueva vista para comparar asistencias (lotedom vs lotobet)
 Route::get('/agencias/asistencia-comparativa', [AsistenciaComparativaController::class, 'index'])->name('agencias.asistencia-comparativa');
 Route::get('/agencias/asistencia-comparativa/list', [AsistenciaComparativaController::class, 'list'])->name('agencias.asistencia-comparativa.list');
 Route::post('/agencias/asistencia-comparativa/send-mail', [AsistenciaComparativaController::class, 'enviarPorCoordinador'])->name('agencias.asistencia-comparativa.send-mail');
 
-Route::get('/ventas-por-usuario-lotonet', fn() => view('lotonet.ventas-usuario'));
-Route::get('/faltantes-lotonet', fn() => view('lotonet.faltantes'));
-Route::get('/paquetico-lotonet', fn() => view('lotonet.paquetico'));
-Route::get('/recargas-lotonet', fn() => view('lotonet.recargas'));
-Route::get('/ventas-por-producto-lotonet', fn() => view('lotonet.ventas-productos'));
-Route::get('/premios-lotonet', fn() => view('lotonet.premios'));
-Route::get('/pagos-misma-empresa-lotonet', fn() => view('lotonet.pagos-misma-empresa'));
-Route::get('/pagos-aotra-empresa-lotonet', fn() => view('lotonet.pagos-aotra-empresa'));
-Route::get('/pagos-porotra-empresa-lotonet', fn() => view('lotonet.pagos-porotra-empresa'));
-Route::get('/asistencias-lotonet', fn() => view('lotonet.asistencias'));
+Route::get('/ventas-por-usuario-lotedom', fn() => view('lotedom.ventas-usuario'));
+Route::get('/faltantes-lotedom', fn() => view('lotedom.faltantes'));
+Route::get('/paquetico-lotedom', fn() => view('lotedom.paquetico'));
+Route::get('/recargas-lotedom', fn() => view('lotedom.recargas'));
+Route::get('/ventas-por-producto-lotedom', fn() => view('lotedom.ventas-productos'));
+Route::get('/premios-lotedom', fn() => view('lotedom.premios'));
+Route::get('/pagos-misma-empresa-lotedom', fn() => view('lotedom.pagos-misma-empresa'));
+Route::get('/pagos-aotra-empresa-lotedom', fn() => view('lotedom.pagos-aotra-empresa'));
+Route::get('/pagos-porotra-empresa-lotedom', fn() => view('lotedom.pagos-porotra-empresa'));
+Route::get('/asistencias-lotedom', fn() => view('lotedom.asistencias'));
 
-Route::get('/ventas-usuarios-lotonet', [VentasController::class, 'getVentasUsuariosLotonet']);
-Route::get('/save-ventas-usuarios-lotonet', [VentasController::class, 'saveVentasUsuariosLotonet']);
-Route::get('/delete-ventas-usuarios-lotonet', [VentasController::class, 'deleteVentasUsuariosLotonet']);
+Route::get('/ventas-usuarios-lotedom', [VentasController::class, 'getVentasUsuariosLotedom']);
+Route::get('/save-ventas-usuarios-lotedom', [VentasController::class, 'saveVentasUsuariosLotedom']);
+Route::get('/delete-ventas-usuarios-lotedom', [VentasController::class, 'deleteVentasUsuariosLotedom']);
 
-Route::get('/get-faltantes-lotonet', [FaltantesController::class, 'getFaltantesLotonet']);
-Route::get('/save-faltantes-lotonet', [FaltantesController::class, 'saveFaltantesLotonet']);
-Route::get('/delete-faltantes-lotonet', [FaltantesController::class, 'deleteFaltantesLotonet']);
+Route::get('/get-faltantes-lotedom', [FaltantesController::class, 'getFaltantesLotedom']);
+Route::get('/save-faltantes-lotedom', [FaltantesController::class, 'saveFaltantesLotedom']);
+Route::get('/delete-faltantes-lotedom', [FaltantesController::class, 'deleteFaltantesLotedom']);
 
-Route::get('/get-paquetico-lotonet', [PaqueticoController::class, 'get']);
-Route::get('/save-paquetico-lotonet', [PaqueticoController::class, 'save']);
-Route::get('/delete-paquetico-lotonet', [PaqueticoController::class, 'delete']);
+Route::get('/get-paquetico-lotedom', [PaqueticoController::class, 'get']);
+Route::get('/save-paquetico-lotedom', [PaqueticoController::class, 'save']);
+Route::get('/delete-paquetico-lotedom', [PaqueticoController::class, 'delete']);
 
-Route::get('/get-recargas-lotonet', [RecargasController::class, 'getRecargasLotonet']);
-Route::get('/save-recargas-lotonet', [RecargasController::class, 'saveRecargasLotonet']);
-Route::get('/delete-recargas-lotonet', [RecargasController::class, 'deleteRecargasLotonet']);
+Route::get('/get-recargas-lotedom', [RecargasController::class, 'getRecargasLotedom']);
+Route::get('/save-recargas-lotedom', [RecargasController::class, 'saveRecargasLotedom']);
+Route::get('/delete-recargas-lotedom', [RecargasController::class, 'deleteRecargasLotedom']);
 
-Route::get('/ventas-producto-lotonet', [VentasProductosController::class, 'getVentasProductosLotonet']);
-Route::get('/save-ventas-producto-lotonet', [VentasProductosController::class, 'saveVentasProductosLotonet']);
-Route::get('/delete-ventas-producto-lotonet', [VentasProductosController::class, 'deleteVentasProductosLotonet']);
+Route::get('/ventas-producto-lotedom', [VentasProductosController::class, 'getVentasProductosLotedom']);
+Route::get('/save-ventas-producto-lotedom', [VentasProductosController::class, 'saveVentasProductosLotedom']);
+Route::get('/delete-ventas-producto-lotedom', [VentasProductosController::class, 'deleteVentasProductosLotedom']);
 
-Route::get('/get-premios-lotonet', [PremioController::class, 'getPremiosLotonet']);
-Route::get('/save-premios-lotonet', [PremioController::class, 'savePremiosLotonet']);
-Route::get('/delete-premios-lotonet', [PremioController::class, 'deletePremiosLotonet']);
+Route::get('/get-premios-lotedom', [PremioController::class, 'getPremiosLotedom']);
+Route::get('/save-premios-lotedom', [PremioController::class, 'savePremiosLotedom']);
+Route::get('/delete-premios-lotedom', [PremioController::class, 'deletePremiosLotedom']);
 
-Route::get('/get-pagos-misma-empresa-lotonet', [PagoMismaEmpresaController::class, 'getPagosLotonet']);
-Route::get('/save-pagos-misma-empresa-lotonet', [PagoMismaEmpresaController::class, 'savePagosLotonet']);
-Route::get('/delete-pagos-misma-empresa-lotonet', [PagoMismaEmpresaController::class, 'deletePagosLotonet']);
+Route::get('/get-pagos-misma-empresa-lotedom', [PagoMismaEmpresaController::class, 'getPagosLotedom']);
+Route::get('/save-pagos-misma-empresa-lotedom', [PagoMismaEmpresaController::class, 'savePagosLotedom']);
+Route::get('/delete-pagos-misma-empresa-lotedom', [PagoMismaEmpresaController::class, 'deletePagosLotedom']);
 
-Route::get('/get-pagos-aotra-empresa-lotonet', [PagoAOtraEmpresaController::class, 'getPagosLotonet']);
-Route::get('/save-pagos-aotra-empresa-lotonet', [PagoAOtraEmpresaController::class, 'savePagosLotonet']);
-Route::get('/delete-pagos-aotra-empresa-lotonet', [PagoAOtraEmpresaController::class, 'deletePagosLotonet']);
+Route::get('/get-pagos-aotra-empresa-lotedom', [PagoAOtraEmpresaController::class, 'getPagosLotedom']);
+Route::get('/save-pagos-aotra-empresa-lotedom', [PagoAOtraEmpresaController::class, 'savePagosLotedom']);
+Route::get('/delete-pagos-aotra-empresa-lotedom', [PagoAOtraEmpresaController::class, 'deletePagosLotedom']);
 
-Route::get('/get-pagos-porotra-empresa-lotonet', [PagoPorOtraEmpresaController::class, 'getPagosLotonet']);
-Route::get('/save-pagos-porotra-empresa-lotonet', [PagoPorOtraEmpresaController::class, 'savePagosLotonet']);
-Route::get('/delete-pagos-porotra-empresa-lotonet', [PagoPorOtraEmpresaController::class, 'deletePagosLotonet']);
+Route::get('/get-pagos-porotra-empresa-lotedom', [PagoPorOtraEmpresaController::class, 'getPagosLotedom']);
+Route::get('/save-pagos-porotra-empresa-lotedom', [PagoPorOtraEmpresaController::class, 'savePagosLotedom']);
+Route::get('/delete-pagos-porotra-empresa-lotedom', [PagoPorOtraEmpresaController::class, 'deletePagosLotedom']);
 
-Route::get('/get-asistencias-lotonet', [AsistenciaController::class, 'getAsistenciasLotonet']);
-Route::get('/save-asistencias-lotonet', [AsistenciaController::class, 'saveAsistenciasLotonet']);
-Route::get('/delete-asistencias-lotonet', [AsistenciaController::class, 'deleteAsistenciasLotonet']);
+Route::get('/get-asistencias-lotedom', [AsistenciaController::class, 'getAsistenciasLotedom']);
+Route::get('/save-asistencias-lotedom', [AsistenciaController::class, 'saveAsistenciasLotedom']);
+Route::get('/delete-asistencias-lotedom', [AsistenciaController::class, 'deleteAsistenciasLotedom']);
 
 Route::middleware('role_or_permission:superadmin|admin|module.recursos_humanos.view')->group(function () {
     Route::get('/recursos-humanos', [RecursosHumanosController::class, 'index'])->name('recursos-humanos.index');
@@ -493,29 +493,29 @@ Route::prefix('servicios-generales')->name('servicios-generales.')
     });
 
 Route::get('/generar-lotobet', fn() => view('lotobet.index'));
-Route::get('/generar-lotonet', fn() => view('lotonet.index'));
+Route::get('/generar-lotedom', fn() => view('lotedom.index'));
 
-Route::get('/ventas-flash-lotobet', [VentaFlashController::class, 'ventasFlashLotobet']);
-Route::get('/get-ventas-flash-lotobet', [VentaFlashController::class, 'getVentasLotobet']);
-Route::post('/save-ventas-flash-lotobet', [VentaFlashController::class, 'saveVentasLotobet']);
-Route::get('/delete-ventas-flash-lotobet', [VentaFlashController::class, 'deleteVentasLotobet']);
-Route::get('/ventas-lotobet-flash-dashboard', [VentaFlashController::class, 'dashboardFlashLotobet']);
-Route::get('/ventas-lotobet-flash-dashboard/data', [VentaFlashController::class, 'dashboardFlashLotobetData']);
+Route::get('/ventas_delta', [VentasDeltaController::class, 'ventasDelta']);
+Route::get('/get-ventas_delta', [VentasDeltaController::class, 'getVentasDelta']);
+Route::post('/save-ventas_delta', [VentasDeltaController::class, 'saveVentasDelta']);
+Route::get('/delete-ventas_delta', [VentasDeltaController::class, 'deleteVentasDelta']);
+Route::get('/ventas-lotobet-flash-dashboard', [VentasDeltaController::class, 'dashboardFlashLotobet']);
+Route::get('/ventas-lotobet-flash-dashboard/data', [VentasDeltaController::class, 'dashboardFlashLotobetData']);
 
-Route::get('/ventas-flash-lotonet', [VentaFlashController::class, 'ventasFlashLotonet']);
-Route::get('/get-ventas-flash-lotonet', [VentaFlashController::class, 'getVentasFlashLotonet']);
-Route::post('/save-ventas-flash-lotonet', [VentaFlashController::class, 'saveVentasFlashLotonet']);
-Route::get('/delete-ventas-flash-lotonet', [VentaFlashController::class, 'deleteVentasFlashLotonet']);
+Route::get('/ventas-flash-lotedom', [VentasDeltaController::class, 'ventasFlashLotedom']);
+Route::get('/get-ventas-flash-lotedom', [VentasDeltaController::class, 'getVentasFlashLotedom']);
+Route::post('/save-ventas-flash-lotedom', [VentasDeltaController::class, 'saveVentasFlashLotedom']);
+Route::get('/delete-ventas-flash-lotedom', [VentasDeltaController::class, 'deleteVentasFlashLotedom']);
 
 // dashboard finanzas lotobet
 Route::get('/ventas-lotobet-dashboard', [FinanceDashboardController::class, 'indexLotobet']);
 Route::get('/ventas-lotobet-dashboard/data', [FinanceDashboardController::class, 'data']);
 Route::get('/ventas-lotobet-dashboard/export-agencias-cero-por-dia', [FinanceDashboardController::class, 'exportAgenciasCeroPorDia']);
 
-// dashboard finanzas lotonet
-Route::get('/ventas-lotonet-dashboard', [FinanceDashboardController::class, 'indexLotonet']);
-Route::get('/ventas-lotonet-dashboard/data', [FinanceDashboardController::class, 'data']);
-Route::get('/ventas-lotonet-dashboard/export-agencias-cero-por-dia', [FinanceDashboardController::class, 'exportAgenciasCeroPorDia']);
+// dashboard finanzas lotedom
+Route::get('/ventas-lotedom-dashboard', [FinanceDashboardController::class, 'indexLotedom']);
+Route::get('/ventas-lotedom-dashboard/data', [FinanceDashboardController::class, 'data']);
+Route::get('/ventas-lotedom-dashboard/export-agencias-cero-por-dia', [FinanceDashboardController::class, 'exportAgenciasCeroPorDia']);
 
 // KPI Lotobet
 Route::get('/kpi-lotobet', [KpiLotobetController::class, 'index']);

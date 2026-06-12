@@ -357,7 +357,7 @@ Cambios transversales relevantes:
 - ExpireInactiveSession middleware (inactividad + remember-me bloqueado)
 - IncentivosController con 3 versiones de reporte (v1, v2, v3)
 - AuthController con guard defensivo para columnas login_at
-- 9 vistas Lotonet reestructuradas para corregir errores 500
+- 9 vistas Lotedom reestructuradas para corregir errores 500
 
 Conteos actuales:
 - Migraciones: 51

@@ -6,7 +6,7 @@ use App\Models\Token;
 use Illuminate\Http\Request;
 use App\Models\PagoAOtraEmpresa;
 use App\Models\PagoAOtraEmpresaNet;
-use App\Support\LotonetRowMapper;
+use App\Support\LotedomRowMapper;
 use Illuminate\Support\Facades\DB;
 
 class PagoAOtraEmpresaController extends Controller
@@ -148,7 +148,7 @@ class PagoAOtraEmpresaController extends Controller
         ]);
     }
 
-    public function getPagosLotonet(Request $request)
+    public function getPagosLotedom(Request $request)
     {
         header('Content-Type: application/json');
 
@@ -180,14 +180,14 @@ class PagoAOtraEmpresaController extends Controller
 
         $ventas = json_decode($response, true);
         $data = array_map(
-            fn (array $row): array => LotonetRowMapper::pago($row, $fecha),
+            fn (array $row): array => LotedomRowMapper::pago($row, $fecha),
             $ventas['data']['result'] ?? []
         );
 
         return response()->json(['pagos' => $data, 'code' => $ventas['code'] ?? 0, 'message' => '']);
     }
 
-    public function savePagosLotonet(Request $request)
+    public function savePagosLotedom(Request $request)
     {
         ini_set('memory_limit', '1G');
         ini_set('max_execution_time', 300); // 300 segundos = 5 minutos
@@ -230,14 +230,14 @@ class PagoAOtraEmpresaController extends Controller
 
         if ($response === false || $httpCode >= 400) {
             return response()->json([
-                'error' => $curlError !== '' ? $curlError : 'La API de Lotonet Lotedom respondio con HTTP ' . $httpCode . '.',
+                'error' => $curlError !== '' ? $curlError : 'La API de Lotedom respondio con HTTP ' . $httpCode . '.',
             ], $httpCode >= 400 ? $httpCode : 502);
         }
 
         $ventas = json_decode($response, true);
 
         $data = array_map(
-            fn (array $row): array => LotonetRowMapper::pago($row, $fecha),
+            fn (array $row): array => LotedomRowMapper::pago($row, $fecha),
             is_array($ventas) ? ($ventas['data']['result'] ?? []) : []
         );
 
@@ -253,7 +253,7 @@ class PagoAOtraEmpresaController extends Controller
         ]);
     }
 
-    public function deletePagosLotonet(Request $request)
+    public function deletePagosLotedom(Request $request)
     {
         header('Content-Type: application/json');
 
