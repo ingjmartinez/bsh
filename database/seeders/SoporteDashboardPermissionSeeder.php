@@ -13,10 +13,18 @@ class SoporteDashboardPermissionSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $permission = Permission::findOrCreate('module.dashboard.view', 'web');
+        $permissions = [
+            'module.dashboard.view',
+            'tickets.view',
+        ];
+
+        foreach ($permissions as $permission) {
+            Permission::findOrCreate($permission, 'web');
+        }
+
         $role = Role::findOrCreate('soporte', 'web');
 
-        $role->givePermissionTo($permission);
+        $role->givePermissionTo($permissions);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
