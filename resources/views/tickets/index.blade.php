@@ -87,11 +87,32 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-xl-9">
+                    <div class="col-12">
                         <div class="card">
                             <div class="card-header">
-                                <form method="GET" action="{{ route('tickets.index') }}" class="row g-3 align-items-end">
-                                    <div class="col-md-3">
+                                <div class="d-flex flex-column gap-3">
+                                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                        <div class="d-flex flex-wrap gap-3">
+                                            <div>
+                                                <span class="text-muted me-2">Pagar ticket</span>
+                                                <strong>{{ number_format($stats['pagar']) }}</strong>
+                                            </div>
+                                            <div>
+                                                <span class="text-muted me-2">Anular ticket</span>
+                                                <strong>{{ number_format($stats['anular']) }}</strong>
+                                            </div>
+                                            <div>
+                                                <span class="text-muted me-2">Reportar averia</span>
+                                                <strong>{{ number_format($stats['averia'] ?? 0) }}</strong>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ticketManualModal">
+                                            <i class="ri-add-line me-1"></i>Registro manual
+                                        </button>
+                                    </div>
+
+                                    <form method="GET" action="{{ route('tickets.index') }}" class="row g-3 align-items-end">
+                                    <div class="col-lg-3 col-md-6">
                                         <label class="form-label" for="categoria">Categoria</label>
                                         <select class="form-select" id="categoria" name="categoria">
                                             <option value="">Todas</option>
@@ -100,27 +121,28 @@
                                             <option value="reportar_averia" @selected(($filtros['categoria'] ?? '') === 'reportar_averia')>Reportar averia</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-2">
+                                    <div class="col-lg-2 col-md-6">
                                         <label class="form-label" for="estado">Estado</label>
                                         <select class="form-select" id="estado" name="estado">
                                             <option value="">Todos</option>
                                             <option value="pendiente" @selected(($filtros['estado'] ?? '') === 'pendiente')>Pendiente</option>
                                             <option value="pagado" @selected(($filtros['estado'] ?? '') === 'pagado')>Pagado</option>
+                                            <option value="token_enviado" @selected(($filtros['estado'] ?? '') === 'token_enviado')>Token enviado</option>
                                             <option value="ticket_pagado" @selected(($filtros['estado'] ?? '') === 'ticket_pagado')>Ticket pagado Por otra Terminal</option>
                                             <option value="nulo" @selected(($filtros['estado'] ?? '') === 'nulo')>Nulo</option>
                                             <option value="en_proceso" @selected(($filtros['estado'] ?? '') === 'en_proceso')>En Proceso</option>
                                             <option value="averia_cerrada" @selected(($filtros['estado'] ?? '') === 'averia_cerrada')>Averia Cerrada</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-2">
+                                    <div class="col-lg-2 col-md-6">
                                         <label class="form-label" for="desde">Desde</label>
                                         <input type="date" class="form-control" id="desde" name="desde" value="{{ $filtros['desde'] ?? '' }}">
                                     </div>
-                                    <div class="col-md-2">
+                                    <div class="col-lg-2 col-md-6">
                                         <label class="form-label" for="hasta">Hasta</label>
                                         <input type="date" class="form-control" id="hasta" name="hasta" value="{{ $filtros['hasta'] ?? '' }}">
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-lg-3 col-md-12">
                                         <label class="form-label" for="buscar">Buscar</label>
                                         <div class="input-group">
                                             <input type="text" class="form-control" id="buscar" name="buscar" value="{{ $filtros['buscar'] ?? '' }}" placeholder="Terminal o telefono">
@@ -129,7 +151,8 @@
                                             </button>
                                         </div>
                                     </div>
-                                </form>
+                                    </form>
+                                </div>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
@@ -178,10 +201,12 @@
                                                                 $estadosGestion = match ($solicitud->categoria) {
                                                                     'anular_ticket' => ['pendiente' => 'Pendiente', 'nulo' => 'Nulo'],
                                                                     'reportar_averia' => ['pendiente' => 'Pendiente', 'en_proceso' => 'En Proceso', 'averia_cerrada' => 'Averia Cerrada'],
-                                                                    default => ['pendiente' => 'Pendiente', 'pagado' => 'Pagado', 'ticket_pagado' => 'Ticket pagado Por otra Terminal'],
+                                                                    default => $solicitud->estado === 'token_enviado'
+                                                                        ? ['pendiente' => 'Pendiente', 'pagado' => 'Pagado', 'token_enviado' => 'Token enviado', 'ticket_pagado' => 'Ticket pagado Por otra Terminal']
+                                                                        : ['pendiente' => 'Pendiente', 'pagado' => 'Pagado', 'ticket_pagado' => 'Ticket pagado Por otra Terminal'],
                                                                 };
                                                             @endphp
-                                                            <form method="POST" action="{{ route('tickets.estado', $solicitud) }}" class="d-flex gap-2 ticket-estado-form">
+                                                            <form method="POST" action="{{ route('tickets.estado', $solicitud) }}" class="d-flex gap-2 ticket-estado-form" data-current-estado="{{ $solicitud->estado }}">
                                                                 @csrf
                                                                 @method('PUT')
                                                                 <select class="form-select form-select-sm" name="estado">
@@ -219,59 +244,48 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                    <div class="col-xl-3">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">Registro manual</h5>
-                            </div>
-                            <div class="card-body">
-                                <form method="POST" action="{{ route('tickets.store') }}" class="vstack gap-3">
-                                    @csrf
-                                    <div>
-                                        <label class="form-label" for="manual_categoria">Categoria</label>
-                                        <select class="form-select" id="manual_categoria" name="categoria" required>
-                                            <option value="pagar_ticket">Pagar ticket</option>
-                                            <option value="anular_ticket">Anular ticket</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="form-label" for="manual_ticket">Codigo de terminal</label>
-                                        <input type="text" class="form-control" id="manual_ticket" name="ticket_numero" required>
-                                    </div>
-                                    <div>
-                                        <label class="form-label" for="manual_phone">Telefono</label>
-                                        <input type="text" class="form-control" id="manual_phone" name="phone">
-                                    </div>
-                                    <div>
-                                        <label class="form-label" for="manual_mensaje">Nota</label>
-                                        <textarea class="form-control" id="manual_mensaje" name="mensaje_original" rows="3"></textarea>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="ri-add-line me-1"></i>Registrar
-                                    </button>
-                                </form>
-                            </div>
+    <div class="modal fade" id="ticketManualModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST" action="{{ route('tickets.store') }}">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title">Registro manual</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body vstack gap-3">
+                        <div>
+                            <label class="form-label" for="manual_categoria">Categoria</label>
+                            <select class="form-select" id="manual_categoria" name="categoria" required>
+                                <option value="pagar_ticket">Pagar ticket</option>
+                                <option value="anular_ticket">Anular ticket</option>
+                            </select>
                         </div>
-
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <span class="text-muted">Pagar ticket</span>
-                                    <strong>{{ number_format($stats['pagar']) }}</strong>
-                                </div>
-                                <div class="d-flex justify-content-between mt-2">
-                                    <span class="text-muted">Anular ticket</span>
-                                    <strong>{{ number_format($stats['anular']) }}</strong>
-                                </div>
-                                <div class="d-flex justify-content-between mt-2">
-                                    <span class="text-muted">Reportar averia</span>
-                                    <strong>{{ number_format($stats['averia'] ?? 0) }}</strong>
-                                </div>
-                            </div>
+                        <div>
+                            <label class="form-label" for="manual_ticket">Codigo de terminal</label>
+                            <input type="text" class="form-control" id="manual_ticket" name="ticket_numero" required>
+                        </div>
+                        <div>
+                            <label class="form-label" for="manual_phone">Telefono</label>
+                            <input type="text" class="form-control" id="manual_phone" name="phone">
+                        </div>
+                        <div>
+                            <label class="form-label" for="manual_mensaje">Nota</label>
+                            <textarea class="form-control" id="manual_mensaje" name="mensaje_original" rows="3"></textarea>
                         </div>
                     </div>
-                </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="ri-add-line me-1"></i>Registrar
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -334,7 +348,7 @@
             const terminalLabel = document.getElementById('terminalPagoLabel');
             const terminalFeedback = document.getElementById('terminalPagoFeedback');
             let pendingForm = null;
-            let pendingLabel = 'Terminal que pago';
+            let pendingValuePrefix = 'Terminal que pago ';
 
             if (!modalEl || !modalForm || !terminalInput || !modalTitle || !terminalLabel || !terminalFeedback || !window.bootstrap) {
                 return;
@@ -346,12 +360,25 @@
                 const estado = form.querySelector('[name="estado"]')?.value || '';
                 const options = Array.from(form.querySelectorAll('[name="estado"] option'));
                 const hasTicketPagado = options.some((option) => option.value === 'ticket_pagado');
+                const currentEstado = form.dataset.currentEstado || '';
+
+                if (estado === 'pagado' && hasTicketPagado && currentEstado !== 'token_enviado') {
+                    return {
+                        label: 'Numeracion del token',
+                        title: 'Enviar token',
+                        feedback: 'Indica la numeracion del token.',
+                        placeholder: 'Ej: 123456',
+                        valuePrefix: '',
+                    };
+                }
 
                 if (estado === 'ticket_pagado') {
                     return {
                         label: 'Terminal que pago',
                         title: 'Ticket pagado Por otra Terminal',
                         feedback: 'Indica el numero de terminal que pago.',
+                        placeholder: 'Ej: 0705888',
+                        valuePrefix: 'Terminal que pago ',
                     };
                 }
 
@@ -360,6 +387,8 @@
                         label: 'Terminal anulado',
                         title: 'Anular ticket',
                         feedback: 'Indica el codigo de terminal anulado.',
+                        placeholder: 'Ej: 0705888',
+                        valuePrefix: 'Terminal anulado ',
                     };
                 }
 
@@ -376,10 +405,11 @@
 
                     event.preventDefault();
                     pendingForm = form;
-                    pendingLabel = context.label;
+                    pendingValuePrefix = context.valuePrefix;
                     modalTitle.textContent = context.title;
                     terminalLabel.textContent = context.label;
                     terminalFeedback.textContent = context.feedback;
+                    terminalInput.placeholder = context.placeholder;
                     terminalInput.value = '';
                     terminalInput.classList.remove('is-invalid');
                     modal.show();
@@ -411,7 +441,7 @@
                     return;
                 }
 
-                pendingForm.querySelector('[name="notas"]').value = `${pendingLabel} ${terminal}`;
+                pendingForm.querySelector('[name="notas"]').value = `${pendingValuePrefix}${terminal}`;
                 pendingForm.dataset.confirmedTerminalPago = '1';
                 modal.hide();
                 pendingForm.requestSubmit();

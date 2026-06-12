@@ -82,6 +82,7 @@ Route::middleware('auth')->group(function () {
 Route::get('/', [InicioController::class, 'index'])->name('inicio.index');
 Route::get('/inicio/ventas-data', [InicioController::class, 'ventasData'])->name('inicio.ventas-data');
 Route::get('/dashboard', [ModuleHubController::class, 'dashboard'])->name('dashboard.index');
+Route::get('/dashboard/tickets', [TicketSolicitudController::class, 'dashboard'])->name('dashboard.tickets');
 
 Route::get('/procesos', [ModuleHubController::class, 'procesos'])->name('procesos.index');
 Route::get('/procesos/{departamento}', [ProcesoController::class, 'departamento'])->name('procesos.departamento');

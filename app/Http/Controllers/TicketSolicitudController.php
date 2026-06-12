@@ -18,7 +18,7 @@ class TicketSolicitudController extends Controller
 {
     public function __construct(private readonly WhatsAppService $whatsAppService)
     {
-        $this->middleware('role_or_permission:superadmin|admin|tickets.view')->only(['index', 'activity']);
+        $this->middleware('role_or_permission:superadmin|admin|tickets.view')->only(['index', 'activity', 'dashboard']);
         $this->middleware('role_or_permission:superadmin|admin|tickets.manage')->only(['store', 'updateEstado']);
     }
 
@@ -40,16 +40,7 @@ class TicketSolicitudController extends Controller
         }
 
         $baseQuery = TicketSolicitud::query()->filtro($filtros);
-
-        $stats = [
-            'total' => (clone $baseQuery)->count(),
-            'pendientes' => (clone $baseQuery)->where('estado', TicketSolicitud::ESTADO_PENDIENTE)->count(),
-            'pagados' => (clone $baseQuery)->whereIn('estado', [TicketSolicitud::ESTADO_PAGADO, TicketSolicitud::ESTADO_TICKET_PAGADO])->count(),
-            'nulos' => (clone $baseQuery)->where('estado', TicketSolicitud::ESTADO_NULO)->count(),
-            'pagar' => (clone $baseQuery)->where('categoria', TicketSolicitud::CATEGORIA_PAGAR)->count(),
-            'anular' => (clone $baseQuery)->where('categoria', TicketSolicitud::CATEGORIA_ANULAR)->count(),
-            'averia' => (clone $baseQuery)->where('categoria', TicketSolicitud::CATEGORIA_AVERIA)->count(),
-        ];
+        $stats = $this->ticketStats($baseQuery);
 
         $solicitudes = (clone $baseQuery)
             ->with('procesadoPor:id,name')
@@ -66,6 +57,30 @@ class TicketSolicitudController extends Controller
             'setupPending' => $setupPending,
             'ticketFeedSignature' => $ticketFeedSignature,
             'ticketActivityUrl' => route('tickets.activity', $filtros),
+        ]);
+    }
+
+    public function dashboard(Request $request): View
+    {
+        $filtros = $request->only(['estado', 'desde', 'hasta', 'buscar']);
+        $setupPending = !Schema::hasTable('ticket_solicitudes');
+
+        if ($setupPending) {
+            return view('dashboard.tickets.index', [
+                'filtros' => $filtros,
+                'stats' => $this->emptyStats(),
+                'dashboard' => $this->emptyDashboardData(),
+                'setupPending' => true,
+            ]);
+        }
+
+        $baseQuery = TicketSolicitud::query()->filtro($filtros);
+
+        return view('dashboard.tickets.index', [
+            'filtros' => $filtros,
+            'stats' => $this->ticketStats($baseQuery),
+            'dashboard' => $this->ticketDashboardData($baseQuery),
+            'setupPending' => false,
         ]);
     }
 
@@ -132,21 +147,45 @@ class TicketSolicitudController extends Controller
             ],
         ], [
             'estado.in' => 'El estado seleccionado no es valido para esta categoria de ticket.',
-            'notas.required' => 'Debes indicar la terminal que pago.',
+            'notas.required' => 'Debes completar la informacion solicitada antes de actualizar el ticket.',
         ]);
 
         if ($this->isEstadoCerrado($ticket)) {
             return back()->withErrors(['tickets' => 'Este ticket ya fue gestionado y no puede cambiar de estado.']);
         }
 
+        if (
+            $validated['estado'] === TicketSolicitud::ESTADO_TOKEN_ENVIADO
+            && $ticket->estado !== TicketSolicitud::ESTADO_TOKEN_ENVIADO
+        ) {
+            return back()->withErrors(['tickets' => 'El estado Token enviado solo se asigna despues de enviar el token por WhatsApp.']);
+        }
+
         $estadoAnterior = (string) $ticket->estado;
+        $estadoDestino = $validated['estado'];
+        $tokenEnviado = false;
+
+        if ($this->requiresTokenSend($request, $ticket)) {
+            $token = trim((string) ($validated['notas'] ?? ''));
+            $sendResult = $this->sendTokenByWhatsApp($ticket, $token);
+
+            if (!($sendResult['success'] ?? false)) {
+                return back()->withErrors([
+                    'tickets' => 'No se pudo enviar el token por WhatsApp. El ticket no fue actualizado.',
+                ]);
+            }
+
+            $estadoDestino = TicketSolicitud::ESTADO_TOKEN_ENVIADO;
+            $validated['notas'] = "Token enviado: {$token}";
+            $tokenEnviado = true;
+        }
 
         $ticket->fill([
-            'estado' => $validated['estado'],
+            'estado' => $estadoDestino,
             'notas' => $validated['notas'] ?? $ticket->notas,
         ]);
 
-        if ($validated['estado'] === TicketSolicitud::ESTADO_PENDIENTE) {
+        if ($estadoDestino === TicketSolicitud::ESTADO_PENDIENTE) {
             $ticket->procesado_por_id = null;
             $ticket->procesado_at = null;
         } else {
@@ -155,9 +194,43 @@ class TicketSolicitudController extends Controller
         }
 
         $ticket->save();
-        $this->notifyResolutionByWhatsApp($ticket, $estadoAnterior);
+        if (!$tokenEnviado) {
+            $this->notifyResolutionByWhatsApp($ticket, $estadoAnterior);
+        }
 
         return back()->with('success', 'Estado del ticket actualizado.');
+    }
+
+    private function sendTokenByWhatsApp(TicketSolicitud $ticket, string $token): array
+    {
+        $recipient = $this->formatRecipient((string) $ticket->phone);
+
+        if ($recipient === null) {
+            return [
+                'success' => false,
+                'message' => 'Telefono invalido.',
+            ];
+        }
+
+        $message = "Hola, hemos recibido tu solicitud {$ticket->codigo}.\n\n"
+            . "Token: {$token}\n"
+            . "Codigo terminal: {$ticket->ticket_numero}\n\n"
+            . "Utiliza este token para continuar con la gestion de tu ticket.";
+
+        try {
+            return $this->whatsAppService->sendText($recipient, $message);
+        } catch (\Throwable $e) {
+            Log::error('Error enviando token de ticket por WhatsApp', [
+                'ticket_id' => $ticket->id,
+                'phone' => $ticket->phone,
+                'message' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
     }
 
     private function notifyResolutionByWhatsApp(TicketSolicitud $ticket, string $estadoAnterior): void
@@ -169,6 +242,7 @@ class TicketSolicitudController extends Controller
         if (!in_array($ticket->estado, [
             TicketSolicitud::ESTADO_PENDIENTE,
             TicketSolicitud::ESTADO_PAGADO,
+            TicketSolicitud::ESTADO_TOKEN_ENVIADO,
             TicketSolicitud::ESTADO_TICKET_PAGADO,
             TicketSolicitud::ESTADO_NULO,
             TicketSolicitud::ESTADO_EN_PROCESO,
@@ -251,7 +325,15 @@ class TicketSolicitudController extends Controller
         $estado = (string) $request->input('estado');
 
         return $estado === TicketSolicitud::ESTADO_TICKET_PAGADO
+            || $this->requiresTokenSend($request, $ticket)
             || ($ticket->categoria === TicketSolicitud::CATEGORIA_ANULAR && $estado === TicketSolicitud::ESTADO_NULO);
+    }
+
+    private function requiresTokenSend(Request $request, TicketSolicitud $ticket): bool
+    {
+        return $ticket->categoria === TicketSolicitud::CATEGORIA_PAGAR
+            && $ticket->estado !== TicketSolicitud::ESTADO_TOKEN_ENVIADO
+            && (string) $request->input('estado') === TicketSolicitud::ESTADO_PAGADO;
     }
 
     private function emptyStats(): array
@@ -264,6 +346,118 @@ class TicketSolicitudController extends Controller
             'pagar' => 0,
             'anular' => 0,
             'averia' => 0,
+        ];
+    }
+
+    private function emptyDashboardData(): array
+    {
+        return [
+            'categorias' => [],
+            'estados' => [],
+            'recientesCerrados' => collect(),
+            'topGestores' => collect(),
+            'pendientesAntiguos' => collect(),
+        ];
+    }
+
+    private function ticketStats(Builder $baseQuery): array
+    {
+        return [
+            'total' => (clone $baseQuery)->count(),
+            'pendientes' => (clone $baseQuery)->where('estado', TicketSolicitud::ESTADO_PENDIENTE)->count(),
+            'pagados' => (clone $baseQuery)->whereIn('estado', [TicketSolicitud::ESTADO_PAGADO, TicketSolicitud::ESTADO_TICKET_PAGADO])->count(),
+            'nulos' => (clone $baseQuery)->where('estado', TicketSolicitud::ESTADO_NULO)->count(),
+            'pagar' => (clone $baseQuery)->where('categoria', TicketSolicitud::CATEGORIA_PAGAR)->count(),
+            'anular' => (clone $baseQuery)->where('categoria', TicketSolicitud::CATEGORIA_ANULAR)->count(),
+            'averia' => (clone $baseQuery)->where('categoria', TicketSolicitud::CATEGORIA_AVERIA)->count(),
+        ];
+    }
+
+    private function ticketDashboardData(Builder $baseQuery): array
+    {
+        $closedStates = [
+            TicketSolicitud::ESTADO_PAGADO,
+            TicketSolicitud::ESTADO_TICKET_PAGADO,
+            TicketSolicitud::ESTADO_NULO,
+            TicketSolicitud::ESTADO_AVERIA_CERRADA,
+        ];
+
+        $estadoCounts = (clone $baseQuery)
+            ->selectRaw('estado, COUNT(*) as total')
+            ->groupBy('estado')
+            ->pluck('total', 'estado')
+            ->map(fn ($total) => (int) $total)
+            ->all();
+
+        $categorias = collect([
+            TicketSolicitud::CATEGORIA_PAGAR => [
+                'label' => 'Pagar ticket',
+                'icon' => 'ri-bank-card-line',
+                'color' => 'success',
+            ],
+            TicketSolicitud::CATEGORIA_ANULAR => [
+                'label' => 'Anular ticket',
+                'icon' => 'ri-close-circle-line',
+                'color' => 'danger',
+            ],
+            TicketSolicitud::CATEGORIA_AVERIA => [
+                'label' => 'Reportar averia',
+                'icon' => 'ri-tools-line',
+                'color' => 'warning',
+            ],
+        ])->map(function (array $meta, string $categoria) use ($baseQuery, $closedStates): array {
+            $query = (clone $baseQuery)->where('categoria', $categoria);
+            $total = (clone $query)->count();
+            $pendientes = (clone $query)->where('estado', TicketSolicitud::ESTADO_PENDIENTE)->count();
+            $cerrados = (clone $query)->whereIn('estado', $closedStates)->count();
+            $enProceso = (clone $query)->where('estado', TicketSolicitud::ESTADO_EN_PROCESO)->count();
+            $porcentajeCierre = $total > 0 ? round(($cerrados / $total) * 100) : 0;
+
+            $estados = (clone $query)
+                ->selectRaw('estado, COUNT(*) as total')
+                ->groupBy('estado')
+                ->pluck('total', 'estado')
+                ->map(fn ($count) => (int) $count);
+
+            return array_merge($meta, [
+                'key' => $categoria,
+                'total' => $total,
+                'pendientes' => $pendientes,
+                'cerrados' => $cerrados,
+                'en_proceso' => $enProceso,
+                'porcentaje_cierre' => $porcentajeCierre,
+                'estados' => $estados,
+                'ultimos' => (clone $query)->latest()->limit(5)->get(),
+                'pendientes_antiguos' => (clone $query)
+                    ->where('estado', TicketSolicitud::ESTADO_PENDIENTE)
+                    ->oldest()
+                    ->limit(5)
+                    ->get(),
+            ]);
+        })->values();
+
+        return [
+            'categorias' => $categorias,
+            'estados' => $estadoCounts,
+            'recientesCerrados' => (clone $baseQuery)
+                ->whereIn('estado', $closedStates)
+                ->with('procesadoPor:id,name')
+                ->latest('procesado_at')
+                ->limit(8)
+                ->get(),
+            'topGestores' => (clone $baseQuery)
+                ->whereNotNull('procesado_por_id')
+                ->with('procesadoPor:id,name')
+                ->selectRaw('procesado_por_id, COUNT(*) as total')
+                ->groupBy('procesado_por_id')
+                ->orderByDesc('total')
+                ->limit(6)
+                ->get(),
+            'pendientesAntiguos' => (clone $baseQuery)
+                ->where('estado', TicketSolicitud::ESTADO_PENDIENTE)
+                ->oldest()
+                ->limit(8)
+                ->get(),
         ];
     }
 
@@ -282,11 +476,13 @@ class TicketSolicitudController extends Controller
             TicketSolicitud::CATEGORIA_PAGAR => [
                 TicketSolicitud::ESTADO_PENDIENTE,
                 TicketSolicitud::ESTADO_PAGADO,
+                TicketSolicitud::ESTADO_TOKEN_ENVIADO,
                 TicketSolicitud::ESTADO_TICKET_PAGADO,
             ],
             default => [
                 TicketSolicitud::ESTADO_PENDIENTE,
                 TicketSolicitud::ESTADO_PAGADO,
+                TicketSolicitud::ESTADO_TOKEN_ENVIADO,
                 TicketSolicitud::ESTADO_TICKET_PAGADO,
                 TicketSolicitud::ESTADO_NULO,
             ],

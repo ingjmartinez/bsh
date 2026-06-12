@@ -50,6 +50,15 @@ return [
                 'tags' => ['lotedom', 'ventas', 'financiero'],
                 'activo' => true,
             ],
+            [
+                'nombre' => 'Tickets WhatsApp',
+                'descripcion' => 'Resumen ejecutivo de tickets por categoria, estado, pendientes antiguos y gestiones recientes.',
+                'url' => '/dashboard/tickets',
+                'icono' => 'ri-ticket-2-line',
+                'categoria' => 'Operaciones',
+                'tags' => ['tickets', 'whatsapp', 'soporte', 'reporte'],
+                'activo' => true,
+            ],
         ],
     ],
 
