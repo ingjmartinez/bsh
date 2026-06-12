@@ -61,7 +61,10 @@ class WhatsAppChatbotService
 
         $currentStep = $session->step ?: self::STEP_INICIO;
 
-        if ($session->step !== self::STEP_CONFIRMAR_CIERRE_SESION && in_array($message, ['1', '2'], true)) {
+        if (
+            !in_array($session->step, [self::STEP_CONFIRMAR_CIERRE_SESION, self::STEP_SISTEMA], true)
+            && in_array($message, ['1', '2'], true)
+        ) {
             $ticket = $this->latestTokenTicketForPhone($session->phone);
 
             if ($ticket !== null) {
@@ -171,16 +174,16 @@ class WhatsAppChatbotService
             return self::SISTEMA_MESSAGE;
         }
 
+        if ($session->step === self::STEP_SISTEMA) {
+            return $this->guardarSistemaYMostrarMenu($session, $message);
+        }
+
         if (in_array($message, ['1', '2'], true)) {
             $ticket = $this->latestTokenTicketForPhone($session->phone);
 
             if ($ticket !== null) {
                 return $this->handleTokenFeedback($session, $ticket, $message);
             }
-        }
-
-        if ($session->step === self::STEP_SISTEMA) {
-            return $this->guardarSistemaYMostrarMenu($session, $message);
         }
 
         if ($session->step === self::STEP_TICKET_NUMERO) {

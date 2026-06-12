@@ -88,6 +88,31 @@ class WhatsAppChatbotServiceTest extends TestCase
         $this->assertSame('seleccion_sistema', ChatbotSession::first()->step);
     }
 
+    public function test_opcion_uno_en_selector_de_sistema_muestra_menu_aunque_exista_token_pendiente(): void
+    {
+        TicketSolicitud::create([
+            'phone' => '8095550110',
+            'categoria' => TicketSolicitud::CATEGORIA_PAGAR,
+            'ticket_numero' => '07068888',
+            'estado' => TicketSolicitud::ESTADO_TOKEN_ENVIADO,
+            'mensaje_original' => 'Pagar ticket: 07068888',
+        ]);
+
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550110', 'hola');
+        $menu = $service->handleIncoming('8095550110', '1');
+
+        $this->assertStringContainsString('1-Consultar horario de servicio', $menu['reply']);
+        $this->assertStringContainsString('6-Reportar averia', $menu['reply']);
+        $this->assertSame('consulta_hora_menu', $menu['session']->step);
+        $this->assertSame([
+            'sistema' => 'real',
+            'label' => 'Real',
+        ], $menu['session']->context);
+        $this->assertSame(TicketSolicitud::ESTADO_TOKEN_ENVIADO, TicketSolicitud::first()->estado);
+    }
+
     public function test_hola_en_sesion_abierta_pide_confirmar_cierre_y_puede_continuar(): void
     {
         $service = new WhatsAppChatbotService();
