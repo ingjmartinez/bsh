@@ -110,7 +110,7 @@ class WhatsAppChatbotServiceTest extends TestCase
         Carbon::setTestNow();
     }
 
-    public function test_respuesta_token_funciono_notifica_soporte_sin_cerrar_ticket(): void
+    public function test_respuesta_token_funciono_marca_ticket_pagado_para_cierre_manual(): void
     {
         $ticket = TicketSolicitud::create([
             'phone' => '8095550104',
@@ -124,8 +124,10 @@ class WhatsAppChatbotServiceTest extends TestCase
 
         $ticket->refresh();
 
-        $this->assertStringContainsString('Notificamos a soporte', $reply['reply']);
-        $this->assertSame(TicketSolicitud::ESTADO_TOKEN_ENVIADO, $ticket->estado);
+        $this->assertStringContainsString('Ticket pagado Por otra Terminal', $reply['reply']);
+        $this->assertSame(TicketSolicitud::ESTADO_TICKET_PAGADO, $ticket->estado);
+        $this->assertNull($ticket->procesado_por_id);
+        $this->assertNull($ticket->procesado_at);
         $this->assertStringContainsString('Cliente confirmo que el token funciono', (string) $ticket->notas);
     }
 

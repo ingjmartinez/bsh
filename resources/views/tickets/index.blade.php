@@ -201,7 +201,17 @@
                                                     </td>
                                                     <td>{{ optional($solicitud->created_at)->format('d/m/Y h:i A') }}</td>
                                                     <td style="min-width: 260px;">
-                                                        @if (!in_array($solicitud->estado, ['pagado', 'ticket_pagado', 'nulo', 'averia_cerrada'], true))
+                                                        @if ($solicitud->estado === 'ticket_pagado')
+                                                            <form method="POST" action="{{ route('tickets.estado', $solicitud) }}">
+                                                                @csrf
+                                                                @method('PUT')
+                                                                <input type="hidden" name="estado" value="pagado">
+                                                                <input type="hidden" name="notas" value="{{ $solicitud->notas }}">
+                                                                <button class="btn btn-sm btn-success" type="submit">
+                                                                    <i class="ri-check-line me-1"></i>Cerrar ticket
+                                                                </button>
+                                                            </form>
+                                                        @elseif (!in_array($solicitud->estado, ['pagado', 'nulo', 'averia_cerrada'], true))
                                                             @php
                                                                 $estadosGestion = match ($solicitud->categoria) {
                                                                     'anular_ticket' => ['pendiente' => 'Pendiente', 'nulo' => 'Nulo'],

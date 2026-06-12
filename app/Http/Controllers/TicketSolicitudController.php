@@ -160,6 +160,13 @@ class TicketSolicitudController extends Controller
         }
 
         if (
+            $ticket->estado === TicketSolicitud::ESTADO_TICKET_PAGADO
+            && $validated['estado'] !== TicketSolicitud::ESTADO_PAGADO
+        ) {
+            return back()->withErrors(['tickets' => 'Este ticket solo puede cerrarse como pagado.']);
+        }
+
+        if (
             $validated['estado'] === TicketSolicitud::ESTADO_TOKEN_ENVIADO
             && $ticket->estado !== TicketSolicitud::ESTADO_TOKEN_ENVIADO
         ) {
@@ -527,7 +534,6 @@ class TicketSolicitudController extends Controller
     {
         return in_array($ticket->estado, [
             TicketSolicitud::ESTADO_PAGADO,
-            TicketSolicitud::ESTADO_TICKET_PAGADO,
             TicketSolicitud::ESTADO_NULO,
             TicketSolicitud::ESTADO_AVERIA_CERRADA,
         ], true);

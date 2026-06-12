@@ -423,15 +423,18 @@ class WhatsAppChatbotService
         $session->context = [];
 
         if ($message === '1') {
+            $ticket->estado = TicketSolicitud::ESTADO_TICKET_PAGADO;
+            $ticket->procesado_por_id = null;
+            $ticket->procesado_at = null;
             $ticket->notas = $this->appendTicketNote(
                 (string) $ticket->notas,
-                'Cliente confirmo que el token funciono. Soporte debe cerrar el ticket como pagado.'
+                'Cliente confirmo que el token funciono. El usuario del sistema debe cerrar el ticket.'
             );
             $ticket->save();
 
-            $this->notifySupportForTokenFeedback($ticket, 'El cliente confirmo que el token funciono. Cerrar el ticket como pagado.');
+            $this->notifySupportForTokenFeedback($ticket, 'El cliente confirmo que el token funciono. El estado cambio a Ticket pagado Por otra Terminal. El usuario del sistema debe cerrar el ticket.');
 
-            return "Gracias por confirmar.\n\nNotificamos a soporte para cerrar tu ticket como pagado.";
+            return "Gracias por confirmar.\n\nTu ticket fue marcado como Ticket pagado Por otra Terminal. Soporte debe cerrar el ticket en el sistema.";
         }
 
         $ticket->estado = TicketSolicitud::ESTADO_TOKEN_NO_FUNCIONO;
