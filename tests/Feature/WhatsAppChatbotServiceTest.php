@@ -189,6 +189,39 @@ class WhatsAppChatbotServiceTest extends TestCase
         $this->assertStringContainsString('Cliente confirmo que el token funciono', (string) $ticket->notas);
     }
 
+    public function test_respuesta_token_funciono_se_procesa_aunque_la_sesion_este_expirada(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-06-12 10:00:00'));
+
+        ChatbotSession::create([
+            'account' => 'default',
+            'phone' => '8095550109',
+            'step' => 'consulta_hora_menu',
+            'context' => [],
+            'last_interaction_at' => now()->subMinutes(5),
+            'message_count' => 3,
+        ]);
+
+        $ticket = TicketSolicitud::create([
+            'phone' => '8095550109',
+            'categoria' => TicketSolicitud::CATEGORIA_PAGAR,
+            'ticket_numero' => '07068888',
+            'estado' => TicketSolicitud::ESTADO_TOKEN_ENVIADO,
+            'mensaje_original' => 'Pagar ticket: 07068888',
+        ]);
+
+        $reply = (new WhatsAppChatbotService())->handleIncoming('8095550109', '1');
+
+        $ticket->refresh();
+
+        $this->assertStringContainsString('Ticket pagado Por otra Terminal', $reply['reply']);
+        $this->assertStringNotContainsString('Consultar horario de servicio', $reply['reply']);
+        $this->assertSame(TicketSolicitud::ESTADO_TICKET_PAGADO, $ticket->estado);
+        $this->assertSame('inicio', $reply['session']->step);
+
+        Carbon::setTestNow();
+    }
+
     public function test_respuesta_token_no_funciono_marca_estado_para_nuevo_token(): void
     {
         $ticket = TicketSolicitud::create([

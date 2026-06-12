@@ -61,6 +61,33 @@ class WhatsAppChatbotService
 
         $currentStep = $session->step ?: self::STEP_INICIO;
 
+        if ($session->step !== self::STEP_CONFIRMAR_CIERRE_SESION && in_array($message, ['1', '2'], true)) {
+            $ticket = $this->latestTokenTicketForPhone($session->phone);
+
+            if ($ticket !== null) {
+                $reply = $this->handleTokenFeedback($session, $ticket, $message);
+
+                $session->last_message = $message;
+                $session->last_interaction_at = now();
+                $session->message_count = ((int) $session->message_count) + 1;
+                $session->save();
+
+                Log::debug('WhatsApp chatbot respuesta', [
+                    'phone' => $normalizedPhone,
+                    'account' => $normalizedAccount,
+                    'from_step' => $currentStep,
+                    'to_step' => $session->step,
+                    'message_count' => $session->message_count,
+                    'reply' => $reply,
+                ]);
+
+                return [
+                    'session' => $session,
+                    'reply' => $reply,
+                ];
+            }
+        }
+
         if ($this->isExpired($session)) {
             Log::debug('WhatsApp chatbot sesion expirada', [
                 'phone' => $normalizedPhone,

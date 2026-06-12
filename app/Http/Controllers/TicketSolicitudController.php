@@ -294,6 +294,7 @@ class TicketSolicitudController extends Controller
         ) {
             $message = "Hola, tu orden {$ticket->codigo} fue cerrada.\n\n"
                 . "Codigo terminal: {$ticket->ticket_numero}\n\n"
+                . "Estado: Finalizado\n\n"
                 . "Gracias por comunicarte con nosotros.";
         } else {
             $message = "Hola, tu solicitud {$ticket->codigo} fue actualizada.\n\n"
@@ -363,7 +364,10 @@ class TicketSolicitudController extends Controller
     private function requiresTokenSend(Request $request, TicketSolicitud $ticket): bool
     {
         return $ticket->categoria === TicketSolicitud::CATEGORIA_PAGAR
-            && $ticket->estado !== TicketSolicitud::ESTADO_TOKEN_ENVIADO
+            && in_array($ticket->estado, [
+                TicketSolicitud::ESTADO_PENDIENTE,
+                TicketSolicitud::ESTADO_TOKEN_NO_FUNCIONO,
+            ], true)
             && (string) $request->input('estado') === TicketSolicitud::ESTADO_PAGADO;
     }
 
