@@ -22,9 +22,11 @@ class WhatsAppChatbotService
     private const STEP_SG_TIPO = 'servicios_generales_tipo';
     private const STEP_SG_TERMINAL = 'servicios_generales_terminal';
     private const STEP_SG_IMAGEN = 'servicios_generales_imagen';
+    private const STEP_CONFIRMAR_CIERRE_SESION = 'confirmar_cierre_sesion';
 
     private const SISTEMA_MESSAGE = "Hola. Selecciona el sistema escribiendo solo el numero:\n\n1- Real\n2- Delta\n3- Lotedom";
     private const MENU_MESSAGE = "Hola. Soy el asistente virtual de BSH, comprometido contigo siempre.\n\nPara continuar, escribe solo el numero de la opcion que necesitas:\n\n1-Consultar horario de servicio\n2-Consultar servicios disponibles\n3-Pagar ticket\n4-Anular ticket\n5-Recursos Humanos\n6-Reportar averia\n\nEstoy listo para ayudarte.";
+    private const CONFIRM_CLOSE_SESSION_MESSAGE = "Ya tienes una sesion abierta.\n\nQuieres cerrar la sesion actual o retomar donde te quedaste?\n\n1- Cerrar sesion\n2- Retomar";
     private const INVALID_YESTERDAY_PHOTO_MESSAGE = 'Foto no valida. Debes enviar una foto tomada hoy.';
     private const SESSION_CLOSED_MESSAGE = "Gracias por comunicarte con nosotros. Cerramos esta conversacion por inactividad.\n\nEsperamos que te pongas en contacto nuevamente cuando necesites asistencia.";
 
@@ -119,7 +121,23 @@ class WhatsAppChatbotService
             'step' => $session->step,
         ]);
 
+        if ($session->step === self::STEP_CONFIRMAR_CIERRE_SESION) {
+            return $this->resolverConfirmacionCierreSesion($session, $message);
+        }
+
         if ($this->isGreeting($message)) {
+            if ($this->hasOpenConversation($session)) {
+                $context = is_array($session->context) ? $session->context : [];
+                $previousStep = $session->step ?: self::STEP_INICIO;
+                $session->step = self::STEP_CONFIRMAR_CIERRE_SESION;
+                $session->context = [
+                    'previous_step' => $previousStep,
+                    'previous_context' => $context,
+                ];
+
+                return self::CONFIRM_CLOSE_SESSION_MESSAGE;
+            }
+
             $session->step = self::STEP_SISTEMA;
             $session->context = [];
 
@@ -495,6 +513,58 @@ class WhatsAppChatbotService
                 ]);
             }
         }
+    }
+
+    private function resolverConfirmacionCierreSesion(ChatbotSession $session, string $message): string
+    {
+        $context = is_array($session->context) ? $session->context : [];
+        $previousStep = (string) ($context['previous_step'] ?? self::STEP_MENU);
+        $previousContext = is_array($context['previous_context'] ?? null) ? $context['previous_context'] : [];
+
+        if ($message === '1') {
+            $this->resetSession($session);
+
+            return "Sesion cerrada correctamente.\n\nEscribe hola para iniciar nuevamente.";
+        }
+
+        if ($message === '2') {
+            $session->step = $previousStep;
+            $session->context = $previousContext;
+
+            return "Retomamos tu solicitud donde la dejaste.\n\n" . $this->promptForStep($session);
+        }
+
+        return self::CONFIRM_CLOSE_SESSION_MESSAGE;
+    }
+
+    private function promptForStep(ChatbotSession $session): string
+    {
+        $context = is_array($session->context) ? $session->context : [];
+        $categoriaLabel = (string) ($context['categoria_label'] ?? 'ticket');
+        $terminalCodigo = trim((string) ($context['ticket_numero'] ?? $context['terminal_codigo'] ?? ''));
+
+        return match ($session->step) {
+            self::STEP_SISTEMA => self::SISTEMA_MESSAGE,
+            self::STEP_MENU => self::MENU_MESSAGE,
+            self::STEP_TICKET_NUMERO => "Estas creando una solicitud de {$categoriaLabel}.\n\nIndica el codigo del terminal.",
+            self::STEP_TICKET_IMAGEN => $terminalCodigo !== ''
+                ? "Estas creando una solicitud de {$categoriaLabel} para el terminal {$terminalCodigo}.\n\nEnvia la imagen del comprobante para registrar la solicitud."
+                : "Estas creando una solicitud de {$categoriaLabel}.\n\nEnvia la imagen del comprobante para registrar la solicitud.",
+            self::STEP_SG_TIPO => "Selecciona el tipo de averia:\n\n1-No tengo internet\n2-No tengo luz\n3-Se me friso el sistema\n4-Cambiar el inversor",
+            self::STEP_SG_TERMINAL => 'Estas reportando una averia.\n\nIndica el codigo del terminal afectado.',
+            self::STEP_SG_IMAGEN => $terminalCodigo !== ''
+                ? "Estas reportando una averia para el terminal {$terminalCodigo}.\n\nEnvia una imagen de la averia para registrar la solicitud."
+                : 'Estas reportando una averia.\n\nEnvia una imagen de la averia para registrar la solicitud.',
+            default => self::MENU_MESSAGE,
+        };
+    }
+
+    private function hasOpenConversation(ChatbotSession $session): bool
+    {
+        return !in_array($session->step ?: self::STEP_INICIO, [
+            self::STEP_INICIO,
+            self::STEP_CONFIRMAR_CIERRE_SESION,
+        ], true);
     }
 
     private function normalizeAttachmentUrl(mixed $attachment): ?string

@@ -208,7 +208,7 @@
                                                                 <input type="hidden" name="estado" value="pagado">
                                                                 <input type="hidden" name="notas" value="{{ $solicitud->notas }}">
                                                                 <button class="btn btn-sm btn-success" type="submit">
-                                                                    <i class="ri-check-line me-1"></i>Cerrar ticket
+                                                                    <i class="ri-check-line me-1"></i>Finalizar
                                                                 </button>
                                                             </form>
                                                         @elseif (!in_array($solicitud->estado, ['pagado', 'nulo', 'averia_cerrada'], true))

@@ -288,12 +288,21 @@ class TicketSolicitudController extends Controller
 
         $terminalDetail = $this->terminalDetailLine($ticket);
 
-        $message = "Hola, tu solicitud {$ticket->codigo} fue actualizada.\n\n"
-            . "Categoria: {$ticket->categoria_label}\n"
-            . "Codigo terminal: {$ticket->ticket_numero}\n"
-            . "Estado actual: {$ticket->estado_label}\n\n"
-            . ($terminalDetail !== null ? $terminalDetail . "\n\n" : '')
-            . "Gracias por comunicarte con nosotros.";
+        if (
+            $estadoAnterior === TicketSolicitud::ESTADO_TICKET_PAGADO
+            && $ticket->estado === TicketSolicitud::ESTADO_PAGADO
+        ) {
+            $message = "Hola, tu orden {$ticket->codigo} fue cerrada.\n\n"
+                . "Codigo terminal: {$ticket->ticket_numero}\n\n"
+                . "Gracias por comunicarte con nosotros.";
+        } else {
+            $message = "Hola, tu solicitud {$ticket->codigo} fue actualizada.\n\n"
+                . "Categoria: {$ticket->categoria_label}\n"
+                . "Codigo terminal: {$ticket->ticket_numero}\n"
+                . "Estado actual: {$ticket->estado_label}\n\n"
+                . ($terminalDetail !== null ? $terminalDetail . "\n\n" : '')
+                . "Gracias por comunicarte con nosotros.";
+        }
 
         try {
             $result = $this->whatsAppService->sendText($recipient, $message);

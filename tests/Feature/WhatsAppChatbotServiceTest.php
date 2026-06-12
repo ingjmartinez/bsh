@@ -88,6 +88,64 @@ class WhatsAppChatbotServiceTest extends TestCase
         $this->assertSame('seleccion_sistema', ChatbotSession::first()->step);
     }
 
+    public function test_hola_en_sesion_abierta_pide_confirmar_cierre_y_puede_continuar(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550106', 'hola');
+        $service->handleIncoming('8095550106', '1');
+        $service->handleIncoming('8095550106', '3');
+
+        $confirmacion = $service->handleIncoming('8095550106', 'hola');
+
+        $this->assertStringContainsString('Quieres cerrar la sesion actual o retomar donde te quedaste', $confirmacion['reply']);
+        $this->assertStringContainsString('2- Retomar', $confirmacion['reply']);
+        $this->assertSame('confirmar_cierre_sesion', $confirmacion['session']->step);
+
+        $continuar = $service->handleIncoming('8095550106', '2');
+
+        $this->assertStringContainsString('Retomamos tu solicitud donde la dejaste', $continuar['reply']);
+        $this->assertStringContainsString('Estas creando una solicitud de Pagar ticket', $continuar['reply']);
+        $this->assertStringContainsString('Indica el codigo del terminal', $continuar['reply']);
+        $this->assertSame('ticket_numero', $continuar['session']->step);
+        $this->assertSame('pagar_ticket', $continuar['session']->context['categoria']);
+    }
+
+    public function test_hola_en_sesion_abierta_retoma_ticket_pidiendo_imagen_del_terminal_actual(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550108', 'hola');
+        $service->handleIncoming('8095550108', '1');
+        $service->handleIncoming('8095550108', '3');
+        $service->handleIncoming('8095550108', '07068888');
+        $service->handleIncoming('8095550108', 'hola');
+
+        $retomar = $service->handleIncoming('8095550108', '2');
+
+        $this->assertStringContainsString('Retomamos tu solicitud donde la dejaste', $retomar['reply']);
+        $this->assertStringContainsString('Pagar ticket', $retomar['reply']);
+        $this->assertStringContainsString('07068888', $retomar['reply']);
+        $this->assertStringContainsString('Envia la imagen del comprobante', $retomar['reply']);
+        $this->assertSame('ticket_imagen', $retomar['session']->step);
+    }
+
+    public function test_hola_en_sesion_abierta_puede_cerrar_sesion(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550107', 'hola');
+        $service->handleIncoming('8095550107', '1');
+        $service->handleIncoming('8095550107', '3');
+        $service->handleIncoming('8095550107', 'hola');
+
+        $cerrar = $service->handleIncoming('8095550107', '1');
+
+        $this->assertStringContainsString('Sesion cerrada correctamente', $cerrar['reply']);
+        $this->assertSame('inicio', $cerrar['session']->step);
+        $this->assertSame([], $cerrar['session']->context);
+    }
+
     public function test_rechaza_foto_con_fecha_de_ayer_antes_de_registrar_ticket(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-06-12 10:00:00'));
