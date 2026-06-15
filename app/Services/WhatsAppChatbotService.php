@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Agencia;
 use App\Models\ChatbotSession;
 use App\Models\ServicioGeneralRequerimiento;
 use App\Models\TicketSolicitud;
@@ -221,20 +222,20 @@ class WhatsAppChatbotService
 
             if ($message === '3') {
                 $session->step = self::STEP_TICKET_NUMERO;
-                $session->context = [
+                $session->context = array_merge(is_array($session->context) ? $session->context : [], [
                     'categoria' => TicketSolicitud::CATEGORIA_PAGAR,
                     'categoria_label' => 'Pagar ticket',
-                ];
+                ]);
 
                 return 'Indica el codigo del terminal que deseas pagar.';
             }
 
             if ($message === '4') {
                 $session->step = self::STEP_TICKET_NUMERO;
-                $session->context = [
+                $session->context = array_merge(is_array($session->context) ? $session->context : [], [
                     'categoria' => TicketSolicitud::CATEGORIA_ANULAR,
                     'categoria_label' => 'Anular ticket',
-                ];
+                ]);
 
                 return 'Indica el codigo del terminal que deseas anular.';
             }
@@ -247,7 +248,7 @@ class WhatsAppChatbotService
 
             if ($message === '6') {
                 $session->step = self::STEP_SG_TIPO;
-                $session->context = [];
+                $session->context = is_array($session->context) ? $session->context : [];
 
                 return "Selecciona el tipo de averia:\n\n1-No tengo internet\n2-No tengo luz\n3-Se me friso el sistema\n4-Cambiar el inversor";
             }
@@ -287,6 +288,11 @@ class WhatsAppChatbotService
         }
 
         $context = is_array($session->context) ? $session->context : [];
+
+        if (($context['sistema'] ?? null) === 'real' && !$this->terminalRealExiste($terminalCodigo)) {
+            return 'Ese id no existe, por favor escribir el id de tu agencia.';
+        }
+
         $session->step = self::STEP_TICKET_IMAGEN;
         $session->context = array_merge($context, [
             'ticket_numero' => $terminalCodigo,
@@ -309,7 +315,7 @@ class WhatsAppChatbotService
         }
 
         $session->step = self::STEP_SG_TERMINAL;
-        $session->context = $tipos[$message];
+        $session->context = array_merge(is_array($session->context) ? $session->context : [], $tipos[$message]);
 
         return 'Indica el codigo del terminal afectado.';
     }
@@ -323,6 +329,11 @@ class WhatsAppChatbotService
         }
 
         $context = is_array($session->context) ? $session->context : [];
+
+        if (($context['sistema'] ?? null) === 'real' && !$this->terminalRealExiste($terminalCodigo)) {
+            return 'Ese id no existe, por favor escribir el id de tu agencia.';
+        }
+
         $session->step = self::STEP_SG_IMAGEN;
         $session->context = array_merge($context, [
             'terminal_codigo' => $terminalCodigo,
@@ -667,6 +678,42 @@ class WhatsAppChatbotService
     {
         $session->step = self::STEP_INICIO;
         $session->context = [];
+    }
+
+    private function terminalRealExiste(string $terminalCodigo): bool
+    {
+        if (!Schema::hasTable('agencias') || !Schema::hasColumn('agencias', 'terminal')) {
+            return false;
+        }
+
+        $terminalNormalizado = $this->normalizarTerminalReal($terminalCodigo);
+
+        if ($terminalNormalizado === '') {
+            return false;
+        }
+
+        $query = Agencia::query()->whereNotNull('terminal');
+
+        if (Schema::hasColumn('agencias', 'estatus')) {
+            $query->where('estatus', 1);
+        }
+
+        return $query
+            ->pluck('terminal')
+            ->contains(fn ($terminal) => $this->normalizarTerminalReal((string) $terminal) === $terminalNormalizado);
+    }
+
+    private function normalizarTerminalReal(string $terminalCodigo): string
+    {
+        $terminalCodigo = trim($terminalCodigo);
+
+        if ($terminalCodigo === '') {
+            return '';
+        }
+
+        $terminalCodigo = ltrim($terminalCodigo, '0');
+
+        return $terminalCodigo === '' ? '0' : $terminalCodigo;
     }
 
     private function normalizePhone(string $phone): string

@@ -7,6 +7,7 @@ use App\Models\TicketSolicitud;
 use App\Services\WhatsAppChatbotService;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -45,10 +46,34 @@ class WhatsAppChatbotServiceTest extends TestCase
             $table->timestamp('procesado_at')->nullable();
             $table->timestamps();
         });
+
+        Schema::dropIfExists('agencias');
+        Schema::create('agencias', function (Blueprint $table): void {
+            $table->id();
+            $table->string('terminal', 25)->nullable();
+            $table->unsignedTinyInteger('estatus')->default(1);
+            $table->timestamps();
+        });
+
+        DB::table('agencias')->insert([
+            [
+                'terminal' => '07068888',
+                'estatus' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'terminal' => 'TERM-123',
+                'estatus' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
     }
 
     protected function tearDown(): void
     {
+        Schema::dropIfExists('agencias');
         Schema::dropIfExists('chatbot_sessions');
         Schema::dropIfExists('ticket_solicitudes');
 
@@ -153,6 +178,37 @@ class WhatsAppChatbotServiceTest extends TestCase
         $this->assertStringContainsString('07068888', $retomar['reply']);
         $this->assertStringContainsString('Envia la imagen del comprobante', $retomar['reply']);
         $this->assertSame('ticket_imagen', $retomar['session']->step);
+    }
+
+    public function test_real_rechaza_terminal_inexistente_en_ticket_y_mantiene_el_paso(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550111', 'hola');
+        $service->handleIncoming('8095550111', '1');
+        $service->handleIncoming('8095550111', '3');
+
+        $reply = $service->handleIncoming('8095550111', '999999');
+
+        $this->assertSame('Ese id no existe, por favor escribir el id de tu agencia.', $reply['reply']);
+        $this->assertSame('ticket_numero', $reply['session']->step);
+        $this->assertArrayNotHasKey('ticket_numero', $reply['session']->context);
+    }
+
+    public function test_real_rechaza_terminal_inexistente_en_averia_y_mantiene_el_paso(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550112', 'hola');
+        $service->handleIncoming('8095550112', '1');
+        $service->handleIncoming('8095550112', '6');
+        $service->handleIncoming('8095550112', '1');
+
+        $reply = $service->handleIncoming('8095550112', '999999');
+
+        $this->assertSame('Ese id no existe, por favor escribir el id de tu agencia.', $reply['reply']);
+        $this->assertSame('servicios_generales_terminal', $reply['session']->step);
+        $this->assertArrayNotHasKey('terminal_codigo', $reply['session']->context);
     }
 
     public function test_hola_en_sesion_abierta_puede_cerrar_sesion(): void
