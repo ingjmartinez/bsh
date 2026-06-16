@@ -243,6 +243,38 @@ class WhatsAppChatbotServiceTest extends TestCase
         $this->assertSame([], $cerrar['session']->context);
     }
 
+    public function test_pagar_ticket_no_registra_solicitud_sin_imagen_y_mantiene_el_paso(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550114', 'hola');
+        $service->handleIncoming('8095550114', '1');
+        $service->handleIncoming('8095550114', '3');
+        $service->handleIncoming('8095550114', '07068888');
+
+        $reply = $service->handleIncoming('8095550114', 'continuar');
+
+        $this->assertSame('Necesito que envies una imagen para continuar con el registro del ticket.', $reply['reply']);
+        $this->assertSame('ticket_imagen', $reply['session']->step);
+        $this->assertSame(0, TicketSolicitud::count());
+    }
+
+    public function test_anular_ticket_no_registra_solicitud_sin_imagen_y_mantiene_el_paso(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550115', 'hola');
+        $service->handleIncoming('8095550115', '1');
+        $service->handleIncoming('8095550115', '4');
+        $service->handleIncoming('8095550115', '07068888');
+
+        $reply = $service->handleIncoming('8095550115', 'continuar');
+
+        $this->assertSame('Necesito que envies una imagen para continuar con el registro del ticket.', $reply['reply']);
+        $this->assertSame('ticket_imagen', $reply['session']->step);
+        $this->assertSame(0, TicketSolicitud::count());
+    }
+
     public function test_rechaza_foto_con_fecha_de_ayer_antes_de_registrar_ticket(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-06-12 10:00:00'));

@@ -305,6 +305,10 @@
                             <label class="form-label" for="manual_mensaje">Nota</label>
                             <textarea class="form-control" id="manual_mensaje" name="mensaje_original" rows="3"></textarea>
                         </div>
+                        <div>
+                            <label class="form-label" for="manual_attachment_url">Imagen del comprobante</label>
+                            <input type="url" class="form-control" id="manual_attachment_url" name="attachment_url" required>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>

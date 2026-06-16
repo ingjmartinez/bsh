@@ -142,7 +142,10 @@ class TicketSolicitudController extends Controller
             'ticket_numero' => 'required|string|max:80',
             'phone' => 'nullable|string|max:32',
             'mensaje_original' => 'nullable|string|max:1000',
-            'attachment_url' => 'nullable|url|max:1200',
+            'attachment_url' => 'required|url|max:1200',
+        ], [
+            'attachment_url.required' => 'Debes agregar la imagen del comprobante para registrar pagos o anulaciones.',
+            'attachment_url.url' => 'La imagen del comprobante debe ser un enlace valido.',
         ]);
 
         TicketSolicitud::create([
