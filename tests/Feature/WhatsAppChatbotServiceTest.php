@@ -80,25 +80,25 @@ class WhatsAppChatbotServiceTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_hola_muestra_selector_de_sistema_y_luego_menu_actual(): void
+    public function test_hola_muestra_selector_de_sistema_solo_real_y_luego_menu_actual(): void
     {
         $service = new WhatsAppChatbotService();
 
         $greeting = $service->handleIncoming('+1 (809) 555-0101', 'hola');
 
         $this->assertStringContainsString('1- Real', $greeting['reply']);
-        $this->assertStringContainsString('2- Delta', $greeting['reply']);
-        $this->assertStringContainsString('3- Lotedom', $greeting['reply']);
+        $this->assertStringNotContainsString('2- Delta', $greeting['reply']);
+        $this->assertStringNotContainsString('3- Lotedom', $greeting['reply']);
         $this->assertSame('seleccion_sistema', $greeting['session']->step);
 
-        $menu = $service->handleIncoming('+1 (809) 555-0101', '3');
+        $menu = $service->handleIncoming('+1 (809) 555-0101', '1');
 
         $this->assertStringContainsString('1-Consultar horario de servicio', $menu['reply']);
         $this->assertStringContainsString('6-Reportar averia', $menu['reply']);
         $this->assertSame('consulta_hora_menu', $menu['session']->step);
         $this->assertSame([
-            'sistema' => 'lotedom',
-            'label' => 'Lotedom',
+            'sistema' => 'real',
+            'label' => 'Real',
         ], $menu['session']->context);
     }
 
@@ -192,6 +192,22 @@ class WhatsAppChatbotServiceTest extends TestCase
 
         $this->assertSame('Ese id no existe, por favor escribir el id de tu agencia.', $reply['reply']);
         $this->assertSame('ticket_numero', $reply['session']->step);
+        $this->assertArrayNotHasKey('ticket_numero', $reply['session']->context);
+    }
+
+    public function test_real_rechaza_terminal_inexistente_en_anular_ticket_y_mantiene_el_paso(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550113', 'hola');
+        $service->handleIncoming('8095550113', '1');
+        $service->handleIncoming('8095550113', '4');
+
+        $reply = $service->handleIncoming('8095550113', '999999');
+
+        $this->assertSame('Ese id no existe, por favor escribir el id de tu agencia.', $reply['reply']);
+        $this->assertSame('ticket_numero', $reply['session']->step);
+        $this->assertSame(TicketSolicitud::CATEGORIA_ANULAR, $reply['session']->context['categoria']);
         $this->assertArrayNotHasKey('ticket_numero', $reply['session']->context);
     }
 
