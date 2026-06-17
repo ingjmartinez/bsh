@@ -297,6 +297,79 @@ class WhatsAppChatbotServiceTest extends TestCase
         Carbon::setTestNow();
     }
 
+    public function test_rechaza_archivo_no_permitido_y_mantiene_paso_de_imagen(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550116', 'hola');
+        $service->handleIncoming('8095550116', '1');
+        $service->handleIncoming('8095550116', '3');
+        $service->handleIncoming('8095550116', '07068888');
+
+        $reply = $service->handleIncoming('8095550116', '', null, [
+            'attachment_url' => 'https://example.com/comprobante.pdf',
+            'attachment_filename' => 'comprobante.pdf',
+            'attachment_extension' => 'pdf',
+            'attachment_mime' => 'application/pdf',
+            'attachment_type' => 'document',
+        ]);
+
+        $this->assertSame(
+            'Tipo de archivo no permitido. Envia una imagen valida con extension: .jpg, .jpeg, .png, .heic o .heif.',
+            $reply['reply']
+        );
+        $this->assertSame('ticket_imagen', $reply['session']->step);
+        $this->assertSame(0, TicketSolicitud::count());
+    }
+
+    public function test_rechaza_imagen_fuera_de_formatos_permitidos(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550117', 'hola');
+        $service->handleIncoming('8095550117', '1');
+        $service->handleIncoming('8095550117', '3');
+        $service->handleIncoming('8095550117', '07068888');
+
+        $reply = $service->handleIncoming('8095550117', '', null, [
+            'attachment_url' => 'https://example.com/comprobante.webp',
+            'attachment_filename' => 'comprobante.webp',
+            'attachment_extension' => 'webp',
+            'attachment_mime' => 'image/webp',
+            'attachment_type' => 'image',
+        ]);
+
+        $this->assertSame(
+            'Tipo de archivo no permitido. Envia una imagen valida con extension: .jpg, .jpeg, .png, .heic o .heif.',
+            $reply['reply']
+        );
+        $this->assertSame('ticket_imagen', $reply['session']->step);
+        $this->assertSame(0, TicketSolicitud::count());
+    }
+
+    public function test_acepta_formato_heic_de_iphone(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550118', 'hola');
+        $service->handleIncoming('8095550118', '1');
+        $service->handleIncoming('8095550118', '3');
+        $service->handleIncoming('8095550118', '07068888');
+
+        $reply = $service->handleIncoming('8095550118', '', null, [
+            'attachment_url' => 'https://example.com/comprobante.heic',
+            'attachment_filename' => 'comprobante.heic',
+            'attachment_extension' => 'heic',
+            'attachment_mime' => 'image/heic',
+            'attachment_type' => 'image',
+        ]);
+
+        $this->assertStringContainsString('Solicitud registrada correctamente.', $reply['reply']);
+        $this->assertSame('inicio', $reply['session']->step);
+        $this->assertSame(1, TicketSolicitud::count());
+        $this->assertSame('https://example.com/comprobante.heic', TicketSolicitud::first()->attachment_url);
+    }
+
     public function test_respuesta_token_funciono_marca_ticket_pagado_para_cierre_manual(): void
     {
         $ticket = TicketSolicitud::create([

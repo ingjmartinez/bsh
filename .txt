@@ -1,2 +1,9 @@
-cuando se le diga hola la bot debe responder con 1- real 2-delta 3-lotedom
-luego sigue el mismo menu que actualmente esta manejando
+- Que no se puedan crear mas solicitudes de token y anulaciones hasta que se concluya la actual
+
+
+
+- Que solo se puedan mandar imagenes (hay un bug que permite mandar audio y video)
+
+
+
+- Que la solicitud de token se cierre automáticamente la agente de ventas diga que funciono

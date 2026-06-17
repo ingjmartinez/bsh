@@ -30,6 +30,9 @@ class WhatsAppChatbotService
     private const CONFIRM_CLOSE_SESSION_MESSAGE = "Ya tienes una sesion abierta.\n\nQuieres cerrar la sesion actual o retomar donde te quedaste?\n\n1- Cerrar sesion\n2- Retomar";
     private const INVALID_YESTERDAY_PHOTO_MESSAGE = 'Foto no valida. Debes enviar una foto tomada hoy.';
     private const SESSION_CLOSED_MESSAGE = "Gracias por comunicarte con nosotros. Cerramos esta conversacion por inactividad.\n\nEsperamos que te pongas en contacto nuevamente cuando necesites asistencia.";
+    private const INVALID_ATTACHMENT_TYPE_MESSAGE = 'Tipo de archivo no permitido. Envia una imagen valida con extension: .jpg, .jpeg, .png, .heic o .heif.';
+    private const ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'heic', 'heif'];
+    private const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif'];
 
     public static function sessionClosedMessage(): string
     {
@@ -359,6 +362,10 @@ class WhatsAppChatbotService
             return 'Necesito que envies una imagen para continuar con el registro de la averia.';
         }
 
+        if (!$this->isAllowedImageAttachment($incoming)) {
+            return self::INVALID_ATTACHMENT_TYPE_MESSAGE;
+        }
+
         if ($this->isYesterdayAttachment($incoming['attachment_timestamp'] ?? null)) {
             return self::INVALID_YESTERDAY_PHOTO_MESSAGE;
         }
@@ -425,6 +432,10 @@ class WhatsAppChatbotService
 
         if ($attachmentUrl === null) {
             return 'Necesito que envies una imagen para continuar con el registro del ticket.';
+        }
+
+        if (!$this->isAllowedImageAttachment($incoming)) {
+            return self::INVALID_ATTACHMENT_TYPE_MESSAGE;
         }
 
         if ($this->isYesterdayAttachment($incoming['attachment_timestamp'] ?? null)) {
@@ -630,6 +641,85 @@ class WhatsAppChatbotService
         $messageId = trim((string) $messageId);
 
         return $messageId !== '' ? $messageId : null;
+    }
+
+    private function isAllowedImageAttachment(array $incoming): bool
+    {
+        $extension = $this->normalizeFileExtension($incoming['attachment_extension'] ?? null)
+            ?? $this->extractExtensionFromPath($incoming['attachment_filename'] ?? null)
+            ?? $this->extractExtensionFromPath($incoming['attachment_url'] ?? null);
+        $mime = $this->normalizeMimeType($incoming['attachment_mime'] ?? null);
+        $type = $this->normalizeAttachmentType($incoming['attachment_type'] ?? null);
+
+        if ($type !== null && !in_array($type, ['image', 'photo'], true)) {
+            return false;
+        }
+
+        if ($extension !== null && !in_array($extension, self::ALLOWED_IMAGE_EXTENSIONS, true)) {
+            return false;
+        }
+
+        if ($mime !== null && !in_array($mime, self::ALLOWED_IMAGE_MIME_TYPES, true)) {
+            return false;
+        }
+
+        return $extension !== null || $mime !== null || in_array($type, ['image', 'photo'], true);
+    }
+
+    private function normalizeFileExtension(mixed $extension): ?string
+    {
+        if ($extension === null || is_array($extension)) {
+            return null;
+        }
+
+        $extension = strtolower(ltrim(trim((string) $extension), '.'));
+
+        return $extension !== '' && !in_array($extension, ['false', 'null'], true) ? $extension : null;
+    }
+
+    private function extractExtensionFromPath(mixed $path): ?string
+    {
+        if ($path === null || is_array($path)) {
+            return null;
+        }
+
+        $path = trim((string) $path);
+
+        if ($path === '' || in_array(strtolower($path), ['false', 'null'], true)) {
+            return null;
+        }
+
+        $path = parse_url($path, PHP_URL_PATH) ?: $path;
+
+        return $this->normalizeFileExtension(pathinfo($path, PATHINFO_EXTENSION));
+    }
+
+    private function normalizeMimeType(mixed $mime): ?string
+    {
+        if ($mime === null || is_array($mime)) {
+            return null;
+        }
+
+        $mime = strtolower(trim(explode(';', (string) $mime)[0]));
+
+        return $mime !== '' && !in_array($mime, ['false', 'null'], true) ? $mime : null;
+    }
+
+    private function normalizeAttachmentType(mixed $type): ?string
+    {
+        if ($type === null || is_array($type)) {
+            return null;
+        }
+
+        $type = strtolower(trim((string) $type));
+
+        if ($type === '' || in_array($type, ['false', 'null'], true)) {
+            return null;
+        }
+
+        return in_array($type, ['image', 'photo', 'document', 'file', 'video', 'audio', 'sticker'], true)
+            ? $type
+            : null;
     }
 
     private function isYesterdayAttachment(mixed $timestamp): bool

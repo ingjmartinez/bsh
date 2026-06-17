@@ -8,5 +8,14 @@ class VtUsuarioNet extends Model
 {
     protected $table = 'ventas_usuarios_net';
     public $timestamps = true;
-    protected $fillable = ['agencia_id', 'cedula', 'monto', 'fecha'];
+    protected $fillable = [
+        'consorcio_id',
+        'agencia_id',
+        'cedula',
+        'producto_id',
+        'descripcion',
+        'tipo',
+        'monto',
+        'fecha',
+    ];
 }

@@ -44,6 +44,7 @@ class WhatsAppWebhookController extends Controller
             $messageId = $this->extractMessageId((array) $data, $payload);
             $attachmentUrl = $this->extractAttachmentUrl((array) $data, $payload);
             $attachmentTimestamp = $this->extractAttachmentTimestamp((array) $data, $payload);
+            $attachmentMetadata = $this->extractAttachmentMetadata((array) $data, $payload, $attachmentUrl);
             $inboundAccount = $this->extractInboundAccount($payload, (array) $data);
             $sendAccount = $this->extractSendAccount($payload, (array) $data, $routeAccount);
             $sessionAccount = $inboundAccount !== '' ? $inboundAccount : $sendAccount;
@@ -51,6 +52,7 @@ class WhatsAppWebhookController extends Controller
 
             if ($attachmentUrl === null && $messageId !== null) {
                 $attachmentUrl = $whatsApp->fetchReceivedAttachmentByMessageId($messageId);
+                $attachmentMetadata = $this->extractAttachmentMetadata((array) $data, $payload, $attachmentUrl);
             }
 
             if ($attachmentUrl !== null) {
@@ -69,6 +71,10 @@ class WhatsAppWebhookController extends Controller
                 'message_id' => $messageId,
                 'attachment_url' => $attachmentUrl,
                 'attachment_timestamp' => $attachmentTimestamp,
+                'attachment_extension' => $attachmentMetadata['extension'],
+                'attachment_filename' => $attachmentMetadata['filename'],
+                'attachment_mime' => $attachmentMetadata['mime'],
+                'attachment_type' => $attachmentMetadata['type'],
                 'inbound_account' => $inboundAccount,
                 'send_account' => $sendAccount,
                 'session_account' => $sessionAccount,
@@ -125,6 +131,10 @@ class WhatsAppWebhookController extends Controller
                 'message_id' => $messageId,
                 'attachment_url' => $attachmentUrl,
                 'attachment_timestamp' => $attachmentTimestamp,
+                'attachment_extension' => $attachmentMetadata['extension'],
+                'attachment_filename' => $attachmentMetadata['filename'],
+                'attachment_mime' => $attachmentMetadata['mime'],
+                'attachment_type' => $attachmentMetadata['type'],
             ]);
             $reply = (string) ($chatbotResult['reply'] ?? '');
 
@@ -336,5 +346,111 @@ class WhatsAppWebhookController extends Controller
             ?? null;
 
         return is_array($attachment) ? array_keys($attachment) : [];
+    }
+
+    private function extractAttachmentMetadata(array $data, array $payload, ?string $attachmentUrl): array
+    {
+        $attachment = $data['attachment']
+            ?? $data['media']
+            ?? $data['image']
+            ?? $payload['attachment']
+            ?? $payload['media']
+            ?? $payload['image']
+            ?? null;
+
+        $filename = null;
+        $mime = null;
+        $type = null;
+        $extension = null;
+
+        if (is_array($attachment)) {
+            $filename = $this->normalizeMetadataValue(
+                $attachment['filename']
+                ?? $attachment['file_name']
+                ?? $attachment['name']
+                ?? null
+            );
+            $mime = $this->normalizeMetadataValue(
+                $attachment['mime']
+                ?? $attachment['mime_type']
+                ?? $attachment['mimetype']
+                ?? $attachment['content_type']
+                ?? null
+            );
+            $type = $this->normalizeMetadataValue(
+                $attachment['type']
+                ?? $attachment['media_type']
+                ?? null
+            );
+            $extension = $this->normalizeMetadataValue(
+                $attachment['extension']
+                ?? $attachment['ext']
+                ?? null
+            );
+        }
+
+        $filename ??= $this->normalizeMetadataValue(
+            $data['filename']
+            ?? $data['file_name']
+            ?? $data['name']
+            ?? $payload['filename']
+            ?? $payload['file_name']
+            ?? $payload['name']
+            ?? null
+        );
+        $mime ??= $this->normalizeMetadataValue(
+            $data['mime']
+            ?? $data['mime_type']
+            ?? $data['mimetype']
+            ?? $data['content_type']
+            ?? $payload['mime']
+            ?? $payload['mime_type']
+            ?? $payload['mimetype']
+            ?? $payload['content_type']
+            ?? null
+        );
+        $type ??= $this->normalizeMetadataValue(
+            $data['type']
+            ?? $data['message_type']
+            ?? $data['media_type']
+            ?? $payload['type']
+            ?? $payload['message_type']
+            ?? $payload['media_type']
+            ?? null
+        );
+
+        $extension = $this->extractExtension($extension)
+            ?? $this->extractExtension($filename)
+            ?? $this->extractExtension($attachmentUrl);
+
+        return [
+            'filename' => $filename,
+            'mime' => $mime,
+            'type' => $type,
+            'extension' => $extension,
+        ];
+    }
+
+    private function normalizeMetadataValue(mixed $value): ?string
+    {
+        if ($value === null || is_array($value)) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+
+        return $value !== '' && !in_array(strtolower($value), ['false', 'null'], true) ? $value : null;
+    }
+
+    private function extractExtension(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $path = parse_url($value, PHP_URL_PATH) ?: $value;
+        $extension = strtolower(ltrim(pathinfo($path, PATHINFO_EXTENSION), '.'));
+
+        return $extension !== '' ? $extension : null;
     }
 }

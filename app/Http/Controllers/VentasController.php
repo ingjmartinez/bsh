@@ -144,9 +144,16 @@ class VentasController extends Controller
         $data = [];
 
         foreach ($apiResult['rows'] as $v) {
+            $tipo = strtolower((string) ($v['tipo'] ?? ''));
+
             $data[] = [
+                'consorcio_id'  => $v['consorcio_id'] ?? null,
+                'consorcio_codigo' => $v['consorcio_codigo'] ?? null,
                 'agencia_id'    => $v['agencia_id'] ?? null,
+                'producto_id'   => $tipo === 'recarga' ? -1 : ($v['producto_id'] ?? null),
                 'cedula'        => str_replace('-', '', (string) ($v['cedula'] ?? '')),
+                'descripcion'   => $tipo === 'recarga' ? 'RECARGAS' : ($v['descripcion'] ?? null),
+                'tipo'          => $v['tipo'] ?? null,
                 'monto'         => $v['monto'] ?? 0,
                 'fecha'         => $fecha,
             ];
@@ -186,9 +193,15 @@ class VentasController extends Controller
         $data = [];
 
         foreach ($apiResult['rows'] as $v) {
+            $tipo = strtolower((string) ($v['tipo'] ?? ''));
+
             $data[] = [
+                'consorcio_id'  => $v['consorcio_id'] ?? null,
                 'agencia_id'    => $v['agencia_id'] ?? null,
                 'cedula'        => $this->normalizeCedula($v['cedula'] ?? null),
+                'producto_id'   => $tipo === 'recarga' ? -1 : ($v['producto_id'] ?? null),
+                'descripcion'   => $tipo === 'recarga' ? 'RECARGAS' : ($v['descripcion'] ?? null),
+                'tipo'          => $v['tipo'] ?? null,
                 'monto'         => $v['monto'] ?? 0,
                 'fecha'         => $fecha,
                 'created_at'    => now(),
@@ -358,26 +371,21 @@ class VentasController extends Controller
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-            CURLOPT_URL => "http://contable.apploteka.com//api/finan/ventas_por_usuario/{$fecha}/5",
+            CURLOPT_URL => "https://lotedom-api.orkapi.net/api/finan/ventas_por_usuario/{$fecha}",
             CURLOPT_PROXY => '',
             CURLOPT_NOPROXY => '*',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
             CURLOPT_TIMEOUT => 0,
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_SSL_VERIFYPEER => 0,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_POSTFIELDS => '{
-                "usuario": {
-                    "username": "fjoselito",
-                    "password": "mnXd5pSyF3HXjCC4"
-                }
-            }',
             CURLOPT_HTTPHEADER => array(
-                'token: ZFozLWdBYyqERusVdTsW',
-                'Content-Type: application/json',
-                'Cookie: _orkapi_session=RkZLWFpIMnM1UTdUdjRXVzNuMFRmZFZnQ2U5N0JoV0JaSzBheUFlZ21TSVoyUEhWWFc2Y2R4Nzd2SmVhQXJKOGtsSktHWnNmelgzWGsxcmJESEVkcXRlWW5tdGpzU1ZZcXRBZFNva2lqL3pGMFppZFZnZUxPUXBscWxLYVdVcUwzdURYb1V5bGJwanZkeDdJTGUzZndkV3FxNmtiMjdvNkxpU0ZQK2RWRU1nPS0tbkVwL215TXpYTXpLS1lYYXJTR3Y2UT09--7e272c2a327d71d9feb7996870d828122936b682'
+                'token: qVd-u1WoDk2_-bHPoEQv',
+                'Cookie: _orkapi_session=%2Bh8hVZGckwqJvUMEtnqw20R03ew%2Bs75uDx%2FGQ95fm94iUpM5hXWHNSR1Rm%2BqGAaEz%2FJWXNq%2BN5OTuZVJFxTO44VIMhrYq4UR37%2Bt%2BZ9QOgknyJVZAKoryDofCAc39LyiLD9wvNwv07ZQU6vSsr7ByZTnQa9%2FOYXLI1Dnv0FaR3Fq4XQDye3JMdK%2BuCCiqMuhEQgI6MHaUk5b36MWKfcwxLcRz7EA7avYVFFOcQGZW1DG3julV%2B8LL24AHO%2B2yW8PWzkot%2Bj9isQn4Q8%2F5HDFFfHiBDqWH4Mr%2F4PYSQW%2Bzw%3D%3D--OAkKsKD1FysuXUdd--lo%2BNmOXstOC7zphBeFRYrw%3D%3D'
             ),
         ));
 
