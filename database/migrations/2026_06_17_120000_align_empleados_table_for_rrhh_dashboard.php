@@ -143,7 +143,7 @@ return new class extends Migration
                 DB::statement("
                     UPDATE empleados
                     SET {$target} = CASE
-                        WHEN {$source} IS NULL OR {$source} = '0000-00-00' THEN NULL
+                        WHEN {$source} IS NULL OR CAST({$source} AS CHAR) = '0000-00-00' THEN NULL
                         ELSE DATE({$source})
                     END
                     WHERE {$target} IS NULL
