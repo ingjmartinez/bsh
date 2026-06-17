@@ -26,6 +26,10 @@ class EmpleadoController extends Controller
     public function list(Request $request)
     {
         $empresa = trim((string) $request->query('empresa', ''));
+        $fechaIngresoColumn = $this->empleadosColumnSql('fecha_ingreso', 'fechaingreso');
+        $fechaEgresoColumn = $this->empleadosColumnSql('fecha_egreso', 'fechasalida');
+        $salarioColumn = $this->empleadosColumnSql('salario', 'salariomensual');
+        $ciudadColumn = $this->empleadosColumnSql('ciudad');
 
         $query = Empleado::select(
             DB::raw("CASE
@@ -36,11 +40,11 @@ class EmpleadoController extends Controller
             'empleadoid',
             'nombres',
             'apellidos',
-            DB::raw('fecha_ingreso AS fechaingreso'),
-            DB::raw('fecha_egreso AS fechasalida'),
+            DB::raw("{$fechaIngresoColumn} AS fechaingreso"),
+            DB::raw("{$fechaEgresoColumn} AS fechasalida"),
             'cedula',
-            DB::raw('NULL AS ciudad'),
-            DB::raw('salario AS salariomensual')
+            DB::raw("{$ciudadColumn} AS ciudad"),
+            DB::raw("{$salarioColumn} AS salariomensual")
         );
 
         if (array_key_exists($empresa, self::EMPRESAS_RRHH)) {
@@ -58,6 +62,11 @@ class EmpleadoController extends Controller
         $cacheKey = 'empleados_dashboard:' . $empresaCache;
 
         $payload = Cache::remember($cacheKey, now()->addSeconds(60), function () use ($empresa) {
+            $fechaEgresoColumn = $this->empleadosColumnName('fecha_egreso', 'fechasalida');
+            $salarioColumn = $this->empleadosColumnName('salario', 'salariomensual');
+            $ciudadExpression = $this->empleadosCiudadExpression();
+            $joinCiudades = Schema::hasColumn('empleados', 'ciudad_id') && Schema::hasTable('ciudades');
+
             $aplicarEmpresa = function ($query) use ($empresa) {
                 if (array_key_exists($empresa, self::EMPRESAS_RRHH)) {
                     $query->where('companyid', $empresa);
@@ -66,33 +75,36 @@ class EmpleadoController extends Controller
                 return $query;
             };
 
-            $condicionActivo = 'fecha_egreso IS NULL';
-            $condicionActivoEmpleado = 'e.fecha_egreso IS NULL';
+            $condicionActivo = "{$fechaEgresoColumn} IS NULL";
+            $condicionActivoEmpleado = "e.{$fechaEgresoColumn} IS NULL";
 
             $resumen = $aplicarEmpresa(DB::table('empleados'))
                 ->selectRaw("
                     COUNT(*) AS total_empleados,
                     SUM(CASE WHEN {$condicionActivo} THEN 1 ELSE 0 END) AS activos,
                     SUM(CASE WHEN {$condicionActivo} THEN 0 ELSE 1 END) AS inactivos,
-                    ROUND(SUM(COALESCE(salario, 0)), 2) AS salario_mensual_total,
-                    ROUND(SUM(CASE WHEN {$condicionActivo} THEN COALESCE(salario, 0) ELSE 0 END), 2) AS salario_mensual_activos,
-                    ROUND(SUM(CASE WHEN {$condicionActivo} THEN 0 ELSE COALESCE(salario, 0) END), 2) AS salario_mensual_inactivos,
-                    ROUND(AVG(COALESCE(salario, 0)), 2) AS salario_promedio
+                    ROUND(SUM(COALESCE({$salarioColumn}, 0)), 2) AS salario_mensual_total,
+                    ROUND(SUM(CASE WHEN {$condicionActivo} THEN COALESCE({$salarioColumn}, 0) ELSE 0 END), 2) AS salario_mensual_activos,
+                    ROUND(SUM(CASE WHEN {$condicionActivo} THEN 0 ELSE COALESCE({$salarioColumn}, 0) END), 2) AS salario_mensual_inactivos,
+                    ROUND(AVG(COALESCE({$salarioColumn}, 0)), 2) AS salario_promedio
                 ")
                 ->first();
 
-            $salarioPorCiudad = $aplicarEmpresa(
-                DB::table('empleados as e')
-                    ->leftJoin('ciudades as c', 'c.id', '=', 'e.ciudad_id')
-            )
+            $ciudadQuery = DB::table('empleados as e');
+
+            if ($joinCiudades) {
+                $ciudadQuery->leftJoin('ciudades as c', 'c.id', '=', 'e.ciudad_id');
+            }
+
+            $salarioPorCiudad = $aplicarEmpresa($ciudadQuery)
                 ->selectRaw("
-                    COALESCE(c.nombre, 'Sin ciudad') AS ciudad,
-                    ROUND(SUM(CASE WHEN {$condicionActivoEmpleado} THEN COALESCE(e.salario, 0) ELSE 0 END), 2) AS salario,
+                    {$ciudadExpression} AS ciudad,
+                    ROUND(SUM(CASE WHEN {$condicionActivoEmpleado} THEN COALESCE(e.{$salarioColumn}, 0) ELSE 0 END), 2) AS salario,
                     COUNT(*) AS empleados,
                     SUM(CASE WHEN {$condicionActivoEmpleado} THEN 1 ELSE 0 END) AS activos,
                     SUM(CASE WHEN {$condicionActivoEmpleado} THEN 0 ELSE 1 END) AS inactivos
                 ")
-                ->groupBy(DB::raw("COALESCE(c.nombre, 'Sin ciudad')"))
+                ->groupBy(DB::raw($ciudadExpression))
                 ->orderByDesc('salario')
                 ->limit(12)
                 ->get()
@@ -107,8 +119,8 @@ class EmpleadoController extends Controller
                 });
 
             $salarioPorEmpresa = $aplicarEmpresa(DB::table('empleados'))
-                ->whereNull('fecha_egreso')
-                ->selectRaw('companyid, ROUND(SUM(COALESCE(salario, 0)), 2) AS salario, COUNT(*) AS empleados')
+                ->whereNull($fechaEgresoColumn)
+                ->selectRaw("companyid, ROUND(SUM(COALESCE({$salarioColumn}, 0)), 2) AS salario, COUNT(*) AS empleados")
                 ->groupBy('companyid')
                 ->get()
                 ->map(function ($fila) {
@@ -282,6 +294,41 @@ class EmpleadoController extends Controller
         return self::EMPRESAS_RRHH[$empresa] ?? ('Empresa ' . $empresa);
     }
 
+    private function empleadosColumnName(string ...$candidates): string
+    {
+        foreach ($candidates as $column) {
+            if (Schema::hasColumn('empleados', $column)) {
+                return $column;
+            }
+        }
+
+        return 'id';
+    }
+
+    private function empleadosColumnSql(string ...$candidates): string
+    {
+        foreach ($candidates as $column) {
+            if (Schema::hasColumn('empleados', $column)) {
+                return $column;
+            }
+        }
+
+        return 'NULL';
+    }
+
+    private function empleadosCiudadExpression(): string
+    {
+        if (Schema::hasColumn('empleados', 'ciudad_id') && Schema::hasTable('ciudades')) {
+            return "COALESCE(c.nombre, 'Sin ciudad')";
+        }
+
+        if (Schema::hasColumn('empleados', 'ciudad')) {
+            return "COALESCE(NULLIF(e.ciudad, ''), 'Sin ciudad')";
+        }
+
+        return "'Sin ciudad'";
+    }
+
     private function mapearEmpleadoApi(array $e, string $empresa): array
     {
         return [
@@ -290,14 +337,22 @@ class EmpleadoController extends Controller
             'nombres'                  => $this->limitarTexto(($e['NOMBRES'] ?? null) ?: 'Sin nombre', 100),
             'apellidos'                => $this->limitarTexto(($e['APELLIDOS'] ?? null) ?: 'Sin apellido', 100),
             'cedula'                   => $this->limitarTexto($e['CEDULA'] ?? null, 30),
+            'salariomensual'            => $this->normalizarDecimal($e['SALARIOMENSUAL'] ?? null),
             'salario'                  => $this->normalizarDecimal($e['SALARIOMENSUAL'] ?? null),
+            'fechanacimiento'           => $this->normalizarFecha($e['FECHANACIMIENTO'] ?? null),
             'fecha_nacimiento'         => $this->normalizarFecha($e['FECHANACIMIENTO'] ?? null),
+            'fechaingreso'              => $this->normalizarFecha($e['FECHAINGRESO'] ?? null),
             'fecha_ingreso'            => $this->normalizarFecha($e['FECHAINGRESO'] ?? null),
+            'fechasalida'               => $this->normalizarFecha($e['FECHASALIDA'] ?? null),
             'fecha_egreso'             => $this->normalizarFecha($e['FECHASALIDA'] ?? null),
             'estatus'                  => empty($e['FECHASALIDA']) ? 1 : 0,
+            'tel1'                      => $this->limitarTexto($e['TEL1'] ?? null, 30),
+            'tel2'                      => $this->limitarTexto($e['TEL2'] ?? null, 30),
             'telefono'                 => $this->limitarTexto($e['TEL1'] ?? ($e['TEL2'] ?? null), 30),
             'email'                    => $this->limitarTexto($e['EMAIL'] ?? null, 150),
+            'ctabanco'                  => $this->limitarTexto($e['CTABANCO'] ?? ($e['CUENTA'] ?? null), 50),
             'numero_cuenta'            => $this->limitarTexto($e['CTABANCO'] ?? ($e['CUENTA'] ?? null), 50),
+            'tipocuenta'                => $this->limitarTexto($e['TIPOCUENTA'] ?? null, 30),
             'tipo_cuenta'              => $this->limitarTexto($e['TIPOCUENTA'] ?? null, 30),
             'fuente_sync'              => 'apisj_rrhh',
             'ultima_sync_at'           => now(),
