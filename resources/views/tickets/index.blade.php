@@ -19,7 +19,21 @@
             ->all();
     @endphp
 
-    <div class="main-content">
+    <style>
+        [data-layout-mode="dark"] .tickets-page .tickets-table th,
+        [data-layout-mode="dark"] .tickets-page .tickets-table td,
+        [data-layout-mode="dark"] .tickets-page .ticket-dark-text,
+        [data-layout-mode="dark"] .tickets-page .tickets-table .text-muted {
+            color: #fff !important;
+        }
+
+        [data-layout-mode="dark"] .tickets-page .tickets-table .badge.bg-light {
+            background-color: rgba(255, 255, 255, 0.14) !important;
+            color: #fff !important;
+        }
+    </style>
+
+    <div class="main-content tickets-page">
         <div class="page-content">
             <div class="container-fluid">
                 <div class="row">
@@ -125,7 +139,7 @@
                                             </div>
                                             <div>
                                                 <span class="text-muted me-2">Token No Funciono</span>
-                                                <strong class="text-dark">{{ number_format($stats['token_no_funciono'] ?? 0) }}</strong>
+                                                <strong class="ticket-dark-text">{{ number_format($stats['token_no_funciono'] ?? 0) }}</strong>
                                             </div>
                                         </div>
                                         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ticketManualModal">
@@ -199,18 +213,18 @@
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
-                                    <table class="table table-hover align-middle">
+                                    <table class="table table-hover align-middle tickets-table">
                                         <thead class="table-light">
                                             <tr>
                                                 <th>Solicitud</th>
                                                 <th>Categoria</th>
                                                 <th>Codigo terminal</th>
                                                 <th>Telefono</th>
-                                                <th>Accion</th>
                                                 <th>Estado</th>
                                                 <th>Imagen</th>
                                                 <th>Entrada</th>
                                                 <th>Gestion</th>
+                                                <th>Accion</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -225,35 +239,6 @@
                                                     <td>{{ $solicitud->categoria_label }}</td>
                                                     <td>{{ $solicitud->ticket_numero }}</td>
                                                     <td>{{ $solicitud->phone }}</td>
-                                                    <td style="min-width: 150px;">
-                                                        @if ($gestionCerrada)
-                                                            <span class="badge bg-light text-muted">Finalizado</span>
-                                                        @elseif ($tomadoPorMi)
-                                                            <div class="d-flex flex-column gap-1">
-                                                                <span class="badge bg-success-subtle text-success">
-                                                                    <i class="ri-user-follow-line me-1"></i>Tomado por ti
-                                                                </span>
-                                                                <form method="POST" action="{{ route('tickets.liberar', $solicitud) }}">
-                                                                    @csrf
-                                                                    @method('DELETE')
-                                                                    <button class="btn btn-sm btn-outline-secondary w-100" type="submit">
-                                                                        Liberar
-                                                                    </button>
-                                                                </form>
-                                                            </div>
-                                                        @elseif ($tomadoPorOtro)
-                                                            <span class="badge bg-warning-subtle text-warning">
-                                                                <i class="ri-lock-line me-1"></i>{{ $solicitud->tomadoPor?->name ?? 'Tomado' }}
-                                                            </span>
-                                                        @else
-                                                            <form method="POST" action="{{ route('tickets.tomar', $solicitud) }}">
-                                                                @csrf
-                                                                <button class="btn btn-sm btn-outline-primary w-100" type="submit">
-                                                                    <i class="ri-user-add-line me-1"></i>Tomar
-                                                                </button>
-                                                            </form>
-                                                        @endif
-                                                    </td>
                                                     <td>
                                                         <span class="badge bg-{{ $solicitud->estado_badge }}">{{ $solicitud->estado_label }}</span>
                                                     </td>
@@ -329,6 +314,35 @@
                                                             <small class="text-muted d-block mt-1">
                                                                 Por {{ $solicitud->procesadoPor->name }} - {{ optional($solicitud->procesado_at)->format('d/m/Y h:i A') }}
                                                             </small>
+                                                        @endif
+                                                    </td>
+                                                    <td style="min-width: 150px;">
+                                                        @if ($gestionCerrada)
+                                                            <span class="badge bg-light text-muted">Finalizado</span>
+                                                        @elseif ($tomadoPorMi)
+                                                            <div class="d-flex flex-column gap-1">
+                                                                <span class="badge bg-success-subtle text-success">
+                                                                    <i class="ri-user-follow-line me-1"></i>Tomado por ti
+                                                                </span>
+                                                                <form method="POST" action="{{ route('tickets.liberar', $solicitud) }}">
+                                                                    @csrf
+                                                                    @method('DELETE')
+                                                                    <button class="btn btn-sm btn-outline-secondary w-100" type="submit">
+                                                                        Liberar
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                        @elseif ($tomadoPorOtro)
+                                                            <span class="badge bg-warning-subtle text-warning">
+                                                                <i class="ri-lock-line me-1"></i>{{ $solicitud->tomadoPor?->name ?? 'Tomado' }}
+                                                            </span>
+                                                        @else
+                                                            <form method="POST" action="{{ route('tickets.tomar', $solicitud) }}">
+                                                                @csrf
+                                                                <button class="btn btn-sm btn-outline-primary w-100" type="submit">
+                                                                    <i class="ri-user-add-line me-1"></i>Tomar
+                                                                </button>
+                                                            </form>
                                                         @endif
                                                     </td>
                                                 </tr>
