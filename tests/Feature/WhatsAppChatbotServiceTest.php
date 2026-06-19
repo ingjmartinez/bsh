@@ -73,6 +73,8 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     protected function tearDown(): void
     {
+        Carbon::setTestNow();
+
         Schema::dropIfExists('agencias');
         Schema::dropIfExists('chatbot_sessions');
         Schema::dropIfExists('ticket_solicitudes');
@@ -111,6 +113,76 @@ class WhatsAppChatbotServiceTest extends TestCase
 
         $this->assertStringContainsString('Selecciona el sistema', $reply['reply']);
         $this->assertSame('seleccion_sistema', ChatbotSession::first()->step);
+    }
+
+    public function test_consulta_horario_muestra_hasta_las_diez_de_la_noche(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550122', 'hola');
+        $service->handleIncoming('8095550122', '1');
+        $reply = $service->handleIncoming('8095550122', '1');
+
+        $this->assertStringContainsString('7:00 AM', $reply['reply']);
+        $this->assertStringContainsString('10:00 PM', $reply['reply']);
+        $this->assertSame('inicio', $reply['session']->step);
+    }
+
+    public function test_no_permite_iniciar_pago_fuera_del_horario_de_servicio(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-06-12 22:01:00'));
+
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550123', 'hola');
+        $service->handleIncoming('8095550123', '1');
+        $reply = $service->handleIncoming('8095550123', '3');
+
+        $this->assertStringContainsString('Nuestro horario de servicio', $reply['reply']);
+        $this->assertStringContainsString('7:00 AM', $reply['reply']);
+        $this->assertStringContainsString('10:00 PM', $reply['reply']);
+        $this->assertSame('inicio', $reply['session']->step);
+        $this->assertSame(0, TicketSolicitud::count());
+    }
+
+    public function test_no_permite_reportar_averia_fuera_del_horario_de_servicio(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-06-12 06:59:00'));
+
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550124', 'hola');
+        $service->handleIncoming('8095550124', '1');
+        $reply = $service->handleIncoming('8095550124', '6');
+
+        $this->assertStringContainsString('Nuestro horario de servicio', $reply['reply']);
+        $this->assertSame('inicio', $reply['session']->step);
+    }
+
+    public function test_no_registra_ticket_si_la_imagen_llega_fuera_del_horario_de_servicio(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-06-12 21:59:30'));
+
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550125', 'hola');
+        $service->handleIncoming('8095550125', '1');
+        $service->handleIncoming('8095550125', '3');
+        $service->handleIncoming('8095550125', '07068888');
+
+        Carbon::setTestNow(Carbon::parse('2026-06-12 22:00:00'));
+
+        $reply = $service->handleIncoming('8095550125', '', null, [
+            'attachment_url' => 'https://example.com/comprobante.jpg',
+            'attachment_filename' => 'comprobante.jpg',
+            'attachment_extension' => 'jpg',
+            'attachment_mime' => 'image/jpeg',
+            'attachment_type' => 'image',
+        ]);
+
+        $this->assertStringContainsString('Nuestro horario de servicio', $reply['reply']);
+        $this->assertSame('inicio', $reply['session']->step);
+        $this->assertSame(0, TicketSolicitud::count());
     }
 
     public function test_opcion_uno_en_selector_de_sistema_muestra_menu_aunque_exista_token_pendiente(): void
@@ -368,6 +440,88 @@ class WhatsAppChatbotServiceTest extends TestCase
         $this->assertSame('inicio', $reply['session']->step);
         $this->assertSame(1, TicketSolicitud::count());
         $this->assertSame('https://example.com/comprobante.heic', TicketSolicitud::first()->attachment_url);
+    }
+
+    public function test_no_permite_crear_otro_ticket_pago_o_nulo_si_el_telefono_tiene_uno_abierto(): void
+    {
+        TicketSolicitud::create([
+            'phone' => '8095550119',
+            'categoria' => TicketSolicitud::CATEGORIA_ANULAR,
+            'ticket_numero' => '07068888',
+            'estado' => TicketSolicitud::ESTADO_PENDIENTE,
+            'mensaje_original' => 'Anular ticket: 07068888',
+        ]);
+
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550119', 'hola');
+        $service->handleIncoming('8095550119', '1');
+        $reply = $service->handleIncoming('8095550119', '3');
+
+        $this->assertStringContainsString('Ya tienes una solicitud abierta.', $reply['reply']);
+        $this->assertStringContainsString('Debes esperar a que finalicen esa solicitud', $reply['reply']);
+        $this->assertSame('inicio', $reply['session']->step);
+        $this->assertSame(1, TicketSolicitud::count());
+    }
+
+    public function test_no_registra_ticket_si_aparece_otro_abierto_antes_de_enviar_imagen(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550120', 'hola');
+        $service->handleIncoming('8095550120', '1');
+        $service->handleIncoming('8095550120', '4');
+        $service->handleIncoming('8095550120', '07068888');
+
+        TicketSolicitud::create([
+            'phone' => '8095550120',
+            'categoria' => TicketSolicitud::CATEGORIA_PAGAR,
+            'ticket_numero' => '07068888',
+            'estado' => TicketSolicitud::ESTADO_TOKEN_NO_FUNCIONO,
+            'mensaje_original' => 'Pagar ticket: 07068888',
+        ]);
+
+        $reply = $service->handleIncoming('8095550120', '', null, [
+            'attachment_url' => 'https://example.com/comprobante.jpg',
+            'attachment_filename' => 'comprobante.jpg',
+            'attachment_extension' => 'jpg',
+            'attachment_mime' => 'image/jpeg',
+            'attachment_type' => 'image',
+        ]);
+
+        $this->assertStringContainsString('Ya tienes una solicitud abierta.', $reply['reply']);
+        $this->assertSame('inicio', $reply['session']->step);
+        $this->assertSame(1, TicketSolicitud::count());
+    }
+
+    public function test_permite_crear_ticket_si_el_anterior_ya_esta_finalizado(): void
+    {
+        TicketSolicitud::create([
+            'phone' => '8095550121',
+            'categoria' => TicketSolicitud::CATEGORIA_ANULAR,
+            'ticket_numero' => '07068888',
+            'estado' => TicketSolicitud::ESTADO_NULO,
+            'mensaje_original' => 'Anular ticket: 07068888',
+        ]);
+
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550121', 'hola');
+        $service->handleIncoming('8095550121', '1');
+        $service->handleIncoming('8095550121', '3');
+        $service->handleIncoming('8095550121', '07068888');
+
+        $reply = $service->handleIncoming('8095550121', '', null, [
+            'attachment_url' => 'https://example.com/comprobante.jpg',
+            'attachment_filename' => 'comprobante.jpg',
+            'attachment_extension' => 'jpg',
+            'attachment_mime' => 'image/jpeg',
+            'attachment_type' => 'image',
+        ]);
+
+        $this->assertStringContainsString('Solicitud registrada correctamente.', $reply['reply']);
+        $this->assertSame('inicio', $reply['session']->step);
+        $this->assertSame(2, TicketSolicitud::count());
     }
 
     public function test_respuesta_token_funciono_marca_ticket_pagado_para_cierre_manual(): void

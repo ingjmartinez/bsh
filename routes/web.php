@@ -470,6 +470,8 @@ Route::prefix('tickets')->name('tickets.')->group(function () {
     Route::get('/', [TicketSolicitudController::class, 'index'])->name('index');
     Route::get('/activity', [TicketSolicitudController::class, 'activity'])->name('activity');
     Route::post('/', [TicketSolicitudController::class, 'store'])->name('store');
+    Route::post('/{ticket}/tomar', [TicketSolicitudController::class, 'tomar'])->name('tomar');
+    Route::delete('/{ticket}/tomar', [TicketSolicitudController::class, 'liberar'])->name('liberar');
     Route::put('/{ticket}/estado', [TicketSolicitudController::class, 'updateEstado'])->name('estado');
 });
 

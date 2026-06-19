@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ChatbotSession;
 use App\Models\TicketSolicitud;
+use App\Models\User;
 use App\Services\WhatsAppService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -17,6 +18,8 @@ use Illuminate\View\View;
 
 class TicketSolicitudController extends Controller
 {
+    private const ADMIN_ROLE_NAMES = ['superadmin', 'admin'];
+
     private const RECHAZO_MOTIVOS_PAGO = [
         'RECHAZADO: EL TICKET DEBE ESTAR VISIBLE Y COMPLETO.',
         'RECHAZADO: ESCRIBIR EN EL CENTRO LA PALABRA PAGAR CON LAPICERO.',
@@ -40,12 +43,13 @@ class TicketSolicitudController extends Controller
     public function __construct(private readonly WhatsAppService $whatsAppService)
     {
         $this->middleware('role_or_permission:superadmin|admin|tickets.view')->only(['index', 'activity', 'dashboard']);
-        $this->middleware('role_or_permission:superadmin|admin|tickets.manage')->only(['store', 'updateEstado']);
+        $this->middleware('role_or_permission:superadmin|admin|tickets.manage')->only(['store', 'updateEstado', 'tomar', 'liberar']);
     }
 
     public function index(Request $request): View
     {
         $filtros = $request->only(['categoria', 'estado', 'desde', 'hasta', 'buscar']);
+        $filtros = $this->withDefaultTicketDateFilters($filtros);
         $setupPending = !Schema::hasTable('ticket_solicitudes');
 
         if ($setupPending) {
@@ -65,7 +69,7 @@ class TicketSolicitudController extends Controller
         $stats = $this->ticketStats($baseQuery);
 
         $solicitudes = (clone $baseQuery)
-            ->with('procesadoPor:id,name')
+            ->with(['procesadoPor:id,name', 'tomadoPor:id,name'])
             ->latest()
             ->paginate(20)
             ->withQueryString();
@@ -86,6 +90,7 @@ class TicketSolicitudController extends Controller
     public function dashboard(Request $request): View
     {
         $filtros = $request->only(['estado', 'desde', 'hasta', 'buscar']);
+        $filtros = $this->withDefaultDashboardDateFilters($filtros);
         $setupPending = !Schema::hasTable('ticket_solicitudes');
 
         if ($setupPending) {
@@ -164,6 +169,10 @@ class TicketSolicitudController extends Controller
     {
         if (!Schema::hasTable('ticket_solicitudes')) {
             return back()->withErrors(['tickets' => 'La tabla del modulo aun no existe. Ejecuta las migraciones.']);
+        }
+
+        if ($this->isTomadoPorOtroUsuario($ticket)) {
+            return back()->withErrors(['tickets' => 'Este ticket esta tomado por otro usuario y no puedes gestionarlo.']);
         }
 
         $estadosPermitidos = $this->allowedEstadosForCategoria((string) $ticket->categoria);
@@ -249,6 +258,11 @@ class TicketSolicitudController extends Controller
             $ticket->procesado_at = now();
         }
 
+        if ($this->isEstadoCerradoPorValor($estadoDestino)) {
+            $ticket->tomado_por_id = null;
+            $ticket->tomado_at = null;
+        }
+
         $ticket->save();
         if (!$tokenEnviado) {
             $this->notifyResolutionByWhatsApp($ticket, $estadoAnterior);
@@ -259,6 +273,60 @@ class TicketSolicitudController extends Controller
         }
 
         return back()->with('success', 'Estado del ticket actualizado.');
+    }
+
+    public function tomar(TicketSolicitud $ticket): RedirectResponse
+    {
+        if (!Schema::hasTable('ticket_solicitudes')) {
+            return back()->withErrors(['tickets' => 'La tabla del modulo aun no existe. Ejecuta las migraciones.']);
+        }
+
+        if ($this->isEstadoCerrado($ticket)) {
+            return back()->withErrors(['tickets' => 'Este ticket ya esta cerrado y no puede ser tomado.']);
+        }
+
+        $userId = (int) auth()->id();
+
+        $updated = TicketSolicitud::query()
+            ->whereKey($ticket->id)
+            ->where(function (Builder $query) use ($userId): void {
+                $query->whereNull('tomado_por_id')
+                    ->orWhere('tomado_por_id', $userId);
+            })
+            ->update([
+                'tomado_por_id' => $userId,
+                'tomado_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+        if ($updated === 0) {
+            $ticket->refresh()->load('tomadoPor:id,name');
+            $tomadoPor = $ticket->tomadoPor?->name ?: 'otro usuario';
+
+            return back()->withErrors(['tickets' => "Este ticket ya fue tomado por {$tomadoPor}."]);
+        }
+
+        return back()->with('success', 'Ticket tomado correctamente.');
+    }
+
+    public function liberar(TicketSolicitud $ticket): RedirectResponse
+    {
+        if (!Schema::hasTable('ticket_solicitudes')) {
+            return back()->withErrors(['tickets' => 'La tabla del modulo aun no existe. Ejecuta las migraciones.']);
+        }
+
+        $user = auth()->user();
+
+        if (!$user || ((int) $ticket->tomado_por_id !== (int) $user->id && !$this->esAdmin($user))) {
+            return back()->withErrors(['tickets' => 'Solo quien tomo el ticket o un administrador puede liberarlo.']);
+        }
+
+        $ticket->forceFill([
+            'tomado_por_id' => null,
+            'tomado_at' => null,
+        ])->save();
+
+        return back()->with('success', 'Ticket liberado correctamente.');
     }
 
     private function sendTokenByWhatsApp(TicketSolicitud $ticket, string $token): array
@@ -439,6 +507,26 @@ class TicketSolicitudController extends Controller
             TicketSolicitud::CATEGORIA_PAGAR => self::RECHAZO_MOTIVOS_PAGO,
             TicketSolicitud::CATEGORIA_ANULAR => self::RECHAZO_MOTIVOS_NULO,
         ];
+    }
+
+    private function withDefaultTicketDateFilters(array $filtros): array
+    {
+        $today = now()->toDateString();
+
+        $filtros['desde'] = $filtros['desde'] ?? $today;
+        $filtros['hasta'] = $filtros['hasta'] ?? $today;
+
+        return $filtros;
+    }
+
+    private function withDefaultDashboardDateFilters(array $filtros): array
+    {
+        $today = now();
+
+        $filtros['desde'] = $filtros['desde'] ?? $today->copy()->startOfMonth()->toDateString();
+        $filtros['hasta'] = $filtros['hasta'] ?? $today->toDateString();
+
+        return $filtros;
     }
 
     private function closeChatbotSessionForTicket(TicketSolicitud $ticket): void
@@ -639,11 +727,27 @@ class TicketSolicitudController extends Controller
 
     private function isEstadoCerrado(TicketSolicitud $ticket): bool
     {
-        return in_array($ticket->estado, [
+        return $this->isEstadoCerradoPorValor((string) $ticket->estado);
+    }
+
+    private function isEstadoCerradoPorValor(string $estado): bool
+    {
+        return in_array($estado, [
             TicketSolicitud::ESTADO_PAGADO,
             TicketSolicitud::ESTADO_NULO,
             TicketSolicitud::ESTADO_AVERIA_CERRADA,
             TicketSolicitud::ESTADO_RECHAZADO,
         ], true);
+    }
+
+    private function isTomadoPorOtroUsuario(TicketSolicitud $ticket): bool
+    {
+        return $ticket->tomado_por_id !== null
+            && (int) $ticket->tomado_por_id !== (int) auth()->id();
+    }
+
+    private function esAdmin(User $user): bool
+    {
+        return $user->hasAnyRole(self::ADMIN_ROLE_NAMES);
     }
 }

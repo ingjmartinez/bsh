@@ -33,6 +33,8 @@ class TicketSolicitud extends Model
         'attachment_url',
         'attachment_message_id',
         'notas',
+        'tomado_por_id',
+        'tomado_at',
         'procesado_por_id',
         'procesado_at',
     ];
@@ -40,6 +42,7 @@ class TicketSolicitud extends Model
     protected function casts(): array
     {
         return [
+            'tomado_at' => 'datetime',
             'procesado_at' => 'datetime',
         ];
     }
@@ -49,11 +52,21 @@ class TicketSolicitud extends Model
         return $this->belongsTo(User::class, 'procesado_por_id');
     }
 
+    public function tomadoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'tomado_por_id');
+    }
+
     public function scopeFiltro(Builder $query, array $filtros): Builder
     {
+        $estados = collect((array) ($filtros['estado'] ?? []))
+            ->filter(fn ($estado) => is_string($estado) && trim($estado) !== '')
+            ->values()
+            ->all();
+
         return $query
             ->when($filtros['categoria'] ?? null, fn(Builder $q, string $categoria) => $q->where('categoria', $categoria))
-            ->when($filtros['estado'] ?? null, fn(Builder $q, string $estado) => $q->where('estado', $estado))
+            ->when($estados !== [], fn(Builder $q) => $q->whereIn('estado', $estados))
             ->when($filtros['desde'] ?? null, fn(Builder $q, string $desde) => $q->whereDate('created_at', '>=', $desde))
             ->when($filtros['hasta'] ?? null, fn(Builder $q, string $hasta) => $q->whereDate('created_at', '<=', $hasta))
             ->when($filtros['buscar'] ?? null, function (Builder $q, string $buscar) {

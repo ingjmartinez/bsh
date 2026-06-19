@@ -1,6 +1,24 @@
 @extends('app')
 
 @section('content')
+    @php
+        $estadoOpcionesFiltro = [
+            'pendiente' => 'Pendiente',
+            'pagado' => 'Pagado',
+            'token_enviado' => 'Token enviado',
+            'token_no_funciono' => 'Token No Funciono',
+            'ticket_pagado' => 'Ticket pagado Por otra Terminal',
+            'nulo' => 'Nulo',
+            'rechazado' => 'Rechazado',
+            'en_proceso' => 'En Proceso',
+            'averia_cerrada' => 'Averia Cerrada',
+        ];
+        $estadosSeleccionadosFiltro = collect((array) ($filtros['estado'] ?? []))
+            ->filter()
+            ->values()
+            ->all();
+    @endphp
+
     <div class="main-content">
         <div class="page-content">
             <div class="container-fluid">
@@ -126,19 +144,38 @@
                                         </select>
                                     </div>
                                     <div class="col-lg-2 col-md-6">
-                                        <label class="form-label" for="estado">Estado</label>
-                                        <select class="form-select" id="estado" name="estado">
-                                            <option value="">Todos</option>
-                                            <option value="pendiente" @selected(($filtros['estado'] ?? '') === 'pendiente')>Pendiente</option>
-                                            <option value="pagado" @selected(($filtros['estado'] ?? '') === 'pagado')>Pagado</option>
-                                            <option value="token_enviado" @selected(($filtros['estado'] ?? '') === 'token_enviado')>Token enviado</option>
-                                            <option value="token_no_funciono" @selected(($filtros['estado'] ?? '') === 'token_no_funciono')>Token No Funciono</option>
-                                            <option value="ticket_pagado" @selected(($filtros['estado'] ?? '') === 'ticket_pagado')>Ticket pagado Por otra Terminal</option>
-                                            <option value="nulo" @selected(($filtros['estado'] ?? '') === 'nulo')>Nulo</option>
-                                            <option value="rechazado" @selected(($filtros['estado'] ?? '') === 'rechazado')>Rechazado</option>
-                                            <option value="en_proceso" @selected(($filtros['estado'] ?? '') === 'en_proceso')>En Proceso</option>
-                                            <option value="averia_cerrada" @selected(($filtros['estado'] ?? '') === 'averia_cerrada')>Averia Cerrada</option>
-                                        </select>
+                                        <label class="form-label" for="ticketEstadoDropdown">Estado</label>
+                                        <div class="dropdown w-100" id="ticketEstadoFilter" data-selected-label="estado seleccionado" data-selected-label-plural="estados seleccionados">
+                                            <button
+                                                class="btn btn-outline-secondary dropdown-toggle w-100 d-flex align-items-center justify-content-between"
+                                                type="button"
+                                                id="ticketEstadoDropdown"
+                                                data-bs-toggle="dropdown"
+                                                data-bs-auto-close="outside"
+                                                aria-expanded="false">
+                                                <span class="ticket-estado-filter-text">Todos</span>
+                                            </button>
+                                            <div class="dropdown-menu w-100 p-2" aria-labelledby="ticketEstadoDropdown">
+                                                @foreach ($estadoOpcionesFiltro as $value => $label)
+                                                    @php
+                                                        $isSelected = in_array($value, $estadosSeleccionadosFiltro, true);
+                                                    @endphp
+                                                    <button
+                                                        type="button"
+                                                        class="dropdown-item d-flex align-items-center gap-2 ticket-estado-option {{ $isSelected ? 'active' : '' }}"
+                                                        data-value="{{ $value }}"
+                                                        aria-pressed="{{ $isSelected ? 'true' : 'false' }}">
+                                                        <i class="ri-check-line {{ $isSelected ? '' : 'invisible' }}"></i>
+                                                        <span>{{ $label }}</span>
+                                                    </button>
+                                                @endforeach
+                                            </div>
+                                            <div class="ticket-estado-hidden-inputs">
+                                                @foreach ($estadosSeleccionadosFiltro as $estadoSeleccionado)
+                                                    <input type="hidden" name="estado[]" value="{{ $estadoSeleccionado }}">
+                                                @endforeach
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="col-lg-2 col-md-6">
                                         <label class="form-label" for="desde">Desde</label>
@@ -169,6 +206,7 @@
                                                 <th>Categoria</th>
                                                 <th>Codigo terminal</th>
                                                 <th>Telefono</th>
+                                                <th>Accion</th>
                                                 <th>Estado</th>
                                                 <th>Imagen</th>
                                                 <th>Entrada</th>
@@ -177,11 +215,45 @@
                                         </thead>
                                         <tbody>
                                             @forelse ($solicitudes as $solicitud)
+                                                @php
+                                                    $tomadoPorMi = (int) ($solicitud->tomado_por_id ?? 0) === (int) auth()->id();
+                                                    $tomadoPorOtro = !empty($solicitud->tomado_por_id) && !$tomadoPorMi;
+                                                    $gestionCerrada = in_array($solicitud->estado, ['pagado', 'nulo', 'averia_cerrada', 'rechazado'], true);
+                                                @endphp
                                                 <tr>
                                                     <td class="fw-semibold">{{ $solicitud->codigo }}</td>
                                                     <td>{{ $solicitud->categoria_label }}</td>
                                                     <td>{{ $solicitud->ticket_numero }}</td>
                                                     <td>{{ $solicitud->phone }}</td>
+                                                    <td style="min-width: 150px;">
+                                                        @if ($gestionCerrada)
+                                                            <span class="badge bg-light text-muted">Finalizado</span>
+                                                        @elseif ($tomadoPorMi)
+                                                            <div class="d-flex flex-column gap-1">
+                                                                <span class="badge bg-success-subtle text-success">
+                                                                    <i class="ri-user-follow-line me-1"></i>Tomado por ti
+                                                                </span>
+                                                                <form method="POST" action="{{ route('tickets.liberar', $solicitud) }}">
+                                                                    @csrf
+                                                                    @method('DELETE')
+                                                                    <button class="btn btn-sm btn-outline-secondary w-100" type="submit">
+                                                                        Liberar
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                        @elseif ($tomadoPorOtro)
+                                                            <span class="badge bg-warning-subtle text-warning">
+                                                                <i class="ri-lock-line me-1"></i>{{ $solicitud->tomadoPor?->name ?? 'Tomado' }}
+                                                            </span>
+                                                        @else
+                                                            <form method="POST" action="{{ route('tickets.tomar', $solicitud) }}">
+                                                                @csrf
+                                                                <button class="btn btn-sm btn-outline-primary w-100" type="submit">
+                                                                    <i class="ri-user-add-line me-1"></i>Tomar
+                                                                </button>
+                                                            </form>
+                                                        @endif
+                                                    </td>
                                                     <td>
                                                         <span class="badge bg-{{ $solicitud->estado_badge }}">{{ $solicitud->estado_label }}</span>
                                                     </td>
@@ -202,7 +274,11 @@
                                                     </td>
                                                     <td>{{ optional($solicitud->created_at)->format('d/m/Y h:i A') }}</td>
                                                     <td style="min-width: 260px;">
-                                                        @if ($solicitud->estado === 'ticket_pagado')
+                                                        @if ($tomadoPorOtro)
+                                                            <span class="text-muted">
+                                                                En gestion por {{ $solicitud->tomadoPor?->name ?? 'otro usuario' }}
+                                                            </span>
+                                                        @elseif ($solicitud->estado === 'ticket_pagado')
                                                             <form method="POST" action="{{ route('tickets.estado', $solicitud) }}">
                                                                 @csrf
                                                                 @method('PUT')
@@ -258,7 +334,7 @@
                                                 </tr>
                                             @empty
                                                 <tr>
-                                                    <td colspan="8" class="text-center text-muted py-4">
+                                                    <td colspan="9" class="text-center text-muted py-4">
                                                         No hay solicitudes con los filtros seleccionados.
                                                     </td>
                                                 </tr>
@@ -371,6 +447,75 @@
 
 @section('script')
     <script>
+        (function () {
+            const filter = document.getElementById('ticketEstadoFilter');
+
+            if (!filter) {
+                return;
+            }
+
+            const text = filter.querySelector('.ticket-estado-filter-text');
+            const hiddenInputs = filter.querySelector('.ticket-estado-hidden-inputs');
+            const options = Array.from(filter.querySelectorAll('.ticket-estado-option'));
+            const labels = new Map(options.map((option) => [option.dataset.value, option.textContent.trim()]));
+
+            function selectedValues() {
+                return Array.from(hiddenInputs.querySelectorAll('input[name="estado[]"]'))
+                    .map((input) => input.value)
+                    .filter(Boolean);
+            }
+
+            function setSelectedValues(values) {
+                hiddenInputs.innerHTML = '';
+
+                values.forEach(function (value) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'estado[]';
+                    input.value = value;
+                    hiddenInputs.appendChild(input);
+                });
+            }
+
+            function refreshUi() {
+                const selected = selectedValues();
+
+                options.forEach(function (option) {
+                    const isSelected = selected.includes(option.dataset.value);
+                    option.classList.toggle('active', isSelected);
+                    option.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+                    option.querySelector('i')?.classList.toggle('invisible', !isSelected);
+                });
+
+                if (!text) {
+                    return;
+                }
+
+                if (selected.length === 0) {
+                    text.textContent = 'Todos';
+                } else if (selected.length === 1) {
+                    text.textContent = labels.get(selected[0]) || '1 estado seleccionado';
+                } else {
+                    text.textContent = `${selected.length} estados seleccionados`;
+                }
+            }
+
+            options.forEach(function (option) {
+                option.addEventListener('click', function () {
+                    const value = option.dataset.value;
+                    const selected = selectedValues();
+                    const nextSelected = selected.includes(value)
+                        ? selected.filter((item) => item !== value)
+                        : selected.concat(value);
+
+                    setSelectedValues(nextSelected);
+                    refreshUi();
+                });
+            });
+
+            refreshUi();
+        })();
+
         (function () {
             const modalEl = document.getElementById('ticketTerminalPagoModal');
             const modalForm = document.getElementById('ticketTerminalPagoForm');
@@ -527,37 +672,77 @@
             const image = document.getElementById('ticketImagePreview');
             const link = document.getElementById('ticketImageLink');
             const title = document.getElementById('ticketImageModalTitle');
+            const storageKey = 'tickets.image_modal.restore';
 
             if (!modal || !image || !link || !title) {
                 return;
             }
 
+            function setImageModal(url, codigo) {
+                image.src = url;
+                link.href = url;
+                title.textContent = `Imagen de ${codigo || 'Ticket'}`;
+            }
+
             modal.addEventListener('show.bs.modal', function (event) {
                 const trigger = event.relatedTarget;
+
+                if (!trigger) {
+                    return;
+                }
+
                 const url = trigger?.getAttribute('data-attachment-url') || '';
                 const codigo = trigger?.getAttribute('data-ticket-codigo') || 'Ticket';
 
-                image.src = url;
-                link.href = url;
-                title.textContent = `Imagen de ${codigo}`;
+                setImageModal(url, codigo);
             });
 
             modal.addEventListener('hidden.bs.modal', function () {
                 image.src = '';
                 link.href = '#';
                 title.textContent = 'Imagen de ticket';
+                window.sessionStorage.removeItem(storageKey);
             });
+
+            try {
+                const rawRestore = window.sessionStorage.getItem(storageKey);
+                const restore = rawRestore ? JSON.parse(rawRestore) : null;
+
+                if (restore?.url && (!restore.expiresAt || Date.now() < restore.expiresAt) && window.bootstrap) {
+                    window.sessionStorage.removeItem(storageKey);
+                    setImageModal(restore.url, restore.codigo || 'Ticket');
+                    bootstrap.Modal.getOrCreateInstance(modal).show();
+                }
+            } catch (error) {
+                window.sessionStorage.removeItem(storageKey);
+            }
         })();
 
         (function () {
             const activityUrl = @json($ticketActivityUrl ?? null);
             let currentSignature = @json($ticketFeedSignature ?? null);
+            const imageModal = document.getElementById('ticketImageModal');
+            const imagePreview = document.getElementById('ticketImagePreview');
+            const imageTitle = document.getElementById('ticketImageModalTitle');
+            const imageRestoreStorageKey = 'tickets.image_modal.restore';
 
             if (!activityUrl || !currentSignature) {
                 return;
             }
 
             let pollTimer = null;
+
+            function rememberOpenImageModal() {
+                if (!imageModal?.classList.contains('show') || !imagePreview?.src) {
+                    return;
+                }
+
+                window.sessionStorage.setItem(imageRestoreStorageKey, JSON.stringify({
+                    url: imagePreview.src,
+                    codigo: (imageTitle?.textContent || 'Imagen de ticket').replace(/^Imagen de\s+/i, ''),
+                    expiresAt: Date.now() + 5 * 60 * 1000,
+                }));
+            }
 
             async function checkTicketActivity() {
                 if (document.hidden) {
@@ -587,6 +772,11 @@
 
                     if (signature !== currentSignature) {
                         currentSignature = signature;
+
+                        if (imageModal?.classList.contains('show')) {
+                            rememberOpenImageModal();
+                        }
+
                         window.location.reload();
                     }
                 } catch (error) {
