@@ -24,12 +24,12 @@
         [data-layout-mode="dark"] .tickets-page .tickets-table td,
         [data-layout-mode="dark"] .tickets-page .ticket-dark-text,
         [data-layout-mode="dark"] .tickets-page .tickets-table .text-muted {
-            color: #fff !important;
+            color: var(--vz-body-color) !important;
         }
 
         [data-layout-mode="dark"] .tickets-page .tickets-table .badge.bg-light {
             background-color: rgba(255, 255, 255, 0.14) !important;
-            color: #fff !important;
+            color: var(--vz-body-color) !important;
         }
     </style>
 
