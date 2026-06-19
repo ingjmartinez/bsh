@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class CoordinadorOperador extends Model
 {
@@ -23,6 +24,27 @@ class CoordinadorOperador extends Model
         'activo' => 'boolean',
     ];
 
+    public static function resolveTableName(): string
+    {
+        foreach (['coordinadores_operador', 'coordinador_operador'] as $table) {
+            if (Schema::hasTable($table)) {
+                return $table;
+            }
+        }
+
+        return 'coordinadores_operador';
+    }
+
+    public static function hasResolvedColumn(string $column): bool
+    {
+        return Schema::hasColumn(static::resolveTableName(), $column);
+    }
+
+    public function getTable()
+    {
+        return static::resolveTableName();
+    }
+
     public function getCedulaAttribute($value): string
     {
         $cedula = preg_replace('/\D/', '', (string) $value);
@@ -32,17 +54,17 @@ class CoordinadorOperador extends Model
 
     public function getApellidoAttribute(): string
     {
-        return '';
+        return (string) ($this->attributes['apellido'] ?? '');
     }
 
     public function getCorreoAttribute(): ?string
     {
-        return $this->email;
+        return $this->attributes['email'] ?? $this->attributes['correo'] ?? null;
     }
 
     public function getPuestoAttribute(): string
     {
-        return 'coordinador';
+        return (string) ($this->attributes['puesto'] ?? 'coordinador');
     }
 
     public function agencias()

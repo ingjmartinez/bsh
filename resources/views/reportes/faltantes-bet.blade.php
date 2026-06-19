@@ -71,8 +71,11 @@
                                         <thead>
                                             <tr>
                                                 <th>Cedula</th>
-                                                <th>Agencia ID</th>
                                                 <th>Nombre Empleado</th>
+                                                <th>Id Centro Costo</th>
+                                                <th>Grupo</th>
+                                                <th>Sub Grupo</th>
+                                                <th>Agencia ID</th>
                                                 <th>Cantidad de Faltantes</th>
                                                 <th>Monto Total</th>
                                                 <th>Acciones</th>
@@ -121,7 +124,7 @@
     </div>
 
     <div class="modal fade" id="detalleFaltantesModal" tabindex="-1" aria-labelledby="detalleFaltantesModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="detalleFaltantesModalLabel">Detalle de Faltantes</h5>
@@ -129,17 +132,30 @@
                 </div>
                 <div class="modal-body">
                     <div class="row g-3 mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label text-muted mb-1">Nombre</label>
                             <div class="fw-semibold" id="detalleNombre">Sin especificar</div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label text-muted mb-1">Cedula</label>
                             <div class="fw-semibold" id="detalleCedula">-</div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label text-muted mb-1">Agencia</label>
                             <div class="fw-semibold" id="detalleAgencia">-</div>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label text-muted mb-1">Id Centro Costo</label>
+                            <div class="fw-semibold" id="detalleCentroCosto">-</div>
+                        </div>
+                        <div class="w-100"></div>
+                        <div class="col-md-3">
+                            <label class="form-label text-muted mb-1">Grupo</label>
+                            <div class="fw-semibold" id="detalleGrupo">-</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label text-muted mb-1">Sub Grupo</label>
+                            <div class="fw-semibold" id="detalleSubGrupo">-</div>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label text-muted mb-1">Total de Faltantes</label>
@@ -179,6 +195,7 @@
         };
 
         document.addEventListener('DOMContentLoaded', function() {
+            inicializarFechasPorDefecto();
             actualizarTitulos();
             cargarDatos(1);
         });
@@ -192,6 +209,20 @@
             document.getElementById('pageTitle').textContent = `Informe de Faltantes ${sistema}`;
             document.getElementById('breadcrumbTitle').textContent = `Faltantes ${sistema}`;
             document.getElementById('cardTitle').textContent = `Reporte de Faltantes por Cedula - ${sistema}`;
+        }
+
+        function inicializarFechasPorDefecto() {
+            const hoy = new Date();
+            const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+            document.getElementById('fecha_inicio').value = formatearFechaInput(primerDiaMes);
+            document.getElementById('fecha_fin').value = formatearFechaInput(hoy);
+        }
+
+        function formatearFechaInput(fecha) {
+            const year = fecha.getFullYear();
+            const month = String(fecha.getMonth() + 1).padStart(2, '0');
+            const day = String(fecha.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
 
         function mostrarProcesandoDatos() {
@@ -267,13 +298,19 @@
                 const row = document.createElement('tr');
                 const nombreEmpleado = registro.nombre_empleado || 'Sin especificar';
                 const agenciaId = registro.agencia_id ?? '';
+                const idCentroCosto = registro.id_centro_costo ?? '';
+                const grupo = registro.id_grupo || '';
+                const subGrupo = registro.id_sub_grupo || '';
                 const detallesFaltantes = registro.detalles_faltantes || '';
                 const totalMonto = parseFloat(registro.total_monto || 0);
 
                 row.innerHTML = `
                     <td>${escapeHtml(registro.identificacion)}</td>
-                    <td class="text-center">${escapeHtml(agenciaId)}</td>
                     <td>${escapeHtml(nombreEmpleado)}</td>
+                    <td class="text-center">${escapeHtml(idCentroCosto)}</td>
+                    <td>${escapeHtml(grupo)}</td>
+                    <td>${escapeHtml(subGrupo)}</td>
+                    <td class="text-center">${escapeHtml(agenciaId)}</td>
                     <td class="text-center">${escapeHtml(registro.cantidad_faltantes)}</td>
                     <td class="text-end">$${totalMonto.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td class="text-center">
@@ -282,6 +319,9 @@
                             data-nombre="${escapeAttribute(nombreEmpleado)}"
                             data-cedula="${escapeAttribute(registro.identificacion)}"
                             data-agencia="${escapeAttribute(agenciaId)}"
+                            data-centro-costo="${escapeAttribute(idCentroCosto)}"
+                            data-grupo="${escapeAttribute(grupo)}"
+                            data-sub-grupo="${escapeAttribute(subGrupo)}"
                             data-total="${escapeAttribute(registro.cantidad_faltantes)}"
                             data-monto="${escapeAttribute(totalMonto)}"
                             data-detalles="${escapeAttribute(detallesFaltantes)}"
@@ -326,6 +366,9 @@
             document.getElementById('detalleNombre').textContent = button.dataset.nombre || 'Sin especificar';
             document.getElementById('detalleCedula').textContent = button.dataset.cedula || '-';
             document.getElementById('detalleAgencia').textContent = button.dataset.agencia || '-';
+            document.getElementById('detalleCentroCosto').textContent = button.dataset.centroCosto || '-';
+            document.getElementById('detalleGrupo').textContent = button.dataset.grupo || '-';
+            document.getElementById('detalleSubGrupo').textContent = button.dataset.subGrupo || '-';
             document.getElementById('detalleTotalFaltantes').textContent = button.dataset.total || '0';
             document.getElementById('detalleMontoTotal').textContent = formatearMonto(button.dataset.monto);
 

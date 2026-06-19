@@ -8,6 +8,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class ReporteController extends Controller
 {
@@ -321,16 +322,82 @@ class ReporteController extends Controller
     private function faltantesBaseQuery(string $tipo)
     {
         if ($tipo !== 'all') {
-            return DB::table($this->getFaltantesConfig($tipo)['tabla']);
+            return DB::query()->fromSub(
+                $this->faltantesSourceQuery($this->getFaltantesConfig($tipo)['tabla']),
+                'faltantes'
+            );
         }
 
-        $faltantesBet = DB::table('faltantes_bet')
-            ->select('agencia_id', 'identificacion', 'faltante_id', 'monto', 'fecha');
-
-        $faltantesNet = DB::table('faltantes_net')
-            ->select('agencia_id', 'identificacion', 'faltante_id', 'monto', 'fecha');
+        $faltantesBet = $this->faltantesSourceQuery('faltantes_bet');
+        $faltantesNet = $this->faltantesSourceQuery('faltantes_net');
 
         return DB::query()->fromSub($faltantesBet->unionAll($faltantesNet), 'faltantes');
+    }
+
+    private function faltantesSourceQuery(string $table)
+    {
+        $cedulaSql = $this->faltantesCedulaSql($table);
+        $idColumn = $this->faltantesIdColumn($table);
+
+        return DB::table($table)->selectRaw("
+            {$table}.agencia_id,
+            {$cedulaSql} AS identificacion,
+            {$idColumn} AS fila_id,
+            {$table}.monto,
+            {$table}.fecha
+        ");
+    }
+
+    private function faltantesCedulaSql(string $table): string
+    {
+        $candidatos = [];
+
+        if (Schema::hasColumn($table, 'identificacion')) {
+            $candidatos[] = "REPLACE(REPLACE(TRIM({$table}.identificacion), '-', ''), ' ', '')";
+        }
+
+        if (Schema::hasColumn($table, 'observacion')) {
+            $candidatos[] = "REPLACE(REPLACE(TRIM({$table}.observacion), '-', ''), ' ', '')";
+        }
+
+        if (empty($candidatos)) {
+            return 'NULL';
+        }
+
+        $cases = collect($candidatos)
+            ->map(fn ($col) => "WHEN {$col} REGEXP '^[0-9]{11}$' THEN {$col}")
+            ->implode(' ');
+
+        return "CASE {$cases} ELSE NULL END";
+    }
+
+    private function faltantesIdColumn(string $table): string
+    {
+        if (Schema::hasColumn($table, 'faltante_id')) {
+            return "{$table}.faltante_id";
+        }
+
+        if (Schema::hasColumn($table, 'id')) {
+            return "{$table}.id";
+        }
+
+        return 'NULL';
+    }
+
+    private function centrosCostoPorTerminalQuery()
+    {
+        $ordenPreferencia = 'COALESCE(cc.ocultar, 0) ASC, COALESCE(cc.inactivo, 0) ASC, cc.id_centro_costo ASC';
+
+        return DB::table('centros_de_costo as cc')
+            ->selectRaw("
+                TRIM(cc.id_viejo) AS agencia_id,
+                CAST(SUBSTRING_INDEX(GROUP_CONCAT(cc.id_centro_costo ORDER BY {$ordenPreferencia} SEPARATOR ','), ',', 1) AS UNSIGNED) AS id_centro_costo,
+                SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(cc.id_grupo, '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1) AS id_grupo,
+                SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(cc.id_sub_grupo, '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1) AS id_sub_grupo
+            ")
+            ->whereNotNull('cc.id_viejo')
+            ->where('cc.id_viejo', '!=', '')
+            ->groupBy(DB::raw('TRIM(cc.id_viejo)'));
     }
 
     public function listFaltantesBet(Request $request)
@@ -340,28 +407,41 @@ class ReporteController extends Controller
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
         $config = $this->getFaltantesConfig($request->input('tipo'));
-        $tabla = $config['tabla'];
 
         $query = $this->faltantesBaseQuery($config['tipo'])
-            ->leftJoin('empleados', $tabla . '.identificacion', '=', 'empleados.cedula')
+            ->leftJoinSub($this->centrosCostoPorTerminalQuery(), 'ccosto', function ($join) {
+                $join->on('faltantes.agencia_id', '=', 'ccosto.agencia_id');
+            })
+            ->leftJoin('empleados', 'faltantes.identificacion', '=', 'empleados.cedula')
             ->select(
-                $tabla . '.agencia_id',
-                $tabla . '.identificacion',
+                'faltantes.agencia_id',
+                'faltantes.identificacion',
                 DB::raw("CONCAT(COALESCE(empleados.nombres, ''), ' ', COALESCE(empleados.apellidos, '')) as nombre_empleado"),
-                DB::raw("COUNT($tabla.faltante_id) as cantidad_faltantes"),
-                DB::raw("SUM($tabla.monto) as total_monto"),
-                DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT($tabla.fecha, '%d/%m/%Y') ORDER BY $tabla.fecha SEPARATOR ', ') as fechas_faltantes"),
-                DB::raw("GROUP_CONCAT(CONCAT(DATE_FORMAT($tabla.fecha, '%d/%m/%Y'), '|', COALESCE($tabla.monto, 0)) ORDER BY $tabla.fecha SEPARATOR ';;') as detalles_faltantes")
+                'ccosto.id_centro_costo',
+                'ccosto.id_grupo',
+                'ccosto.id_sub_grupo',
+                DB::raw("COUNT(faltantes.fila_id) as cantidad_faltantes"),
+                DB::raw("SUM(faltantes.monto) as total_monto"),
+                DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(faltantes.fecha, '%d/%m/%Y') ORDER BY faltantes.fecha SEPARATOR ', ') as fechas_faltantes"),
+                DB::raw("GROUP_CONCAT(CONCAT(DATE_FORMAT(faltantes.fecha, '%d/%m/%Y'), '|', COALESCE(faltantes.monto, 0)) ORDER BY faltantes.fecha SEPARATOR ';;') as detalles_faltantes")
             )
-            ->whereNotNull($tabla . '.identificacion')
-            ->where($tabla . '.identificacion', '!=', '');
+            ->whereNotNull('faltantes.identificacion')
+            ->where('faltantes.identificacion', '!=', '');
 
         if ($fechaInicio && $fechaFin) {
-            $query->whereBetween($tabla . '.fecha', [$fechaInicio, $fechaFin]);
+            $query->whereBetween('faltantes.fecha', [$fechaInicio, $fechaFin]);
         }
 
         $registros = $query
-            ->groupBy($tabla . '.agencia_id', $tabla . '.identificacion', 'empleados.nombres', 'empleados.apellidos')
+            ->groupBy(
+                'faltantes.agencia_id',
+                'faltantes.identificacion',
+                'empleados.nombres',
+                'empleados.apellidos',
+                'ccosto.id_centro_costo',
+                'ccosto.id_grupo',
+                'ccosto.id_sub_grupo'
+            )
             ->orderBy('total_monto', 'desc')
             ->paginate(10);
 
@@ -376,26 +456,31 @@ class ReporteController extends Controller
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
         $config = $this->getFaltantesConfig($request->input('tipo'));
-        $tabla = $config['tabla'];
 
         $query = $this->faltantesBaseQuery($config['tipo'])
-            ->leftJoin('empleados', $tabla . '.identificacion', '=', 'empleados.cedula')
+            ->leftJoinSub($this->centrosCostoPorTerminalQuery(), 'ccosto', function ($join) {
+                $join->on('faltantes.agencia_id', '=', 'ccosto.agencia_id');
+            })
+            ->leftJoin('empleados', 'faltantes.identificacion', '=', 'empleados.cedula')
             ->select(
-                $tabla . '.identificacion',
+                'faltantes.identificacion',
                 DB::raw("CONCAT(COALESCE(empleados.nombres, ''), ' ', COALESCE(empleados.apellidos, '')) as nombre_empleado"),
-                DB::raw("COUNT($tabla.faltante_id) as cantidad_faltantes"),
-                DB::raw("SUM($tabla.monto) as total_monto"),
-                DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT($tabla.fecha, '%d/%m/%Y') ORDER BY $tabla.fecha SEPARATOR ', ') as fechas_faltantes")
+                'ccosto.id_centro_costo',
+                'ccosto.id_grupo',
+                'ccosto.id_sub_grupo',
+                DB::raw("COUNT(faltantes.fila_id) as cantidad_faltantes"),
+                DB::raw("SUM(faltantes.monto) as total_monto"),
+                DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(faltantes.fecha, '%d/%m/%Y') ORDER BY faltantes.fecha SEPARATOR ', ') as fechas_faltantes")
             )
-            ->whereNotNull($tabla . '.identificacion')
-            ->where($tabla . '.identificacion', '!=', '');
+            ->whereNotNull('faltantes.identificacion')
+            ->where('faltantes.identificacion', '!=', '');
 
         if ($fechaInicio && $fechaFin) {
-            $query->whereBetween($tabla . '.fecha', [$fechaInicio, $fechaFin]);
+            $query->whereBetween('faltantes.fecha', [$fechaInicio, $fechaFin]);
         }
 
         $registros = $query
-            ->groupBy($tabla . '.identificacion', 'empleados.nombres', 'empleados.apellidos')
+            ->groupBy('faltantes.identificacion', 'empleados.nombres', 'empleados.apellidos', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo')
             ->orderBy('total_monto', 'desc')
             ->get();
 
@@ -411,26 +496,31 @@ class ReporteController extends Controller
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
         $config = $this->getFaltantesConfig($request->input('tipo'));
-        $tabla = $config['tabla'];
 
         $query = $this->faltantesBaseQuery($config['tipo'])
-            ->leftJoin('empleados', $tabla . '.identificacion', '=', 'empleados.cedula')
+            ->leftJoinSub($this->centrosCostoPorTerminalQuery(), 'ccosto', function ($join) {
+                $join->on('faltantes.agencia_id', '=', 'ccosto.agencia_id');
+            })
+            ->leftJoin('empleados', 'faltantes.identificacion', '=', 'empleados.cedula')
             ->select(
-                $tabla . '.identificacion',
+                'faltantes.identificacion',
                 DB::raw("CONCAT(COALESCE(empleados.nombres, ''), ' ', COALESCE(empleados.apellidos, '')) as nombre_empleado"),
-                DB::raw("COUNT($tabla.faltante_id) as cantidad_faltantes"),
-                DB::raw("SUM($tabla.monto) as total_monto"),
-                DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT($tabla.fecha, '%d/%m/%Y') ORDER BY $tabla.fecha SEPARATOR ', ') as fechas_faltantes")
+                'ccosto.id_centro_costo',
+                'ccosto.id_grupo',
+                'ccosto.id_sub_grupo',
+                DB::raw("COUNT(faltantes.fila_id) as cantidad_faltantes"),
+                DB::raw("SUM(faltantes.monto) as total_monto"),
+                DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(faltantes.fecha, '%d/%m/%Y') ORDER BY faltantes.fecha SEPARATOR ', ') as fechas_faltantes")
             )
-            ->whereNotNull($tabla . '.identificacion')
-            ->where($tabla . '.identificacion', '!=', '');
+            ->whereNotNull('faltantes.identificacion')
+            ->where('faltantes.identificacion', '!=', '');
 
         if ($fechaInicio && $fechaFin) {
-            $query->whereBetween($tabla . '.fecha', [$fechaInicio, $fechaFin]);
+            $query->whereBetween('faltantes.fecha', [$fechaInicio, $fechaFin]);
         }
 
         $registros = $query
-            ->groupBy($tabla . '.identificacion', 'empleados.nombres', 'empleados.apellidos')
+            ->groupBy('faltantes.identificacion', 'empleados.nombres', 'empleados.apellidos', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo')
             ->orderBy('total_monto', 'desc')
             ->get();
 

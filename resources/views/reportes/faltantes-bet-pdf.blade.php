@@ -65,6 +65,9 @@
             <tr>
                 <th>Cedula</th>
                 <th>Nombre Empleado</th>
+                <th>Id Centro Costo</th>
+                <th>Grupo</th>
+                <th>Sub Grupo</th>
                 <th class="text-center">Cantidad de Faltantes</th>
                 <th class="text-end">Monto Total</th>
             </tr>
@@ -82,6 +85,9 @@
                 <tr>
                     <td>{{ $registro->identificacion }}</td>
                     <td>{{ trim($registro->nombre_empleado) ?: 'Sin especificar' }}</td>
+                    <td>{{ $registro->id_centro_costo ?? '' }}</td>
+                    <td>{{ trim($registro->id_grupo ?? '') }}</td>
+                    <td>{{ trim($registro->id_sub_grupo ?? '') }}</td>
                     <td class="text-center">{{ $registro->cantidad_faltantes }}</td>
                     <td class="text-end">${{ number_format($registro->total_monto, 2, '.', ',') }}</td>
                 </tr>

@@ -9,8 +9,48 @@ use Illuminate\Support\Facades\DB;
 
 class CoordinadorOperadorController extends Controller
 {
+    private function coordinadorOperadorTable(): string
+    {
+        return CoordinadorOperador::resolveTableName();
+    }
+
+    private function coordinadorOperadorPayload(array $validated): array
+    {
+        $payload = [
+            'cedula' => $validated['cedula'],
+            'telefono' => $validated['telefono'],
+        ];
+
+        if (CoordinadorOperador::hasResolvedColumn('apellido')) {
+            $payload['nombre'] = trim((string) $validated['nombre']);
+            $payload['apellido'] = trim((string) ($validated['apellido'] ?? ''));
+        } else {
+            $payload['nombre'] = trim($validated['nombre'] . ' ' . ($validated['apellido'] ?? ''));
+        }
+
+        if (CoordinadorOperador::hasResolvedColumn('email')) {
+            $payload['email'] = $validated['correo'];
+        }
+
+        if (CoordinadorOperador::hasResolvedColumn('correo')) {
+            $payload['correo'] = $validated['correo'];
+        }
+
+        if (CoordinadorOperador::hasResolvedColumn('puesto')) {
+            $payload['puesto'] = $validated['puesto'] ?? 'coordinador';
+        }
+
+        if (CoordinadorOperador::hasResolvedColumn('activo')) {
+            $payload['activo'] = true;
+        }
+
+        return $payload;
+    }
+
     public function index()
     {
+        $tablaCoordinador = $this->coordinadorOperadorTable();
+
         $registros = CoordinadorOperador::with('agencias:id,codigo,nombre,terminal')
             ->withCount('agencias')
             ->orderByDesc('id')
@@ -21,7 +61,7 @@ class CoordinadorOperadorController extends Controller
             ->get();
 
         $asignacionesAgencia = DB::table('coordinador_operador_agencia as coa')
-            ->join('coordinadores_operador as co', 'co.id', '=', 'coa.coordinador_operador_id')
+            ->join($tablaCoordinador . ' as co', 'co.id', '=', 'coa.coordinador_operador_id')
             ->select(
                 'coa.agencia_id',
                 'co.id as coordinador_id',
@@ -52,7 +92,7 @@ class CoordinadorOperadorController extends Controller
             'nombre' => ['required', 'string', 'max:150'],
             'apellido' => ['nullable', 'string', 'max:100'],
             'correo' => ['required', 'email', 'max:150'],
-            'cedula' => ['required', 'regex:/^\d{11}$/', 'unique:coordinadores_operador,cedula'],
+            'cedula' => ['required', 'regex:/^\d{11}$/', 'unique:' . $this->coordinadorOperadorTable() . ',cedula'],
             'telefono' => ['required', 'regex:/^\d{10}$/'],
             'puesto' => ['nullable', 'in:coordinador,operador'],
         ], [
@@ -62,13 +102,7 @@ class CoordinadorOperadorController extends Controller
             'puesto.in' => 'El puesto debe ser coordinador u operador.',
         ]);
 
-        CoordinadorOperador::create([
-            'nombre' => trim($validated['nombre'] . ' ' . ($validated['apellido'] ?? '')),
-            'email' => $validated['correo'],
-            'cedula' => $validated['cedula'],
-            'telefono' => $validated['telefono'],
-            'activo' => true,
-        ]);
+        CoordinadorOperador::create($this->coordinadorOperadorPayload($validated));
 
         return redirect()->route('coordinador-operador.index')
             ->with('success', 'Registro creado correctamente.');
@@ -87,7 +121,7 @@ class CoordinadorOperadorController extends Controller
             'nombre' => ['required', 'string', 'max:150'],
             'apellido' => ['nullable', 'string', 'max:100'],
             'correo' => ['required', 'email', 'max:150'],
-            'cedula' => ['required', 'regex:/^\d{11}$/', 'unique:coordinadores_operador,cedula,' . $coordinador_operador->id],
+            'cedula' => ['required', 'regex:/^\d{11}$/', 'unique:' . $this->coordinadorOperadorTable() . ',cedula,' . $coordinador_operador->id],
             'telefono' => ['required', 'regex:/^\d{10}$/'],
             'puesto' => ['nullable', 'in:coordinador,operador'],
         ], [
@@ -97,13 +131,7 @@ class CoordinadorOperadorController extends Controller
             'puesto.in' => 'El puesto debe ser coordinador u operador.',
         ]);
 
-        $coordinador_operador->update([
-            'nombre' => trim($validated['nombre'] . ' ' . ($validated['apellido'] ?? '')),
-            'email' => $validated['correo'],
-            'cedula' => $validated['cedula'],
-            'telefono' => $validated['telefono'],
-            'activo' => true,
-        ]);
+        $coordinador_operador->update($this->coordinadorOperadorPayload($validated));
 
         return redirect()->route('coordinador-operador.index')
             ->with('success', 'Registro actualizado correctamente.');
@@ -119,6 +147,8 @@ class CoordinadorOperadorController extends Controller
 
     public function asignarAgencias(Request $request, CoordinadorOperador $coordinador_operador)
     {
+        $tablaCoordinador = $this->coordinadorOperadorTable();
+
         $validated = $request->validate([
             'agencias' => ['nullable', 'array'],
             'agencias.*' => ['integer', 'exists:agencias,id'],
@@ -128,7 +158,7 @@ class CoordinadorOperadorController extends Controller
         $agenciasSeleccionadas = collect($validated['agencias'] ?? [])->map(fn($id) => (int) $id)->values();
 
         $conflictos = DB::table('coordinador_operador_agencia as coa')
-            ->join('coordinadores_operador as co', 'co.id', '=', 'coa.coordinador_operador_id')
+            ->join($tablaCoordinador . ' as co', 'co.id', '=', 'coa.coordinador_operador_id')
             ->join('agencias as a', 'a.id', '=', 'coa.agencia_id')
             ->whereIn('coa.agencia_id', $agenciasSeleccionadas)
             ->where('coa.coordinador_operador_id', '!=', $coordinador_operador->id)

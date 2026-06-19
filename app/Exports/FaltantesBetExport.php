@@ -2,10 +2,10 @@
 
 namespace App\Exports;
 
+use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Maatwebsite\Excel\Concerns\FromCollection;
 
 class FaltantesBetExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize
 {
@@ -24,8 +24,11 @@ class FaltantesBetExport implements FromCollection, WithHeadings, WithMapping, S
     public function headings(): array
     {
         return [
-            'Cédula',
+            'Id Centro Costo',
+            'Cedula',
             'Nombre Empleado',
+            'Grupo',
+            'Sub Grupo',
             'Cantidad de Faltantes',
             'Monto Total',
         ];
@@ -34,8 +37,11 @@ class FaltantesBetExport implements FromCollection, WithHeadings, WithMapping, S
     public function map($row): array
     {
         return [
+            $row->id_centro_costo,
             $row->identificacion,
-            trim($row->nombre_empleado) ?? 'Sin especificar',
+            trim($row->nombre_empleado ?? '') ?: 'Sin especificar',
+            trim($row->id_grupo ?? ''),
+            trim($row->id_sub_grupo ?? ''),
             $row->cantidad_faltantes,
             number_format($row->total_monto, 2, '.', ''),
         ];
