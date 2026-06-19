@@ -14,10 +14,13 @@ class CoordinadorOperador extends Model
 
     protected $fillable = [
         'nombre',
+        'apellido',
         'cedula',
         'telefono',
+        'correo',
         'email',
         'activo',
+        'puesto',
     ];
 
     protected $casts = [
@@ -26,13 +29,21 @@ class CoordinadorOperador extends Model
 
     public static function resolveTableName(): string
     {
-        foreach (['coordinadores_operador', 'coordinador_operador'] as $table) {
+        $candidatas = ['coordinador_operador', 'coordinadores_operador'];
+
+        foreach ($candidatas as $table) {
+            if (Schema::hasTable($table) && Schema::hasColumn($table, 'puesto')) {
+                return $table;
+            }
+        }
+
+        foreach ($candidatas as $table) {
             if (Schema::hasTable($table)) {
                 return $table;
             }
         }
 
-        return 'coordinadores_operador';
+        return 'coordinador_operador';
     }
 
     public static function hasResolvedColumn(string $column): bool

@@ -6,12 +6,42 @@ use App\Models\Agencia;
 use App\Models\CoordinadorOperador;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class CoordinadorOperadorController extends Controller
 {
     private function coordinadorOperadorTable(): string
     {
         return CoordinadorOperador::resolveTableName();
+    }
+
+    private function agenciaCodeColumn(): string
+    {
+        return Schema::hasColumn('agencias', 'codigo') ? 'codigo' : 'agencia';
+    }
+
+    private function agenciaNameColumn(): string
+    {
+        return Schema::hasColumn('agencias', 'nombre') ? 'nombre' : 'nombre_agencia';
+    }
+
+    private function agenciaCodeSelect(): string
+    {
+        return $this->agenciaCodeColumn() . ' as codigo';
+    }
+
+    private function agenciaNameSelect(): string
+    {
+        return $this->agenciaNameColumn() . ' as nombre';
+    }
+
+    private function coordinadorNombreSql(string $alias = 'co'): string
+    {
+        if (CoordinadorOperador::hasResolvedColumn('apellido')) {
+            return "TRIM(CONCAT(COALESCE({$alias}.nombre, ''), ' ', COALESCE({$alias}.apellido, '')))";
+        }
+
+        return "TRIM(COALESCE({$alias}.nombre, ''))";
     }
 
     private function coordinadorOperadorPayload(array $validated): array
@@ -51,13 +81,18 @@ class CoordinadorOperadorController extends Controller
     {
         $tablaCoordinador = $this->coordinadorOperadorTable();
 
-        $registros = CoordinadorOperador::with('agencias:id,codigo,nombre,terminal')
+        $registros = CoordinadorOperador::with([
+                'agencias' => function ($query) {
+                    $query->selectRaw('agencias.id, agencias.terminal, agencias.' . $this->agenciaCodeSelect() . ', agencias.' . $this->agenciaNameSelect());
+                }
+            ])
             ->withCount('agencias')
             ->orderByDesc('id')
             ->paginate(15);
 
-        $agencias = Agencia::select('id', 'codigo', 'nombre', 'terminal')
-            ->orderBy('codigo')
+        $agencias = Agencia::query()
+            ->selectRaw('id, terminal, ' . $this->agenciaCodeSelect() . ', ' . $this->agenciaNameSelect())
+            ->orderBy($this->agenciaCodeColumn())
             ->get();
 
         $asignacionesAgencia = DB::table('coordinador_operador_agencia as coa')
@@ -65,7 +100,7 @@ class CoordinadorOperadorController extends Controller
             ->select(
                 'coa.agencia_id',
                 'co.id as coordinador_id',
-                'co.nombre'
+                DB::raw($this->coordinadorNombreSql('co') . ' as nombre')
             )
             ->get()
             ->groupBy('agencia_id')
@@ -165,7 +200,7 @@ class CoordinadorOperadorController extends Controller
             ->select(
                 'coa.agencia_id',
                 'a.terminal',
-                'co.nombre'
+                DB::raw($this->coordinadorNombreSql('co') . ' as nombre')
             )
             ->get();
 
