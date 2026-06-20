@@ -20,6 +20,7 @@ class WhatsAppChatbotService
     private const STEP_MENU = 'consulta_hora_menu';
     private const STEP_TICKET_NUMERO = 'ticket_numero';
     private const STEP_TICKET_IMAGEN = 'ticket_imagen';
+    private const STEP_TICKET_BLOQUEADO = 'ticket_bloqueado';
     private const STEP_SG_TIPO = 'servicios_generales_tipo';
     private const STEP_SG_TERMINAL = 'servicios_generales_terminal';
     private const STEP_SG_IMAGEN = 'servicios_generales_imagen';
@@ -69,7 +70,7 @@ class WhatsAppChatbotService
         $currentStep = $session->step ?: self::STEP_INICIO;
 
         if (
-            !in_array($session->step, [self::STEP_CONFIRMAR_CIERRE_SESION, self::STEP_SISTEMA], true)
+            !in_array($session->step, [self::STEP_CONFIRMAR_CIERRE_SESION, self::STEP_SISTEMA, self::STEP_TICKET_BLOQUEADO], true)
             && in_array($message, ['1', '2'], true)
         ) {
             $ticket = $this->latestTokenTicketForPhone($session->phone);
@@ -162,6 +163,10 @@ class WhatsAppChatbotService
             return $this->resolverConfirmacionCierreSesion($session, $message);
         }
 
+        if ($session->step === self::STEP_TICKET_BLOQUEADO) {
+            return $this->resolverTicketBloqueado($session, $message);
+        }
+
         if ($this->isGreeting($message)) {
             if ($this->hasOpenConversation($session)) {
                 $context = is_array($session->context) ? $session->context : [];
@@ -234,9 +239,7 @@ class WhatsAppChatbotService
                 }
 
                 if ($openTicket = $this->openPaymentOrCancellationTicketForPhone($session->phone)) {
-                    $this->resetSession($session);
-
-                    return $this->openTicketBlockMessage($openTicket);
+                    return $this->activarBloqueoPorTicketAbierto($session, $openTicket);
                 }
 
                 $session->step = self::STEP_TICKET_NUMERO;
@@ -256,9 +259,7 @@ class WhatsAppChatbotService
                 }
 
                 if ($openTicket = $this->openPaymentOrCancellationTicketForPhone($session->phone)) {
-                    $this->resetSession($session);
-
-                    return $this->openTicketBlockMessage($openTicket);
+                    return $this->activarBloqueoPorTicketAbierto($session, $openTicket);
                 }
 
                 $session->step = self::STEP_TICKET_NUMERO;
@@ -506,9 +507,7 @@ class WhatsAppChatbotService
         }
 
         if ($openTicket = $this->openPaymentOrCancellationTicketForPhone($session->phone)) {
-            $this->resetSession($session);
-
-            return $this->openTicketBlockMessage($openTicket);
+            return $this->activarBloqueoPorTicketAbierto($session, $openTicket);
         }
 
         try {
@@ -582,7 +581,64 @@ class WhatsAppChatbotService
             . "Categoria: {$ticket->categoria_label}\n"
             . "Terminal: {$ticket->ticket_numero}\n"
             . "Estado: {$ticket->estado_label}\n\n"
-            . "Debes esperar a que finalicen esa solicitud antes de crear otra de pago o anulacion.";
+            . "1- Ver Solicitud Pendiente\n"
+            . "2- Rechazar solicitud";
+    }
+
+    private function activarBloqueoPorTicketAbierto(ChatbotSession $session, TicketSolicitud $ticket): string
+    {
+        $session->step = self::STEP_TICKET_BLOQUEADO;
+        $session->context = [
+            'blocked_ticket_id' => (int) $ticket->id,
+        ];
+
+        return $this->openTicketBlockMessage($ticket);
+    }
+
+    private function resolverTicketBloqueado(ChatbotSession $session, string $message): string
+    {
+        $context = is_array($session->context) ? $session->context : [];
+        $ticketId = (int) ($context['blocked_ticket_id'] ?? 0);
+        $ticket = $ticketId > 0 ? TicketSolicitud::query()->find($ticketId) : null;
+
+        if ($ticket === null || $ticket->phone !== $session->phone) {
+            $this->resetSession($session);
+
+            return 'No pude encontrar la solicitud pendiente. Escribe hola para iniciar nuevamente.';
+        }
+
+        if (in_array((string) $ticket->estado, [
+            TicketSolicitud::ESTADO_PAGADO,
+            TicketSolicitud::ESTADO_NULO,
+            TicketSolicitud::ESTADO_RECHAZADO,
+        ], true)) {
+            $this->resetSession($session);
+
+            return "Tu solicitud {$ticket->codigo} ya no esta abierta.\n\nEscribe hola para iniciar nuevamente.";
+        }
+
+        if ($message === '1') {
+            return $this->openTicketBlockMessage($ticket);
+        }
+
+        if ($message === '2') {
+            $ticket->estado = TicketSolicitud::ESTADO_RECHAZADO;
+            $ticket->procesado_por_id = $this->chatbotUserId();
+            $ticket->procesado_at = now();
+            $ticket->tomado_por_id = null;
+            $ticket->tomado_at = null;
+            $ticket->notas = $this->appendTicketNote(
+                (string) $ticket->notas,
+                'Rechazado por el usuario'
+            );
+            $ticket->save();
+
+            $this->resetSession($session);
+
+            return "Tu solicitud {$ticket->codigo} fue rechazada correctamente.\n\nYa puedes crear una nueva solicitud si la necesitas.";
+        }
+
+        return $this->openTicketBlockMessage($ticket);
     }
 
     private function handleTokenFeedback(ChatbotSession $session, TicketSolicitud $ticket, string $message): string
@@ -696,6 +752,7 @@ class WhatsAppChatbotService
         return match ($session->step) {
             self::STEP_SISTEMA => self::SISTEMA_MESSAGE,
             self::STEP_MENU => self::MENU_MESSAGE,
+            self::STEP_TICKET_BLOQUEADO => 'Tienes una solicitud abierta. Escribe 1 para verla o 2 para rechazarla.',
             self::STEP_TICKET_NUMERO => "Estas creando una solicitud de {$categoriaLabel}.\n\nIndica el codigo del terminal.",
             self::STEP_TICKET_IMAGEN => $terminalCodigo !== ''
                 ? "Estas creando una solicitud de {$categoriaLabel} para el terminal {$terminalCodigo}.\n\nEnvia la imagen del comprobante para registrar la solicitud."
