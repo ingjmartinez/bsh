@@ -10,6 +10,7 @@ use App\Support\InicioVentasCache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class VentasController extends Controller
 {
@@ -452,5 +453,62 @@ class VentasController extends Controller
             'message' => $message !== '' ? $message : 'Proceso completado.',
             'rows' => $rows,
         ];
+    }
+
+    private function syncAgenciasLotedomFromVentasUsuariosRows(array $rows): void
+    {
+        if (!Schema::hasTable('agencias_lotedom')) {
+            return;
+        }
+
+        $timestamp = now();
+        $catalogo = [];
+
+        foreach ($rows as $row) {
+            $agenciaId = trim((string) ($row['agencia_id'] ?? ''));
+
+            if ($agenciaId === '') {
+                continue;
+            }
+
+            $catalogo[$agenciaId] = [
+                'agencia' => $agenciaId,
+                'codigo' => $agenciaId,
+                'terminal' => $agenciaId,
+                'sistema' => 'lotedom',
+                'estatus' => 1,
+                'aplica_incentivo' => 1,
+                'updated_at' => $timestamp,
+            ];
+
+            if (!isset($catalogo[$agenciaId]['created_at'])) {
+                $catalogo[$agenciaId]['created_at'] = $timestamp;
+            }
+        }
+
+        if (empty($catalogo)) {
+            return;
+        }
+
+        foreach (array_chunk(array_values($catalogo), 1000) as $chunk) {
+            DB::table('agencias_lotedom')->insertOrIgnore($chunk);
+        }
+    }
+
+    private function syncAgenciasLotedomFromVentasUsuariosNetByFecha(string $fecha): void
+    {
+        if (!Schema::hasTable('ventas_usuarios_net')) {
+            return;
+        }
+
+        $rows = DB::table('ventas_usuarios_net')
+            ->select('agencia_id')
+            ->whereDate('fecha', $fecha)
+            ->whereNotNull('agencia_id')
+            ->get()
+            ->map(fn ($row) => ['agencia_id' => $row->agencia_id])
+            ->all();
+
+        $this->syncAgenciasLotedomFromVentasUsuariosRows($rows);
     }
 }

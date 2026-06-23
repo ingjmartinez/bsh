@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AgenciaController;
+use App\Http\Controllers\AgenciaLotedomController;
 use App\Http\Controllers\Api;
 use App\Http\Controllers\AsistenciaComparativaController;
 use App\Http\Controllers\AsistenciaController;
@@ -341,6 +342,32 @@ Route::get('agencias-mass-update-template', [AgenciaController::class, 'massUpda
 Route::get('agencias-incumplimientos-horario', [AgenciaController::class, 'incumplimientosHorario'])->name('agencias.incumplimientos');
 Route::get('agencias-incumplimientos-horario/list', [AgenciaController::class, 'listIncumplimientosHorario'])->name('agencias.incumplimientos.list');
 Route::post('agencias-incumplimientos-horario/send-mail', [AgenciaController::class, 'enviarMiniReporteIncumplimiento'])->name('agencias.incumplimientos.send-mail');
+
+Route::resource('agencias-lotedom', AgenciaLotedomController::class)
+    ->except(['show'])
+    ->parameters(['agencias-lotedom' => 'agenciaLotedom']);
+Route::get('agencias-lotedom-list', [AgenciaLotedomController::class, 'list'])->name('agencias-lotedom.list');
+Route::get('agencias-lotedom-export', [AgenciaLotedomController::class, 'export'])->name('agencias-lotedom.export');
+Route::post('agencias-lotedom-import', [AgenciaLotedomController::class, 'import'])->name('agencias-lotedom.import');
+Route::post('agencias-lotedom-mass-update', [AgenciaLotedomController::class, 'massUpdate'])->name('agencias-lotedom.mass-update');
+Route::post('agencias-lotedom-mass-update-preview', [AgenciaLotedomController::class, 'massUpdatePreview'])->name('agencias-lotedom.mass-update-preview');
+Route::get('agencias-lotedom-no-registradas-venta-fija-semana', [AgenciaLotedomController::class, 'noRegistradasVentaFijaSemana'])->name('agencias-lotedom.no-registradas-venta-fija-semana');
+Route::post('agencias-lotedom-no-registradas-registrar', [AgenciaLotedomController::class, 'registrarNoRegistradasVentaFija'])->name('agencias-lotedom.no-registradas.registrar');
+Route::post('agencias-lotedom-no-registradas-registrar-terminal', [AgenciaLotedomController::class, 'registrarTerminalNoRegistrada'])->name('agencias-lotedom.no-registradas.registrar-terminal');
+Route::get('agencias-lotedom-no-registradas-desde-ventas', [AgenciaLotedomController::class, 'noRegistradasDesdeVentasUsuarios'])->name('agencias-lotedom.no-registradas-desde-ventas');
+Route::post('agencias-lotedom-no-registradas-sincronizar-desde-ventas', [AgenciaLotedomController::class, 'sincronizarNoRegistradasDesdeVentasUsuarios'])->name('agencias-lotedom.no-registradas.sincronizar-desde-ventas');
+Route::get('agencias-lotedom-inactivas', [AgenciaLotedomController::class, 'agenciasInactivas'])->name('agencias-lotedom.inactivas');
+Route::get('agencias-lotedom-sin-venta-30-dias', [AgenciaLotedomController::class, 'agenciasSinVentaTreintaDias'])->name('agencias-lotedom.sin-venta-30-dias');
+Route::get('agencias-lotedom-inactivas-con-venta-30-dias', [AgenciaLotedomController::class, 'agenciasInactivasConVentaTreintaDias'])->name('agencias-lotedom.inactivas-con-venta-30-dias');
+Route::get('agencias-lotedom-no-registradas-con-venta-30-dias', [AgenciaLotedomController::class, 'agenciasNoRegistradasConVentaTreintaDias'])->name('agencias-lotedom.no-registradas-con-venta-30-dias');
+Route::post('agencias-lotedom-sin-venta-30-dias-desactivar', [AgenciaLotedomController::class, 'desactivarAgenciasSinVentaTreintaDias'])->name('agencias-lotedom.sin-venta-30-dias.desactivar');
+Route::post('agencias-lotedom-actualizar-estatus', [AgenciaLotedomController::class, 'actualizarEstatusAgencia'])->name('agencias-lotedom.actualizar-estatus');
+Route::get('agencias-lotedom-para-actualizar', [AgenciaLotedomController::class, 'agenciasParaActualizar'])->name('agencias-lotedom.para-actualizar');
+Route::get('agencias-lotedom-template', [AgenciaLotedomController::class, 'template'])->name('agencias-lotedom.template');
+Route::get('agencias-lotedom-mass-update-template', [AgenciaLotedomController::class, 'massUpdateTemplate'])->name('agencias-lotedom.mass-update-template');
+Route::get('agencias-lotedom-incumplimientos-horario', [AgenciaLotedomController::class, 'incumplimientosHorario'])->name('agencias-lotedom.incumplimientos');
+Route::get('agencias-lotedom-incumplimientos-horario/list', [AgenciaLotedomController::class, 'listIncumplimientosHorario'])->name('agencias-lotedom.incumplimientos.list');
+Route::post('agencias-lotedom-incumplimientos-horario/send-mail', [AgenciaLotedomController::class, 'enviarMiniReporteIncumplimiento'])->name('agencias-lotedom.incumplimientos.send-mail');
 
 Route::resource('usuarios', UserController::class)->except(['show']);
 Route::get('usuarios-list', [UserController::class, 'list'])->name('usuarios.list');

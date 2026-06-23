@@ -8,6 +8,7 @@ use App\Models\ServicioGeneralRequerimiento;
 use App\Models\TicketSolicitud;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -332,7 +333,7 @@ class WhatsAppChatbotService
             return self::SERVICE_HOURS_MESSAGE;
         }
 
-        if (!$this->terminalRealExiste($terminalCodigo)) {
+        if (!$this->terminalExisteParaSistema((string) ($context['sistema'] ?? ''), $terminalCodigo)) {
             return 'Ese id no existe, por favor escribir el id de tu agencia.';
         }
 
@@ -385,7 +386,7 @@ class WhatsAppChatbotService
             return self::SERVICE_HOURS_MESSAGE;
         }
 
-        if (!$this->terminalRealExiste($terminalCodigo)) {
+        if (!$this->terminalExisteParaSistema((string) ($context['sistema'] ?? ''), $terminalCodigo)) {
             return 'Ese id no existe, por favor escribir el id de tu agencia.';
         }
 
@@ -938,7 +939,25 @@ class WhatsAppChatbotService
 
     private function terminalRealExiste(string $terminalCodigo): bool
     {
-        if (!Schema::hasTable('agencias') || !Schema::hasColumn('agencias', 'terminal')) {
+        return $this->terminalExisteEnTabla('agencias', $terminalCodigo);
+    }
+
+    private function terminalLotedomExiste(string $terminalCodigo): bool
+    {
+        return $this->terminalExisteEnTabla('agencias_lotedom', $terminalCodigo);
+    }
+
+    private function terminalExisteParaSistema(string $sistema, string $terminalCodigo): bool
+    {
+        return match (Str::lower(trim($sistema))) {
+            'lotedom' => $this->terminalLotedomExiste($terminalCodigo),
+            default => $this->terminalRealExiste($terminalCodigo),
+        };
+    }
+
+    private function terminalExisteEnTabla(string $tabla, string $terminalCodigo): bool
+    {
+        if (!Schema::hasTable($tabla) || !Schema::hasColumn($tabla, 'terminal')) {
             return false;
         }
 
@@ -948,9 +967,11 @@ class WhatsAppChatbotService
             return false;
         }
 
-        $query = Agencia::query()->whereNotNull('terminal');
+        $query = $tabla === 'agencias'
+            ? Agencia::query()->whereNotNull('terminal')
+            : DB::table($tabla)->whereNotNull('terminal');
 
-        if (Schema::hasColumn('agencias', 'estatus')) {
+        if (Schema::hasColumn($tabla, 'estatus')) {
             $query->where('estatus', 1);
         }
 

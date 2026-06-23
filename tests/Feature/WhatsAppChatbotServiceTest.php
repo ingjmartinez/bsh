@@ -16,6 +16,7 @@ class WhatsAppChatbotServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Carbon::setTestNow(Carbon::parse('2026-06-12 10:00:00'));
 
         Schema::dropIfExists('chatbot_sessions');
         Schema::create('chatbot_sessions', function (Blueprint $table): void {
@@ -55,6 +56,14 @@ class WhatsAppChatbotServiceTest extends TestCase
             $table->timestamps();
         });
 
+        Schema::dropIfExists('agencias_lotedom');
+        Schema::create('agencias_lotedom', function (Blueprint $table): void {
+            $table->id();
+            $table->string('terminal', 25)->nullable();
+            $table->unsignedTinyInteger('estatus')->default(1);
+            $table->timestamps();
+        });
+
         DB::table('agencias')->insert([
             [
                 'terminal' => '07068888',
@@ -69,12 +78,28 @@ class WhatsAppChatbotServiceTest extends TestCase
                 'updated_at' => now(),
             ],
         ]);
+
+        DB::table('agencias_lotedom')->insert([
+            [
+                'terminal' => '08007777',
+                'estatus' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'terminal' => 'LOTE-321',
+                'estatus' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
     }
 
     protected function tearDown(): void
     {
         Carbon::setTestNow();
 
+        Schema::dropIfExists('agencias_lotedom');
         Schema::dropIfExists('agencias');
         Schema::dropIfExists('chatbot_sessions');
         Schema::dropIfExists('ticket_solicitudes');
@@ -299,6 +324,38 @@ class WhatsAppChatbotServiceTest extends TestCase
         $this->assertArrayNotHasKey('ticket_numero', $reply['session']->context);
     }
 
+    public function test_lotedom_rechaza_terminal_inexistente_en_ticket_y_mantiene_el_paso(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550131', 'hola');
+        $service->handleIncoming('8095550131', '3');
+        $service->handleIncoming('8095550131', '3');
+
+        $reply = $service->handleIncoming('8095550131', '999999');
+
+        $this->assertSame('Ese id no existe, por favor escribir el id de tu agencia.', $reply['reply']);
+        $this->assertSame('ticket_numero', $reply['session']->step);
+        $this->assertSame('lotedom', $reply['session']->context['sistema']);
+        $this->assertArrayNotHasKey('ticket_numero', $reply['session']->context);
+    }
+
+    public function test_lotedom_acepta_terminal_existente_en_su_catalogo_para_ticket(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550132', 'hola');
+        $service->handleIncoming('8095550132', '3');
+        $service->handleIncoming('8095550132', '3');
+
+        $reply = $service->handleIncoming('8095550132', '08007777');
+
+        $this->assertStringContainsString('Codigo de terminal 08007777 recibido.', $reply['reply']);
+        $this->assertSame('ticket_imagen', $reply['session']->step);
+        $this->assertSame('08007777', $reply['session']->context['ticket_numero']);
+        $this->assertSame('lotedom', $reply['session']->context['sistema']);
+    }
+
     public function test_real_rechaza_terminal_inexistente_en_anular_ticket_y_mantiene_el_paso(): void
     {
         $service = new WhatsAppChatbotService();
@@ -315,6 +372,40 @@ class WhatsAppChatbotServiceTest extends TestCase
         $this->assertArrayNotHasKey('ticket_numero', $reply['session']->context);
     }
 
+    public function test_lotedom_rechaza_terminal_inexistente_en_anular_ticket_y_mantiene_el_paso(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550133', 'hola');
+        $service->handleIncoming('8095550133', '3');
+        $service->handleIncoming('8095550133', '4');
+
+        $reply = $service->handleIncoming('8095550133', '999999');
+
+        $this->assertSame('Ese id no existe, por favor escribir el id de tu agencia.', $reply['reply']);
+        $this->assertSame('ticket_numero', $reply['session']->step);
+        $this->assertSame('lotedom', $reply['session']->context['sistema']);
+        $this->assertSame(TicketSolicitud::CATEGORIA_ANULAR, $reply['session']->context['categoria']);
+        $this->assertArrayNotHasKey('ticket_numero', $reply['session']->context);
+    }
+
+    public function test_lotedom_acepta_terminal_existente_en_su_catalogo_para_anular_ticket(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550134', 'hola');
+        $service->handleIncoming('8095550134', '3');
+        $service->handleIncoming('8095550134', '4');
+
+        $reply = $service->handleIncoming('8095550134', 'LOTE-321');
+
+        $this->assertStringContainsString('Codigo de terminal LOTE-321 recibido.', $reply['reply']);
+        $this->assertSame('ticket_imagen', $reply['session']->step);
+        $this->assertSame('LOTE-321', $reply['session']->context['ticket_numero']);
+        $this->assertSame('lotedom', $reply['session']->context['sistema']);
+        $this->assertSame(TicketSolicitud::CATEGORIA_ANULAR, $reply['session']->context['categoria']);
+    }
+
     public function test_real_rechaza_terminal_inexistente_en_averia_y_mantiene_el_paso(): void
     {
         $service = new WhatsAppChatbotService();
@@ -329,6 +420,40 @@ class WhatsAppChatbotServiceTest extends TestCase
         $this->assertSame('Ese id no existe, por favor escribir el id de tu agencia.', $reply['reply']);
         $this->assertSame('servicios_generales_terminal', $reply['session']->step);
         $this->assertArrayNotHasKey('terminal_codigo', $reply['session']->context);
+    }
+
+    public function test_lotedom_rechaza_terminal_inexistente_en_averia_y_mantiene_el_paso(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550135', 'hola');
+        $service->handleIncoming('8095550135', '3');
+        $service->handleIncoming('8095550135', '6');
+        $service->handleIncoming('8095550135', '1');
+
+        $reply = $service->handleIncoming('8095550135', '999999');
+
+        $this->assertSame('Ese id no existe, por favor escribir el id de tu agencia.', $reply['reply']);
+        $this->assertSame('servicios_generales_terminal', $reply['session']->step);
+        $this->assertSame('lotedom', $reply['session']->context['sistema']);
+        $this->assertArrayNotHasKey('terminal_codigo', $reply['session']->context);
+    }
+
+    public function test_lotedom_acepta_terminal_existente_en_su_catalogo_para_averia(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550136', 'hola');
+        $service->handleIncoming('8095550136', '3');
+        $service->handleIncoming('8095550136', '6');
+        $service->handleIncoming('8095550136', '1');
+
+        $reply = $service->handleIncoming('8095550136', '08007777');
+
+        $this->assertStringContainsString('Terminal 08007777 recibido.', $reply['reply']);
+        $this->assertSame('servicios_generales_imagen', $reply['session']->step);
+        $this->assertSame('08007777', $reply['session']->context['terminal_codigo']);
+        $this->assertSame('lotedom', $reply['session']->context['sistema']);
     }
 
     public function test_hola_en_sesion_abierta_puede_cerrar_sesion(): void

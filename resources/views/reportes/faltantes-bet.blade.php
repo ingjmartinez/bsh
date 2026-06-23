@@ -50,6 +50,15 @@
                                         <input type="date" class="form-control" id="fecha_fin">
                                     </div>
 
+                                    <div>
+                                        <label class="mb-0" for="buscar">Buscar</label>
+                                        <input
+                                            type="text"
+                                            class="form-control"
+                                            id="buscar"
+                                            placeholder="Cedula, agencia o nombre">
+                                    </div>
+
                                     <button id="btnFiltrar" class="btn btn-primary">
                                         Filtrar
                                     </button>
@@ -264,6 +273,7 @@
             const fechaInicio = document.getElementById('fecha_inicio').value;
             const fechaFin = document.getElementById('fecha_fin').value;
             const tipo = obtenerTipoFaltante();
+            const buscar = document.getElementById('buscar').value.trim();
 
             const params = new URLSearchParams({
                 tipo: tipo,
@@ -271,6 +281,10 @@
                 fecha_fin: fechaFin,
                 page: page
             });
+
+            if (buscar) {
+                params.append('buscar', buscar);
+            }
 
             if (mostrarProcesando) {
                 mostrarProcesandoDatos();
@@ -434,12 +448,17 @@
             const fechaInicio = document.getElementById('fecha_inicio').value;
             const fechaFin = document.getElementById('fecha_fin').value;
             const tipo = obtenerTipoFaltante();
+            const buscar = document.getElementById('buscar').value.trim();
 
             const params = new URLSearchParams({
                 tipo: tipo,
                 fecha_inicio: fechaInicio,
                 fecha_fin: fechaFin
             });
+
+            if (buscar) {
+                params.append('buscar', buscar);
+            }
 
             window.location.href = `${urlBase}/excel?${params}`;
         });
@@ -448,6 +467,7 @@
             const fechaInicio = document.getElementById('fecha_inicio').value;
             const fechaFin = document.getElementById('fecha_fin').value;
             const tipo = obtenerTipoFaltante();
+            const buscar = document.getElementById('buscar').value.trim();
 
             const params = new URLSearchParams({
                 tipo: tipo,
@@ -455,7 +475,19 @@
                 fecha_fin: fechaFin
             });
 
+            if (buscar) {
+                params.append('buscar', buscar);
+            }
+
             window.location.href = `${urlBase}/pdf?${params}`;
+        });
+
+        document.getElementById('buscar').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                actualizarTitulos();
+                cargarDatos(1, true);
+            }
         });
     </script>
 @endsection

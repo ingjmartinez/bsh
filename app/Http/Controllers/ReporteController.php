@@ -400,12 +400,42 @@ class ReporteController extends Controller
             ->groupBy(DB::raw('TRIM(cc.id_viejo)'));
     }
 
+    private function applyFaltantesFilters($query, ?string $fechaInicio, ?string $fechaFin, ?string $buscar)
+    {
+        $query
+            ->whereNotNull('faltantes.identificacion')
+            ->where('faltantes.identificacion', '!=', '');
+
+        if ($fechaInicio && $fechaFin) {
+            $query->whereBetween('faltantes.fecha', [$fechaInicio, $fechaFin]);
+        }
+
+        $buscar = trim((string) $buscar);
+
+        if ($buscar === '') {
+            return $query;
+        }
+
+        $like = '%' . $buscar . '%';
+
+        return $query->where(function ($subQuery) use ($like) {
+            $subQuery
+                ->where('faltantes.identificacion', 'like', $like)
+                ->orWhere('faltantes.agencia_id', 'like', $like)
+                ->orWhereRaw(
+                    "CONCAT_WS(' ', NULLIF(TRIM(COALESCE(empleados.nombres, '')), ''), NULLIF(TRIM(COALESCE(empleados.apellidos, '')), '')) LIKE ?",
+                    [$like]
+                );
+        });
+    }
+
     public function listFaltantesBet(Request $request)
     {
         header('Content-Type: application/json');
 
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
+        $buscar = $request->input('buscar');
         $config = $this->getFaltantesConfig($request->input('tipo'));
 
         $query = $this->faltantesBaseQuery($config['tipo'])
@@ -424,13 +454,9 @@ class ReporteController extends Controller
                 DB::raw("SUM(faltantes.monto) as total_monto"),
                 DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(faltantes.fecha, '%d/%m/%Y') ORDER BY faltantes.fecha SEPARATOR ', ') as fechas_faltantes"),
                 DB::raw("GROUP_CONCAT(CONCAT(DATE_FORMAT(faltantes.fecha, '%d/%m/%Y'), '|', COALESCE(faltantes.monto, 0)) ORDER BY faltantes.fecha SEPARATOR ';;') as detalles_faltantes")
-            )
-            ->whereNotNull('faltantes.identificacion')
-            ->where('faltantes.identificacion', '!=', '');
+            );
 
-        if ($fechaInicio && $fechaFin) {
-            $query->whereBetween('faltantes.fecha', [$fechaInicio, $fechaFin]);
-        }
+        $this->applyFaltantesFilters($query, $fechaInicio, $fechaFin, $buscar);
 
         $registros = $query
             ->groupBy(
@@ -455,6 +481,7 @@ class ReporteController extends Controller
 
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
+        $buscar = $request->input('buscar');
         $config = $this->getFaltantesConfig($request->input('tipo'));
 
         $query = $this->faltantesBaseQuery($config['tipo'])
@@ -471,13 +498,9 @@ class ReporteController extends Controller
                 DB::raw("COUNT(faltantes.fila_id) as cantidad_faltantes"),
                 DB::raw("SUM(faltantes.monto) as total_monto"),
                 DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(faltantes.fecha, '%d/%m/%Y') ORDER BY faltantes.fecha SEPARATOR ', ') as fechas_faltantes")
-            )
-            ->whereNotNull('faltantes.identificacion')
-            ->where('faltantes.identificacion', '!=', '');
+            );
 
-        if ($fechaInicio && $fechaFin) {
-            $query->whereBetween('faltantes.fecha', [$fechaInicio, $fechaFin]);
-        }
+        $this->applyFaltantesFilters($query, $fechaInicio, $fechaFin, $buscar);
 
         $registros = $query
             ->groupBy('faltantes.identificacion', 'empleados.nombres', 'empleados.apellidos', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo')
@@ -495,6 +518,7 @@ class ReporteController extends Controller
 
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
+        $buscar = $request->input('buscar');
         $config = $this->getFaltantesConfig($request->input('tipo'));
 
         $query = $this->faltantesBaseQuery($config['tipo'])
@@ -511,13 +535,9 @@ class ReporteController extends Controller
                 DB::raw("COUNT(faltantes.fila_id) as cantidad_faltantes"),
                 DB::raw("SUM(faltantes.monto) as total_monto"),
                 DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(faltantes.fecha, '%d/%m/%Y') ORDER BY faltantes.fecha SEPARATOR ', ') as fechas_faltantes")
-            )
-            ->whereNotNull('faltantes.identificacion')
-            ->where('faltantes.identificacion', '!=', '');
+            );
 
-        if ($fechaInicio && $fechaFin) {
-            $query->whereBetween('faltantes.fecha', [$fechaInicio, $fechaFin]);
-        }
+        $this->applyFaltantesFilters($query, $fechaInicio, $fechaFin, $buscar);
 
         $registros = $query
             ->groupBy('faltantes.identificacion', 'empleados.nombres', 'empleados.apellidos', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo')

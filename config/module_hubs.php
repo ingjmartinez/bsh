@@ -269,6 +269,15 @@ return [
                 'activo' => true,
             ],
             [
+                'nombre' => 'Agencias Lotedom',
+                'descripcion' => 'Administra el catalogo de agencias Lotedom y su mantenimiento operativo.',
+                'url' => '/agencias-lotedom',
+                'icono' => 'ri-building-4-line',
+                'categoria' => 'Agencias',
+                'tags' => ['agencias', 'lotedom', 'terminales', 'mantenimiento'],
+                'activo' => true,
+            ],
+            [
                 'nombre' => 'Incumplimientos Horario',
                 'descripcion' => 'Da seguimiento a incumplimientos y asistencia por horario.',
                 'url' => '/agencias-incumplimientos-horario',
