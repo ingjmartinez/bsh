@@ -82,15 +82,15 @@ class WhatsAppChatbotServiceTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_hola_muestra_selector_de_sistema_solo_real_y_luego_menu_actual(): void
+    public function test_hola_muestra_selector_de_sistema_completo_y_luego_menu_actual(): void
     {
         $service = new WhatsAppChatbotService();
 
         $greeting = $service->handleIncoming('+1 (809) 555-0101', 'hola');
 
         $this->assertStringContainsString('1- Real', $greeting['reply']);
-        $this->assertStringNotContainsString('2- Delta', $greeting['reply']);
-        $this->assertStringNotContainsString('3- Lotedom', $greeting['reply']);
+        $this->assertStringContainsString('2- Delta', $greeting['reply']);
+        $this->assertStringContainsString('3- Lotedom', $greeting['reply']);
         $this->assertSame('seleccion_sistema', $greeting['session']->step);
 
         $menu = $service->handleIncoming('+1 (809) 555-0101', '1');
@@ -101,6 +101,38 @@ class WhatsAppChatbotServiceTest extends TestCase
         $this->assertSame([
             'sistema' => 'real',
             'label' => 'Real',
+        ], $menu['session']->context);
+    }
+
+    public function test_permite_seleccionar_delta_y_muestra_menu_actual(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550191', 'hola');
+        $menu = $service->handleIncoming('8095550191', '2');
+
+        $this->assertStringContainsString('1-Consultar horario de servicio', $menu['reply']);
+        $this->assertStringContainsString('6-Reportar averia', $menu['reply']);
+        $this->assertSame('consulta_hora_menu', $menu['session']->step);
+        $this->assertSame([
+            'sistema' => 'delta',
+            'label' => 'Delta',
+        ], $menu['session']->context);
+    }
+
+    public function test_permite_seleccionar_lotedom_y_muestra_menu_actual(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550192', 'hola');
+        $menu = $service->handleIncoming('8095550192', '3');
+
+        $this->assertStringContainsString('1-Consultar horario de servicio', $menu['reply']);
+        $this->assertStringContainsString('6-Reportar averia', $menu['reply']);
+        $this->assertSame('consulta_hora_menu', $menu['session']->step);
+        $this->assertSame([
+            'sistema' => 'lotedom',
+            'label' => 'Lotedom',
         ], $menu['session']->context);
     }
 
@@ -459,8 +491,9 @@ class WhatsAppChatbotServiceTest extends TestCase
         $reply = $service->handleIncoming('8095550119', '3');
 
         $this->assertStringContainsString('Ya tienes una solicitud abierta.', $reply['reply']);
-        $this->assertStringContainsString('Debes esperar a que finalicen esa solicitud', $reply['reply']);
-        $this->assertSame('inicio', $reply['session']->step);
+        $this->assertStringContainsString('1- Ver Solicitud Pendiente', $reply['reply']);
+        $this->assertStringContainsString('2- Rechazar solicitud', $reply['reply']);
+        $this->assertSame('ticket_bloqueado', $reply['session']->step);
         $this->assertSame(1, TicketSolicitud::count());
     }
 
@@ -490,7 +523,9 @@ class WhatsAppChatbotServiceTest extends TestCase
         ]);
 
         $this->assertStringContainsString('Ya tienes una solicitud abierta.', $reply['reply']);
-        $this->assertSame('inicio', $reply['session']->step);
+        $this->assertStringContainsString('1- Ver Solicitud Pendiente', $reply['reply']);
+        $this->assertStringContainsString('2- Rechazar solicitud', $reply['reply']);
+        $this->assertSame('ticket_bloqueado', $reply['session']->step);
         $this->assertSame(1, TicketSolicitud::count());
     }
 

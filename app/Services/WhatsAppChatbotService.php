@@ -26,7 +26,7 @@ class WhatsAppChatbotService
     private const STEP_SG_IMAGEN = 'servicios_generales_imagen';
     private const STEP_CONFIRMAR_CIERRE_SESION = 'confirmar_cierre_sesion';
 
-    private const SISTEMA_MESSAGE = "Hola. Selecciona el sistema escribiendo solo el numero:\n\n1- Real";
+    private const SISTEMA_MESSAGE = "Hola. Selecciona el sistema escribiendo solo el numero:\n\n1- Real\n2- Delta\n3- Lotedom";
     private const MENU_MESSAGE = "Hola. Soy el asistente virtual de BSH, comprometido contigo siempre.\n\nPara continuar, escribe solo el numero de la opcion que necesitas:\n\n1-Consultar horario de servicio\n2-Consultar servicios disponibles\n3-Pagar ticket\n4-Anular ticket\n5-Recursos Humanos\n6-Reportar averia\n\nEstoy listo para ayudarte.";
     private const CONFIRM_CLOSE_SESSION_MESSAGE = "Ya tienes una sesion abierta.\n\nQuieres cerrar la sesion actual o retomar donde te quedaste?\n\n1- Cerrar sesion\n2- Retomar";
     private const INVALID_YESTERDAY_PHOTO_MESSAGE = 'Foto no valida. Debes enviar una foto tomada hoy.';
@@ -302,6 +302,8 @@ class WhatsAppChatbotService
     {
         $sistemas = [
             '1' => ['sistema' => 'real', 'label' => 'Real'],
+            '2' => ['sistema' => 'delta', 'label' => 'Delta'],
+            '3' => ['sistema' => 'lotedom', 'label' => 'Lotedom'],
         ];
 
         if (!isset($sistemas[$message])) {
