@@ -431,6 +431,11 @@ class ReporteController extends Controller
         });
     }
 
+    private function empleadosCedulaNormalizadaSql(string $table = 'empleados'): string
+    {
+        return "REPLACE(REPLACE(TRIM({$table}.cedula), '-', ''), ' ', '')";
+    }
+
     public function listFaltantesBet(Request $request)
     {
         header('Content-Type: application/json');
@@ -444,7 +449,9 @@ class ReporteController extends Controller
             ->leftJoinSub($this->centrosCostoPorTerminalQuery(), 'ccosto', function ($join) {
                 $join->on('faltantes.agencia_id', '=', 'ccosto.agencia_id');
             })
-            ->leftJoin('empleados', 'faltantes.identificacion', '=', 'empleados.cedula')
+            ->leftJoin('empleados', function ($join) {
+                $join->on('faltantes.identificacion', '=', DB::raw($this->empleadosCedulaNormalizadaSql('empleados')));
+            })
             ->select(
                 'faltantes.agencia_id',
                 'empleados.empleadoid',
@@ -494,7 +501,9 @@ class ReporteController extends Controller
             ->leftJoinSub($this->centrosCostoPorTerminalQuery(), 'ccosto', function ($join) {
                 $join->on('faltantes.agencia_id', '=', 'ccosto.agencia_id');
             })
-            ->leftJoin('empleados', 'faltantes.identificacion', '=', 'empleados.cedula')
+            ->leftJoin('empleados', function ($join) {
+                $join->on('faltantes.identificacion', '=', DB::raw($this->empleadosCedulaNormalizadaSql('empleados')));
+            })
             ->select(
                 'empleados.empleadoid',
                 'empleados.idcentrocosto',
@@ -533,7 +542,9 @@ class ReporteController extends Controller
             ->leftJoinSub($this->centrosCostoPorTerminalQuery(), 'ccosto', function ($join) {
                 $join->on('faltantes.agencia_id', '=', 'ccosto.agencia_id');
             })
-            ->leftJoin('empleados', 'faltantes.identificacion', '=', 'empleados.cedula')
+            ->leftJoin('empleados', function ($join) {
+                $join->on('faltantes.identificacion', '=', DB::raw($this->empleadosCedulaNormalizadaSql('empleados')));
+            })
             ->select(
                 'empleados.empleadoid',
                 'empleados.idcentrocosto',
