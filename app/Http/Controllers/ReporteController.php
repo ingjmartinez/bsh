@@ -422,10 +422,11 @@ class ReporteController extends Controller
             $subQuery
                 ->where('faltantes.identificacion', 'like', $like)
                 ->orWhere('faltantes.agencia_id', 'like', $like)
-                ->orWhere('empleados.empleadoid', 'like', $like)
-                ->orWhere('empleados.idcentrocosto', 'like', $like)
+                ->orWhereRaw("COALESCE(emp_cc.empleadoid, emp_ced.empleadoid) LIKE ?", [$like])
+                ->orWhereRaw("COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto) LIKE ?", [$like])
+                ->orWhereRaw("COALESCE(emp_cc.companyid, emp_ced.companyid) LIKE ?", [$like])
                 ->orWhereRaw(
-                    "CONCAT_WS(' ', NULLIF(TRIM(COALESCE(empleados.nombres, '')), ''), NULLIF(TRIM(COALESCE(empleados.apellidos, '')), '')) LIKE ?",
+                    "CONCAT_WS(' ', NULLIF(TRIM(COALESCE(emp_cc.nombres, emp_ced.nombres, '')), ''), NULLIF(TRIM(COALESCE(emp_cc.apellidos, emp_ced.apellidos, '')), '')) LIKE ?",
                     [$like]
                 );
         });
@@ -436,6 +437,55 @@ class ReporteController extends Controller
         return "REPLACE(REPLACE(TRIM({$table}.cedula), '-', ''), ' ', '')";
     }
 
+    private function empleadosOrdenPreferenciaSql(string $table = 'e'): string
+    {
+        return "COALESCE({$table}.estatus, 0) DESC, CASE WHEN {$table}.fecha_egreso IS NULL THEN 1 ELSE 0 END DESC, {$table}.companyid ASC, {$table}.empleadoid ASC";
+    }
+
+    private function empleadosPreferidosPorCedulaCostoQuery()
+    {
+        $cedulaNormalizada = $this->empleadosCedulaNormalizadaSql('e');
+        $ordenPreferencia = $this->empleadosOrdenPreferenciaSql('e');
+
+        return DB::table('empleados as e')
+            ->selectRaw("
+                {$cedulaNormalizada} AS cedula_normalizada,
+                e.idcentrocosto AS idcentrocosto_clave,
+                CAST(SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(CAST(e.companyid AS CHAR), '') ORDER BY {$ordenPreferencia} SEPARATOR ','), ',', 1) AS UNSIGNED) AS companyid,
+                CAST(SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(CAST(e.empleadoid AS CHAR), '') ORDER BY {$ordenPreferencia} SEPARATOR ','), ',', 1) AS UNSIGNED) AS empleadoid,
+                CAST(SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(CAST(e.idcentrocosto AS CHAR), '') ORDER BY {$ordenPreferencia} SEPARATOR ','), ',', 1) AS UNSIGNED) AS idcentrocosto,
+                SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(e.nombres, '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1) AS nombres,
+                SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(e.apellidos, '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1) AS apellidos
+            ")
+            ->whereNotNull('e.cedula')
+            ->where('e.cedula', '!=', '')
+            ->whereNotNull('e.idcentrocosto')
+            ->where('e.estatus', 1)
+            ->whereNull('e.fecha_egreso')
+            ->groupBy(DB::raw($cedulaNormalizada), 'e.idcentrocosto');
+    }
+
+    private function empleadosPreferidosPorCedulaQuery()
+    {
+        $cedulaNormalizada = $this->empleadosCedulaNormalizadaSql('e');
+        $ordenPreferencia = $this->empleadosOrdenPreferenciaSql('e');
+
+        return DB::table('empleados as e')
+            ->selectRaw("
+                {$cedulaNormalizada} AS cedula_normalizada,
+                CAST(SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(CAST(e.companyid AS CHAR), '') ORDER BY {$ordenPreferencia} SEPARATOR ','), ',', 1) AS UNSIGNED) AS companyid,
+                CAST(SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(CAST(e.empleadoid AS CHAR), '') ORDER BY {$ordenPreferencia} SEPARATOR ','), ',', 1) AS UNSIGNED) AS empleadoid,
+                CAST(SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(CAST(e.idcentrocosto AS CHAR), '') ORDER BY {$ordenPreferencia} SEPARATOR ','), ',', 1) AS UNSIGNED) AS idcentrocosto,
+                SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(e.nombres, '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1) AS nombres,
+                SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(e.apellidos, '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1) AS apellidos
+            ")
+            ->whereNotNull('e.cedula')
+            ->where('e.cedula', '!=', '')
+            ->where('e.estatus', 1)
+            ->whereNull('e.fecha_egreso')
+            ->groupBy(DB::raw($cedulaNormalizada));
+    }
+
     public function listFaltantesBet(Request $request)
     {
         header('Content-Type: application/json');
@@ -444,24 +494,32 @@ class ReporteController extends Controller
         $fechaFin = $request->input('fecha_fin');
         $buscar = $request->input('buscar');
         $config = $this->getFaltantesConfig($request->input('tipo'));
+        $empresaExpr = "COALESCE(emp_cc.companyid, emp_ced.companyid)";
+        $empleadoExpr = "COALESCE(emp_cc.empleadoid, emp_ced.empleadoid)";
+        $idCcEmpleadoExpr = "COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto)";
+        $nombreExpr = "CONCAT(COALESCE(emp_cc.nombres, emp_ced.nombres, ''), ' ', COALESCE(emp_cc.apellidos, emp_ced.apellidos, ''))";
 
         $query = $this->faltantesBaseQuery($config['tipo'])
             ->leftJoinSub($this->centrosCostoPorTerminalQuery(), 'ccosto', function ($join) {
                 $join->on('faltantes.agencia_id', '=', 'ccosto.agencia_id');
             })
-            ->leftJoin('empleados', function ($join) {
-                $join->on('faltantes.identificacion', '=', DB::raw($this->empleadosCedulaNormalizadaSql('empleados')));
+            ->leftJoinSub($this->empleadosPreferidosPorCedulaCostoQuery(), 'emp_cc', function ($join) {
+                $join->on('faltantes.identificacion', '=', 'emp_cc.cedula_normalizada')
+                    ->on('ccosto.id_centro_costo', '=', 'emp_cc.idcentrocosto_clave');
+            })
+            ->leftJoinSub($this->empleadosPreferidosPorCedulaQuery(), 'emp_ced', function ($join) {
+                $join->on('faltantes.identificacion', '=', 'emp_ced.cedula_normalizada');
             })
             ->select(
                 'faltantes.agencia_id',
-                'empleados.companyid',
-                'empleados.empleadoid',
-                'empleados.idcentrocosto',
                 'faltantes.identificacion',
-                DB::raw("CONCAT(COALESCE(empleados.nombres, ''), ' ', COALESCE(empleados.apellidos, '')) as nombre_empleado"),
                 'ccosto.id_centro_costo',
                 'ccosto.id_grupo',
                 'ccosto.id_sub_grupo',
+                DB::raw("{$empresaExpr} as companyid"),
+                DB::raw("{$empleadoExpr} as empleadoid"),
+                DB::raw("{$idCcEmpleadoExpr} as idcentrocosto"),
+                DB::raw("{$nombreExpr} as nombre_empleado"),
                 DB::raw("COUNT(faltantes.fila_id) as cantidad_faltantes"),
                 DB::raw("SUM(faltantes.monto) as total_monto"),
                 DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(faltantes.fecha, '%d/%m/%Y') ORDER BY faltantes.fecha SEPARATOR ', ') as fechas_faltantes"),
@@ -473,15 +531,14 @@ class ReporteController extends Controller
         $registros = $query
             ->groupBy(
                 'faltantes.agencia_id',
-                'empleados.companyid',
-                'empleados.empleadoid',
-                'empleados.idcentrocosto',
                 'faltantes.identificacion',
-                'empleados.nombres',
-                'empleados.apellidos',
                 'ccosto.id_centro_costo',
                 'ccosto.id_grupo',
-                'ccosto.id_sub_grupo'
+                'ccosto.id_sub_grupo',
+                DB::raw($empresaExpr),
+                DB::raw($empleadoExpr),
+                DB::raw($idCcEmpleadoExpr),
+                DB::raw($nombreExpr)
             )
             ->orderBy('total_monto', 'desc')
             ->paginate(10);
@@ -498,23 +555,31 @@ class ReporteController extends Controller
         $fechaFin = $request->input('fecha_fin');
         $buscar = $request->input('buscar');
         $config = $this->getFaltantesConfig($request->input('tipo'));
+        $empresaExpr = "COALESCE(emp_cc.companyid, emp_ced.companyid)";
+        $empleadoExpr = "COALESCE(emp_cc.empleadoid, emp_ced.empleadoid)";
+        $idCcEmpleadoExpr = "COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto)";
+        $nombreExpr = "CONCAT(COALESCE(emp_cc.nombres, emp_ced.nombres, ''), ' ', COALESCE(emp_cc.apellidos, emp_ced.apellidos, ''))";
 
         $query = $this->faltantesBaseQuery($config['tipo'])
             ->leftJoinSub($this->centrosCostoPorTerminalQuery(), 'ccosto', function ($join) {
                 $join->on('faltantes.agencia_id', '=', 'ccosto.agencia_id');
             })
-            ->leftJoin('empleados', function ($join) {
-                $join->on('faltantes.identificacion', '=', DB::raw($this->empleadosCedulaNormalizadaSql('empleados')));
+            ->leftJoinSub($this->empleadosPreferidosPorCedulaCostoQuery(), 'emp_cc', function ($join) {
+                $join->on('faltantes.identificacion', '=', 'emp_cc.cedula_normalizada')
+                    ->on('ccosto.id_centro_costo', '=', 'emp_cc.idcentrocosto_clave');
+            })
+            ->leftJoinSub($this->empleadosPreferidosPorCedulaQuery(), 'emp_ced', function ($join) {
+                $join->on('faltantes.identificacion', '=', 'emp_ced.cedula_normalizada');
             })
             ->select(
-                'empleados.companyid',
-                'empleados.empleadoid',
-                'empleados.idcentrocosto',
                 'faltantes.identificacion',
-                DB::raw("CONCAT(COALESCE(empleados.nombres, ''), ' ', COALESCE(empleados.apellidos, '')) as nombre_empleado"),
                 'ccosto.id_centro_costo',
                 'ccosto.id_grupo',
                 'ccosto.id_sub_grupo',
+                DB::raw("{$empresaExpr} as companyid"),
+                DB::raw("{$empleadoExpr} as empleadoid"),
+                DB::raw("{$idCcEmpleadoExpr} as idcentrocosto"),
+                DB::raw("{$nombreExpr} as nombre_empleado"),
                 DB::raw("COUNT(faltantes.fila_id) as cantidad_faltantes"),
                 DB::raw("SUM(faltantes.monto) as total_monto"),
                 DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(faltantes.fecha, '%d/%m/%Y') ORDER BY faltantes.fecha SEPARATOR ', ') as fechas_faltantes")
@@ -523,7 +588,7 @@ class ReporteController extends Controller
         $this->applyFaltantesFilters($query, $fechaInicio, $fechaFin, $buscar);
 
         $registros = $query
-            ->groupBy('empleados.companyid', 'empleados.empleadoid', 'empleados.idcentrocosto', 'faltantes.identificacion', 'empleados.nombres', 'empleados.apellidos', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo')
+            ->groupBy('faltantes.identificacion', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo', DB::raw($empresaExpr), DB::raw($empleadoExpr), DB::raw($idCcEmpleadoExpr), DB::raw($nombreExpr))
             ->orderBy('total_monto', 'desc')
             ->get();
 
@@ -540,23 +605,31 @@ class ReporteController extends Controller
         $fechaFin = $request->input('fecha_fin');
         $buscar = $request->input('buscar');
         $config = $this->getFaltantesConfig($request->input('tipo'));
+        $empresaExpr = "COALESCE(emp_cc.companyid, emp_ced.companyid)";
+        $empleadoExpr = "COALESCE(emp_cc.empleadoid, emp_ced.empleadoid)";
+        $idCcEmpleadoExpr = "COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto)";
+        $nombreExpr = "CONCAT(COALESCE(emp_cc.nombres, emp_ced.nombres, ''), ' ', COALESCE(emp_cc.apellidos, emp_ced.apellidos, ''))";
 
         $query = $this->faltantesBaseQuery($config['tipo'])
             ->leftJoinSub($this->centrosCostoPorTerminalQuery(), 'ccosto', function ($join) {
                 $join->on('faltantes.agencia_id', '=', 'ccosto.agencia_id');
             })
-            ->leftJoin('empleados', function ($join) {
-                $join->on('faltantes.identificacion', '=', DB::raw($this->empleadosCedulaNormalizadaSql('empleados')));
+            ->leftJoinSub($this->empleadosPreferidosPorCedulaCostoQuery(), 'emp_cc', function ($join) {
+                $join->on('faltantes.identificacion', '=', 'emp_cc.cedula_normalizada')
+                    ->on('ccosto.id_centro_costo', '=', 'emp_cc.idcentrocosto_clave');
+            })
+            ->leftJoinSub($this->empleadosPreferidosPorCedulaQuery(), 'emp_ced', function ($join) {
+                $join->on('faltantes.identificacion', '=', 'emp_ced.cedula_normalizada');
             })
             ->select(
-                'empleados.companyid',
-                'empleados.empleadoid',
-                'empleados.idcentrocosto',
                 'faltantes.identificacion',
-                DB::raw("CONCAT(COALESCE(empleados.nombres, ''), ' ', COALESCE(empleados.apellidos, '')) as nombre_empleado"),
                 'ccosto.id_centro_costo',
                 'ccosto.id_grupo',
                 'ccosto.id_sub_grupo',
+                DB::raw("{$empresaExpr} as companyid"),
+                DB::raw("{$empleadoExpr} as empleadoid"),
+                DB::raw("{$idCcEmpleadoExpr} as idcentrocosto"),
+                DB::raw("{$nombreExpr} as nombre_empleado"),
                 DB::raw("COUNT(faltantes.fila_id) as cantidad_faltantes"),
                 DB::raw("SUM(faltantes.monto) as total_monto"),
                 DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(faltantes.fecha, '%d/%m/%Y') ORDER BY faltantes.fecha SEPARATOR ', ') as fechas_faltantes")
@@ -565,7 +638,7 @@ class ReporteController extends Controller
         $this->applyFaltantesFilters($query, $fechaInicio, $fechaFin, $buscar);
 
         $registros = $query
-            ->groupBy('empleados.companyid', 'empleados.empleadoid', 'empleados.idcentrocosto', 'faltantes.identificacion', 'empleados.nombres', 'empleados.apellidos', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo')
+            ->groupBy('faltantes.identificacion', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo', DB::raw($empresaExpr), DB::raw($empleadoExpr), DB::raw($idCcEmpleadoExpr), DB::raw($nombreExpr))
             ->orderBy('total_monto', 'desc')
             ->get();
 

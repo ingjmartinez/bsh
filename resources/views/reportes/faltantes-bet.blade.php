@@ -84,7 +84,6 @@
                                                 <th>Id CC Empleado</th>
                                                 <th>Cedula</th>
                                                 <th>Nombre Empleado</th>
-                                                <th>Id Centro Costo</th>
                                                 <th>Grupo</th>
                                                 <th>Sub Grupo</th>
                                                 <th>Agencia ID</th>
@@ -327,7 +326,6 @@
                     <td class="text-center">${escapeHtml(registro.idcentrocosto ?? '')}</td>
                     <td>${escapeHtml(registro.identificacion)}</td>
                     <td>${escapeHtml(nombreEmpleado)}</td>
-                    <td class="text-center">${escapeHtml(idCentroCosto)}</td>
                     <td>${escapeHtml(grupo)}</td>
                     <td>${escapeHtml(subGrupo)}</td>
                     <td class="text-center">${escapeHtml(agenciaId)}</td>
