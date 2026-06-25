@@ -216,6 +216,7 @@
                                         <tr>
                                             <th>Empresa</th>
                                             <th>Id Empleado</th>
+                                            <th>Id CC Empleado</th>
                                             <th>Nombres</th>
                                             <th>Apellidos</th>
                                             <th>Cedula</th>
@@ -476,8 +477,12 @@
         function cargarDashboard() {
             const empresa = obtenerEmpresaActual();
             actualizarBadgeEmpresa();
+            const url = new URL('/empleados/dashboard', window.location.origin);
+            url.searchParams.set('empresa', empresa);
+            url.searchParams.set('_ts', Date.now());
 
-            return fetch('/empleados/dashboard?empresa=' + encodeURIComponent(empresa), {
+            return fetch(url.toString(), {
+                cache: 'no-store',
                 headers: {
                     'Accept': 'application/json',
                 },
@@ -496,8 +501,12 @@
 
         function list() {
             const empresa = obtenerEmpresaActual();
+            const url = new URL('/empleados/list', window.location.origin);
+            url.searchParams.set('empresa', empresa);
+            url.searchParams.set('_ts', Date.now());
 
-            return fetch("/empleados/list?empresa=" + encodeURIComponent(empresa), {
+            return fetch(url.toString(), {
+                cache: 'no-store',
                 headers: {
                     'Accept': 'application/json',
                 },
@@ -513,6 +522,7 @@
                         row.innerHTML = `
                             <td>${item.company}</td>
                             <td>${item.empleadoid}</td>
+                            <td>${item.idcentrocosto ?? ''}</td>
                             <td>${item.nombres}</td>
                             <td>${item.apellidos}</td>
                             <td>${item.cedula ?? ''}</td>
@@ -589,7 +599,7 @@
                 textSwal.innerHTML = "Sincronizando: 100%";
                 clearInterval(interval);
                 await cargarDashboard();
-                setTimeout(list, 0);
+                await list();
 
                 Swal.fire({
                     title: "Listo",
@@ -610,22 +620,19 @@
             }
         });
 
-        document.getElementById('empresa').addEventListener('change', function () {
-            cargarDashboard().finally(function () {
-                setTimeout(list, 0);
-            });
+        document.getElementById('empresa').addEventListener('change', async function () {
+            await cargarDashboard();
+            await list();
         });
 
-        document.getElementById('btnRefrescarDashboard').addEventListener('click', function () {
-            cargarDashboard().finally(function () {
-                setTimeout(list, 0);
-            });
+        document.getElementById('btnRefrescarDashboard').addEventListener('click', async function () {
+            await cargarDashboard();
+            await list();
         });
 
-        document.addEventListener('DOMContentLoaded', function () {
-            cargarDashboard().finally(function () {
-                setTimeout(list, 0);
-            });
+        document.addEventListener('DOMContentLoaded', async function () {
+            await cargarDashboard();
+            await list();
         });
     </script>
 @endsection

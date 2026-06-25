@@ -422,6 +422,8 @@ class ReporteController extends Controller
             $subQuery
                 ->where('faltantes.identificacion', 'like', $like)
                 ->orWhere('faltantes.agencia_id', 'like', $like)
+                ->orWhere('empleados.empleadoid', 'like', $like)
+                ->orWhere('empleados.idcentrocosto', 'like', $like)
                 ->orWhereRaw(
                     "CONCAT_WS(' ', NULLIF(TRIM(COALESCE(empleados.nombres, '')), ''), NULLIF(TRIM(COALESCE(empleados.apellidos, '')), '')) LIKE ?",
                     [$like]
@@ -445,6 +447,8 @@ class ReporteController extends Controller
             ->leftJoin('empleados', 'faltantes.identificacion', '=', 'empleados.cedula')
             ->select(
                 'faltantes.agencia_id',
+                'empleados.empleadoid',
+                'empleados.idcentrocosto',
                 'faltantes.identificacion',
                 DB::raw("CONCAT(COALESCE(empleados.nombres, ''), ' ', COALESCE(empleados.apellidos, '')) as nombre_empleado"),
                 'ccosto.id_centro_costo',
@@ -461,6 +465,8 @@ class ReporteController extends Controller
         $registros = $query
             ->groupBy(
                 'faltantes.agencia_id',
+                'empleados.empleadoid',
+                'empleados.idcentrocosto',
                 'faltantes.identificacion',
                 'empleados.nombres',
                 'empleados.apellidos',
@@ -490,6 +496,8 @@ class ReporteController extends Controller
             })
             ->leftJoin('empleados', 'faltantes.identificacion', '=', 'empleados.cedula')
             ->select(
+                'empleados.empleadoid',
+                'empleados.idcentrocosto',
                 'faltantes.identificacion',
                 DB::raw("CONCAT(COALESCE(empleados.nombres, ''), ' ', COALESCE(empleados.apellidos, '')) as nombre_empleado"),
                 'ccosto.id_centro_costo',
@@ -503,7 +511,7 @@ class ReporteController extends Controller
         $this->applyFaltantesFilters($query, $fechaInicio, $fechaFin, $buscar);
 
         $registros = $query
-            ->groupBy('faltantes.identificacion', 'empleados.nombres', 'empleados.apellidos', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo')
+            ->groupBy('empleados.empleadoid', 'empleados.idcentrocosto', 'faltantes.identificacion', 'empleados.nombres', 'empleados.apellidos', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo')
             ->orderBy('total_monto', 'desc')
             ->get();
 
@@ -527,6 +535,8 @@ class ReporteController extends Controller
             })
             ->leftJoin('empleados', 'faltantes.identificacion', '=', 'empleados.cedula')
             ->select(
+                'empleados.empleadoid',
+                'empleados.idcentrocosto',
                 'faltantes.identificacion',
                 DB::raw("CONCAT(COALESCE(empleados.nombres, ''), ' ', COALESCE(empleados.apellidos, '')) as nombre_empleado"),
                 'ccosto.id_centro_costo',
@@ -540,7 +550,7 @@ class ReporteController extends Controller
         $this->applyFaltantesFilters($query, $fechaInicio, $fechaFin, $buscar);
 
         $registros = $query
-            ->groupBy('faltantes.identificacion', 'empleados.nombres', 'empleados.apellidos', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo')
+            ->groupBy('empleados.empleadoid', 'empleados.idcentrocosto', 'faltantes.identificacion', 'empleados.nombres', 'empleados.apellidos', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo')
             ->orderBy('total_monto', 'desc')
             ->get();
 

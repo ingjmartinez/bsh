@@ -63,6 +63,8 @@
     <table>
         <thead>
             <tr>
+                <th>Id Empleado</th>
+                <th>Id CC Empleado</th>
                 <th>Cedula</th>
                 <th>Nombre Empleado</th>
                 <th>Id Centro Costo</th>
@@ -83,6 +85,8 @@
                     $totalFaltantes += $registro->cantidad_faltantes;
                 @endphp
                 <tr>
+                    <td>{{ $registro->empleadoid ?? '' }}</td>
+                    <td>{{ $registro->idcentrocosto ?? '' }}</td>
                     <td>{{ $registro->identificacion }}</td>
                     <td>{{ trim($registro->nombre_empleado) ?: 'Sin especificar' }}</td>
                     <td>{{ $registro->id_centro_costo ?? '' }}</td>

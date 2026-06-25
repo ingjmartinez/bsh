@@ -177,13 +177,18 @@
 
                         data.faltantes.forEach(item => {
                             const row = document.createElement('tr');
+                            const consorcioId = item.consorcio_id ?? '';
+                            const agenciaId = item.agencia_id ?? '';
+                            const identificacion = item.identificacion ?? '';
+                            const monto = item.monto ?? '';
+                            const descripcion = item.descripcion ?? item.observacion ?? item.motivo ?? '';
                             row.innerHTML = `
-                                <td>${item.consorcio_id}</td>
-                                <td>${item.agencia_id}</td>
-                                <td>${item.identificacion}</td>
-                                <td>${item.monto}</td>
-                                <td>${fecha}</td>
-                                <td>${item.descripcion}</td>
+                                <td>${escapeLotedomHtml(consorcioId)}</td>
+                                <td>${escapeLotedomHtml(agenciaId)}</td>
+                                <td>${escapeLotedomHtml(identificacion)}</td>
+                                <td>${escapeLotedomHtml(monto)}</td>
+                                <td>${escapeLotedomHtml(fecha)}</td>
+                                <td>${escapeLotedomHtml(descripcion)}</td>
                             `;
                             tableBody.appendChild(row);
                         });

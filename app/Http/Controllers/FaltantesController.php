@@ -187,7 +187,13 @@ class FaltantesController extends Controller
         $data = [];
 
         foreach (($faltantes['data']['result'] ?? []) as $v) {
-            $data[] = LotedomRowMapper::faltante($v, $fecha);
+            $registro = LotedomRowMapper::faltante($v, $fecha);
+
+            $data[] = array_merge($registro, [
+                'consorcio_id' => $v['consorcio_id'] ?? $v['consorcio'] ?? null,
+                'identificacion' => $v['identificacion'] ?? $v['cedula'] ?? null,
+                'descripcion' => $registro['observacion'] ?? $v['descripcion'] ?? $v['observacion'] ?? null,
+            ]);
         }
 
         return response()->json(['faltantes' => $data, 'code' => $faltantes['code'], 'message' => 'Resultas obtenidos correctamente']);

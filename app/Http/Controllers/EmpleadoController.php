@@ -30,6 +30,7 @@ class EmpleadoController extends Controller
         $fechaEgresoColumn = $this->empleadosColumnSql('fecha_egreso', 'fechasalida');
         $salarioColumn = $this->empleadosColumnSql('salario', 'salariomensual');
         $ciudadColumn = $this->empleadosColumnSql('ciudad');
+        $centroCostoColumn = $this->empleadosColumnSql('idcentrocosto');
 
         $query = Empleado::select(
             DB::raw("CASE
@@ -38,6 +39,7 @@ class EmpleadoController extends Controller
                 ELSE CONCAT('Empresa ', companyid)
             END AS company"),
             'empleadoid',
+            DB::raw("{$centroCostoColumn} AS idcentrocosto"),
             'nombres',
             'apellidos',
             DB::raw("{$fechaIngresoColumn} AS fechaingreso"),
@@ -334,6 +336,7 @@ class EmpleadoController extends Controller
         return [
             'companyid'                => $e['COMPANYID'] ?? $empresa,
             'empleadoid'               => $e['EMPLEADOID'],
+            'idcentrocosto'            => $this->normalizarEntero($e['IDCENTROCOSTO'] ?? null),
             'nombres'                  => $this->limitarTexto(($e['NOMBRES'] ?? null) ?: 'Sin nombre', 100),
             'apellidos'                => $this->limitarTexto(($e['APELLIDOS'] ?? null) ?: 'Sin apellido', 100),
             'cedula'                   => $this->limitarTexto($e['CEDULA'] ?? null, 30),
@@ -383,6 +386,15 @@ class EmpleadoController extends Controller
         $numero = str_replace(',', '', (string) $valor);
 
         return is_numeric($numero) ? (float) $numero : null;
+    }
+
+    private function normalizarEntero($valor): ?int
+    {
+        if ($valor === null || $valor === '') {
+            return null;
+        }
+
+        return is_numeric($valor) ? (int) $valor : null;
     }
 
     private function limitarTexto($valor, int $limite): ?string

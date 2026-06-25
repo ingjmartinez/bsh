@@ -24,6 +24,8 @@ class FaltantesBetExport implements FromCollection, WithHeadings, WithMapping, S
     public function headings(): array
     {
         return [
+            'Id Empleado',
+            'Id CC Empleado',
             'Id Centro Costo',
             'Cedula',
             'Nombre Empleado',
@@ -37,6 +39,8 @@ class FaltantesBetExport implements FromCollection, WithHeadings, WithMapping, S
     public function map($row): array
     {
         return [
+            $row->empleadoid,
+            $row->idcentrocosto,
             $row->id_centro_costo,
             $row->identificacion,
             trim($row->nombre_empleado ?? '') ?: 'Sin especificar',
