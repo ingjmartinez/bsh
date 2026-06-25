@@ -2,6 +2,24 @@
 
 @section('content')
     <div class="main-content">
+        <style>
+            #tableFaltantes thead th.sortable-column {
+                cursor: pointer;
+                user-select: none;
+                white-space: nowrap;
+            }
+
+            #tableFaltantes thead th.sortable-column .sort-indicator {
+                display: inline-block;
+                min-width: 1rem;
+                margin-left: 0.25rem;
+                color: #94a3b8;
+            }
+
+            #tableFaltantes thead th.sortable-column.active {
+                background-color: #eef4ff;
+            }
+        </style>
 
         <div class="page-content">
             <div class="container-fluid">
@@ -79,16 +97,16 @@
                                         style="width:100%;">
                                         <thead>
                                             <tr>
-                                                <th>Empresa</th>
-                                                <th>Id Empleado</th>
-                                                <th>Id CC Empleado</th>
-                                                <th>Cedula</th>
-                                                <th>Nombre Empleado</th>
-                                                <th>Grupo</th>
-                                                <th>Sub Grupo</th>
-                                                <th>Agencia ID</th>
-                                                <th>Cantidad de Faltantes</th>
-                                                <th>Monto Total</th>
+                                                <th class="sortable-column" data-sort="companyid">Empresa <span class="sort-indicator"></span></th>
+                                                <th class="sortable-column" data-sort="empleadoid">Id Empleado <span class="sort-indicator"></span></th>
+                                                <th class="sortable-column" data-sort="idcentrocosto">Id CC Empleado <span class="sort-indicator"></span></th>
+                                                <th class="sortable-column" data-sort="identificacion">Cedula <span class="sort-indicator"></span></th>
+                                                <th class="sortable-column" data-sort="nombre_empleado">Nombre Empleado <span class="sort-indicator"></span></th>
+                                                <th class="sortable-column" data-sort="id_grupo">Grupo <span class="sort-indicator"></span></th>
+                                                <th class="sortable-column" data-sort="id_sub_grupo">Sub Grupo <span class="sort-indicator"></span></th>
+                                                <th class="sortable-column" data-sort="agencia_id">Agencia ID <span class="sort-indicator"></span></th>
+                                                <th class="sortable-column" data-sort="cantidad_faltantes">Cantidad de Faltantes <span class="sort-indicator"></span></th>
+                                                <th class="sortable-column" data-sort="total_monto">Monto Total <span class="sort-indicator"></span></th>
                                                 <th>Acciones</th>
                                             </tr>
                                         </thead>
@@ -204,10 +222,15 @@
             bet: 'Lotobet Real',
             net: 'Lotedom'
         };
+        const currentSort = {
+            by: 'total_monto',
+            dir: 'desc'
+        };
 
         document.addEventListener('DOMContentLoaded', function() {
             inicializarFechasPorDefecto();
             actualizarTitulos();
+            actualizarIndicadoresOrden();
             cargarDatos(1);
         });
 
@@ -271,6 +294,33 @@
             return escapeHtml(value).replaceAll('`', '&#096;');
         }
 
+        function actualizarIndicadoresOrden() {
+            document.querySelectorAll('#tableFaltantes thead th.sortable-column').forEach(th => {
+                const indicator = th.querySelector('.sort-indicator');
+                const isActive = th.dataset.sort === currentSort.by;
+
+                th.classList.toggle('active', isActive);
+
+                if (indicator) {
+                    indicator.textContent = isActive
+                        ? (currentSort.dir === 'asc' ? '▲' : '▼')
+                        : '↕';
+                }
+            });
+        }
+
+        function alternarOrden(sortBy) {
+            if (currentSort.by === sortBy) {
+                currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.by = sortBy;
+                currentSort.dir = 'asc';
+            }
+
+            actualizarIndicadoresOrden();
+            cargarDatos(1, true);
+        }
+
         function cargarDatos(page = 1, mostrarProcesando = false) {
             const fechaInicio = document.getElementById('fecha_inicio').value;
             const fechaFin = document.getElementById('fecha_fin').value;
@@ -281,7 +331,9 @@
                 tipo: tipo,
                 fecha_inicio: fechaInicio,
                 fecha_fin: fechaFin,
-                page: page
+                page: page,
+                sort_by: currentSort.by,
+                sort_dir: currentSort.dir
             });
 
             if (buscar) {
@@ -457,7 +509,9 @@
             const params = new URLSearchParams({
                 tipo: tipo,
                 fecha_inicio: fechaInicio,
-                fecha_fin: fechaFin
+                fecha_fin: fechaFin,
+                sort_by: currentSort.by,
+                sort_dir: currentSort.dir
             });
 
             if (buscar) {
@@ -476,7 +530,9 @@
             const params = new URLSearchParams({
                 tipo: tipo,
                 fecha_inicio: fechaInicio,
-                fecha_fin: fechaFin
+                fecha_fin: fechaFin,
+                sort_by: currentSort.by,
+                sort_dir: currentSort.dir
             });
 
             if (buscar) {
@@ -492,6 +548,12 @@
                 actualizarTitulos();
                 cargarDatos(1, true);
             }
+        });
+
+        document.querySelectorAll('#tableFaltantes thead th.sortable-column').forEach(th => {
+            th.addEventListener('click', function() {
+                alternarOrden(this.dataset.sort);
+            });
         });
     </script>
 @endsection

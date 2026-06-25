@@ -432,6 +432,27 @@ class ReporteController extends Controller
         });
     }
 
+    private function applyFaltantesSort($query, ?string $sortBy, ?string $sortDir)
+    {
+        $sortDir = strtolower((string) $sortDir) === 'asc' ? 'asc' : 'desc';
+        $sortMap = [
+            'companyid' => 'companyid',
+            'empleadoid' => 'empleadoid',
+            'idcentrocosto' => 'idcentrocosto',
+            'identificacion' => 'identificacion',
+            'nombre_empleado' => 'nombre_empleado',
+            'id_grupo' => 'id_grupo',
+            'id_sub_grupo' => 'id_sub_grupo',
+            'agencia_id' => 'agencia_id',
+            'cantidad_faltantes' => 'cantidad_faltantes',
+            'total_monto' => 'total_monto',
+        ];
+
+        $column = $sortMap[$sortBy] ?? 'total_monto';
+
+        return $query->orderBy($column, $sortDir);
+    }
+
     private function empleadosCedulaNormalizadaSql(string $table = 'empleados'): string
     {
         return "REPLACE(REPLACE(TRIM({$table}.cedula), '-', ''), ' ', '')";
@@ -493,6 +514,8 @@ class ReporteController extends Controller
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
         $buscar = $request->input('buscar');
+        $sortBy = $request->input('sort_by');
+        $sortDir = $request->input('sort_dir');
         $config = $this->getFaltantesConfig($request->input('tipo'));
         $empresaExpr = "COALESCE(emp_cc.companyid, emp_ced.companyid)";
         $empleadoExpr = "COALESCE(emp_cc.empleadoid, emp_ced.empleadoid)";
@@ -527,6 +550,7 @@ class ReporteController extends Controller
             );
 
         $this->applyFaltantesFilters($query, $fechaInicio, $fechaFin, $buscar);
+        $this->applyFaltantesSort($query, $sortBy, $sortDir);
 
         $registros = $query
             ->groupBy(
@@ -540,7 +564,6 @@ class ReporteController extends Controller
                 DB::raw($idCcEmpleadoExpr),
                 DB::raw($nombreExpr)
             )
-            ->orderBy('total_monto', 'desc')
             ->paginate(10);
 
         return $registros->toJson();
@@ -554,6 +577,8 @@ class ReporteController extends Controller
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
         $buscar = $request->input('buscar');
+        $sortBy = $request->input('sort_by');
+        $sortDir = $request->input('sort_dir');
         $config = $this->getFaltantesConfig($request->input('tipo'));
         $empresaExpr = "COALESCE(emp_cc.companyid, emp_ced.companyid)";
         $empleadoExpr = "COALESCE(emp_cc.empleadoid, emp_ced.empleadoid)";
@@ -586,10 +611,10 @@ class ReporteController extends Controller
             );
 
         $this->applyFaltantesFilters($query, $fechaInicio, $fechaFin, $buscar);
+        $this->applyFaltantesSort($query, $sortBy, $sortDir);
 
         $registros = $query
             ->groupBy('faltantes.identificacion', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo', DB::raw($empresaExpr), DB::raw($empleadoExpr), DB::raw($idCcEmpleadoExpr), DB::raw($nombreExpr))
-            ->orderBy('total_monto', 'desc')
             ->get();
 
         $fileName = 'faltantes_' . $config['tipo'] . '_' . now()->format('Ymd_His') . '.xlsx';
@@ -604,6 +629,8 @@ class ReporteController extends Controller
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
         $buscar = $request->input('buscar');
+        $sortBy = $request->input('sort_by');
+        $sortDir = $request->input('sort_dir');
         $config = $this->getFaltantesConfig($request->input('tipo'));
         $empresaExpr = "COALESCE(emp_cc.companyid, emp_ced.companyid)";
         $empleadoExpr = "COALESCE(emp_cc.empleadoid, emp_ced.empleadoid)";
@@ -636,10 +663,10 @@ class ReporteController extends Controller
             );
 
         $this->applyFaltantesFilters($query, $fechaInicio, $fechaFin, $buscar);
+        $this->applyFaltantesSort($query, $sortBy, $sortDir);
 
         $registros = $query
             ->groupBy('faltantes.identificacion', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo', DB::raw($empresaExpr), DB::raw($empleadoExpr), DB::raw($idCcEmpleadoExpr), DB::raw($nombreExpr))
-            ->orderBy('total_monto', 'desc')
             ->get();
 
         $sistema = $config['nombre'];
