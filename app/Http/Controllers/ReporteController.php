@@ -454,6 +454,7 @@ class ReporteController extends Controller
             })
             ->select(
                 'faltantes.agencia_id',
+                'empleados.companyid',
                 'empleados.empleadoid',
                 'empleados.idcentrocosto',
                 'faltantes.identificacion',
@@ -472,6 +473,7 @@ class ReporteController extends Controller
         $registros = $query
             ->groupBy(
                 'faltantes.agencia_id',
+                'empleados.companyid',
                 'empleados.empleadoid',
                 'empleados.idcentrocosto',
                 'faltantes.identificacion',
@@ -505,6 +507,7 @@ class ReporteController extends Controller
                 $join->on('faltantes.identificacion', '=', DB::raw($this->empleadosCedulaNormalizadaSql('empleados')));
             })
             ->select(
+                'empleados.companyid',
                 'empleados.empleadoid',
                 'empleados.idcentrocosto',
                 'faltantes.identificacion',
@@ -520,7 +523,7 @@ class ReporteController extends Controller
         $this->applyFaltantesFilters($query, $fechaInicio, $fechaFin, $buscar);
 
         $registros = $query
-            ->groupBy('empleados.empleadoid', 'empleados.idcentrocosto', 'faltantes.identificacion', 'empleados.nombres', 'empleados.apellidos', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo')
+            ->groupBy('empleados.companyid', 'empleados.empleadoid', 'empleados.idcentrocosto', 'faltantes.identificacion', 'empleados.nombres', 'empleados.apellidos', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo')
             ->orderBy('total_monto', 'desc')
             ->get();
 
@@ -546,6 +549,7 @@ class ReporteController extends Controller
                 $join->on('faltantes.identificacion', '=', DB::raw($this->empleadosCedulaNormalizadaSql('empleados')));
             })
             ->select(
+                'empleados.companyid',
                 'empleados.empleadoid',
                 'empleados.idcentrocosto',
                 'faltantes.identificacion',
@@ -561,7 +565,7 @@ class ReporteController extends Controller
         $this->applyFaltantesFilters($query, $fechaInicio, $fechaFin, $buscar);
 
         $registros = $query
-            ->groupBy('empleados.empleadoid', 'empleados.idcentrocosto', 'faltantes.identificacion', 'empleados.nombres', 'empleados.apellidos', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo')
+            ->groupBy('empleados.companyid', 'empleados.empleadoid', 'empleados.idcentrocosto', 'faltantes.identificacion', 'empleados.nombres', 'empleados.apellidos', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo')
             ->orderBy('total_monto', 'desc')
             ->get();
 

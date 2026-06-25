@@ -79,6 +79,7 @@
                                         style="width:100%;">
                                         <thead>
                                             <tr>
+                                                <th>Empresa</th>
                                                 <th>Id Empleado</th>
                                                 <th>Id CC Empleado</th>
                                                 <th>Cedula</th>
@@ -321,6 +322,7 @@
                 const totalMonto = parseFloat(registro.total_monto || 0);
 
                 row.innerHTML = `
+                    <td class="text-center">${escapeHtml(registro.companyid ?? '')}</td>
                     <td class="text-center">${escapeHtml(registro.empleadoid ?? '')}</td>
                     <td class="text-center">${escapeHtml(registro.idcentrocosto ?? '')}</td>
                     <td>${escapeHtml(registro.identificacion)}</td>

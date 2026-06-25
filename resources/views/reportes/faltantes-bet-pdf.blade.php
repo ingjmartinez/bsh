@@ -63,6 +63,7 @@
     <table>
         <thead>
             <tr>
+                <th>Empresa</th>
                 <th>Id Empleado</th>
                 <th>Id CC Empleado</th>
                 <th>Cedula</th>
@@ -85,6 +86,7 @@
                     $totalFaltantes += $registro->cantidad_faltantes;
                 @endphp
                 <tr>
+                    <td>{{ $registro->companyid ?? '' }}</td>
                     <td>{{ $registro->empleadoid ?? '' }}</td>
                     <td>{{ $registro->idcentrocosto ?? '' }}</td>
                     <td>{{ $registro->identificacion }}</td>
