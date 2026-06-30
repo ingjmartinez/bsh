@@ -375,6 +375,8 @@ Route::post('usuarios/{usuario}/reset-clave', [UserController::class, 'resetClav
 Route::get('/superadmin/sesiones', [SuperAdminSesionController::class, 'index'])
     ->middleware('role:superadmin')
     ->name('superadmin.sesiones.index');
+Route::get('coordinador-operador/asignacion-data', [CoordinadorOperadorController::class, 'asignacionData'])
+    ->name('coordinador-operador.asignacion-data');
 Route::resource('coordinador-operador', CoordinadorOperadorController::class)->except(['show']);
 Route::post('coordinador-operador/{coordinador_operador}/asignar-agencias', [CoordinadorOperadorController::class, 'asignarAgencias'])
     ->name('coordinador-operador.asignar-agencias');

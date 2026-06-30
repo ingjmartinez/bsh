@@ -15,6 +15,7 @@ class CoordinadorOperador extends Model
     protected $fillable = [
         'nombre',
         'apellido',
+        'cargo',
         'cedula',
         'telefono',
         'correo',
@@ -56,11 +57,15 @@ class CoordinadorOperador extends Model
         return static::resolveTableName();
     }
 
-    public function getCedulaAttribute($value): string
+    public function getCedulaAttribute($value): ?string
     {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
         $cedula = preg_replace('/\D/', '', (string) $value);
 
-        return str_pad($cedula, 11, '0', STR_PAD_LEFT);
+        return $cedula === '' ? null : str_pad($cedula, 11, '0', STR_PAD_LEFT);
     }
 
     public function getApellidoAttribute(): string

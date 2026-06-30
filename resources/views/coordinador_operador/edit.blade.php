@@ -51,6 +51,17 @@
                                         </div>
 
                                         <div class="col-md-6">
+                                            <label class="form-label">Cargo <span class="text-danger">*</span></label>
+                                            <select name="cargo" class="form-select @error('cargo') is-invalid @enderror" required>
+                                                <option value="">Seleccione un cargo</option>
+                                                @foreach($cargosDisponibles as $cargo)
+                                                    <option value="{{ $cargo }}" @selected(old('cargo', $registro->cargo) === $cargo)>{{ $cargo }}</option>
+                                                @endforeach
+                                            </select>
+                                            @error('cargo')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                        </div>
+
+                                        <div class="col-md-6">
                                             <label class="form-label">Cédula <span class="text-danger">*</span></label>
                                             <input type="text" name="cedula" class="form-control @error('cedula') is-invalid @enderror" value="{{ old('cedula', $registro->cedula) }}" inputmode="numeric" pattern="[0-9]{11}" maxlength="11" oninput="this.value=this.value.replace(/\D/g,'').slice(0, 11); this.setCustomValidity('')" oninvalid="if(this.validity.valueMissing){this.setCustomValidity('Campo de 11 Digitos obligatorios')}else if(this.value.length < 11){this.setCustomValidity('Faltan digitos: la cedula debe tener 11')}else if(this.value.length > 11){this.setCustomValidity('Tiene digitos de mas: la cedula debe tener 11')}else{this.setCustomValidity('Campo de 11 Digitos obligatorios')}" required>
                                             <div class="form-text">Campo de 11 Digitos obligatorios</div>
@@ -59,8 +70,8 @@
 
                                         <div class="col-md-6">
                                             <label class="form-label">Teléfono <span class="text-danger">*</span></label>
-                                            <input type="text" name="telefono" class="form-control @error('telefono') is-invalid @enderror" value="{{ old('telefono', $registro->telefono) }}" inputmode="numeric" pattern="[0-9]{10}" oninput="this.value=this.value.replace(/\D/g,''); this.setCustomValidity('')" oninvalid="if(this.validity.valueMissing){this.setCustomValidity('Campo de 10 Digitos obligatorios')}else if(this.value.length < 10){this.setCustomValidity('Faltan digitos: el telefono debe tener 10')}else if(this.value.length > 10){this.setCustomValidity('Tiene digitos de mas: el telefono debe tener 10')}else{this.setCustomValidity('Campo de 10 Digitos obligatorios')}" required>
-                                            <div class="form-text">Campo de 10 Digitos obligatorios</div>
+                                            <input type="text" name="telefono" class="form-control @error('telefono') is-invalid @enderror" value="{{ old('telefono', $registro->telefono) }}" inputmode="numeric" pattern="[0-9]{11}" maxlength="11" oninput="this.value=this.value.replace(/\D/g,'').slice(0, 11); this.setCustomValidity('')" oninvalid="if(this.validity.valueMissing){this.setCustomValidity('Campo de 11 Digitos obligatorios')}else if(this.value.length < 11){this.setCustomValidity('Faltan digitos: el telefono debe tener 11')}else if(this.value.length > 11){this.setCustomValidity('Tiene digitos de mas: el telefono debe tener 11')}else{this.setCustomValidity('Campo de 11 Digitos obligatorios')}" required>
+                                            <div class="form-text">Campo de 11 Digitos obligatorios</div>
                                             @error('telefono')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                         </div>
 
@@ -79,5 +90,40 @@
             </div>
         </div>
     </div>
+@endsection
+
+@section('script')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const cedulaInput = document.querySelector('input[name="cedula"]');
+        const cedulaLabel = cedulaInput?.closest('.col-md-6')?.querySelector('.form-label');
+        const cedulaHelp = cedulaInput?.closest('.col-md-6')?.querySelector('.form-text');
+
+        if (cedulaInput) {
+            cedulaInput.removeAttribute('required');
+            cedulaInput.setAttribute('aria-describedby', 'cedulaHelp');
+            cedulaInput.oninvalid = function () {
+                if (!this.value) {
+                    this.setCustomValidity('');
+                } else if (this.value.length < 11) {
+                    this.setCustomValidity('Faltan digitos: la cedula debe tener 11');
+                } else if (this.value.length > 11) {
+                    this.setCustomValidity('Tiene digitos de mas: la cedula debe tener 11');
+                } else {
+                    this.setCustomValidity('La cedula debe tener 11 digitos');
+                }
+            };
+        }
+
+        if (cedulaLabel) {
+            cedulaLabel.textContent = 'Cedula';
+        }
+
+        if (cedulaHelp) {
+            cedulaHelp.id = 'cedulaHelp';
+            cedulaHelp.textContent = 'Opcional. Si la registra, debe tener 11 digitos.';
+        }
+    });
+</script>
 @endsection
 

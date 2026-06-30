@@ -5,11 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\Agencia;
 use App\Models\CoordinadorOperador;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class CoordinadorOperadorController extends Controller
 {
+    private const CARGOS_DISPONIBLES = [
+        'Gerente De Servicio',
+        'Lider De Zona',
+        'Recolector',
+        'Socio',
+    ];
+
     private function coordinadorOperadorTable(): string
     {
         return CoordinadorOperador::resolveTableName();
@@ -44,10 +52,15 @@ class CoordinadorOperadorController extends Controller
         return "TRIM(COALESCE({$alias}.nombre, ''))";
     }
 
+    private function clearIndexCache(): void
+    {
+        Cache::forget('coordinador_operador.agencias_asignacion_data');
+    }
+
     private function coordinadorOperadorPayload(array $validated): array
     {
         $payload = [
-            'cedula' => $validated['cedula'],
+            'cedula' => $validated['cedula'] ?? null,
             'telefono' => $validated['telefono'],
         ];
 
@@ -70,6 +83,10 @@ class CoordinadorOperadorController extends Controller
             $payload['puesto'] = $validated['puesto'] ?? 'coordinador';
         }
 
+        if (CoordinadorOperador::hasResolvedColumn('cargo')) {
+            $payload['cargo'] = $validated['cargo'];
+        }
+
         if (CoordinadorOperador::hasResolvedColumn('activo')) {
             $payload['activo'] = true;
         }
@@ -79,8 +96,6 @@ class CoordinadorOperadorController extends Controller
 
     public function index()
     {
-        $tablaCoordinador = $this->coordinadorOperadorTable();
-
         $registros = CoordinadorOperador::with([
                 'agencias' => function ($query) {
                     $query->selectRaw('agencias.id, agencias.terminal, agencias.' . $this->agenciaCodeSelect() . ', agencias.' . $this->agenciaNameSelect());
@@ -90,35 +105,61 @@ class CoordinadorOperadorController extends Controller
             ->orderByDesc('id')
             ->paginate(15);
 
-        $agencias = Agencia::query()
-            ->selectRaw('id, terminal, ' . $this->agenciaCodeSelect() . ', ' . $this->agenciaNameSelect())
-            ->orderBy($this->agenciaCodeColumn())
-            ->get();
-
-        $asignacionesAgencia = DB::table('coordinador_operador_agencia as coa')
-            ->join($tablaCoordinador . ' as co', 'co.id', '=', 'coa.coordinador_operador_id')
-            ->select(
-                'coa.agencia_id',
-                'co.id as coordinador_id',
-                DB::raw($this->coordinadorNombreSql('co') . ' as nombre')
-            )
-            ->get()
-            ->groupBy('agencia_id')
-            ->map(function ($rows) {
-                return $rows->map(function ($row) {
-                    return [
-                        'id' => (int) $row->coordinador_id,
-                        'nombre' => trim((string) ($row->nombre ?? '')),
-                    ];
-                })->values();
-            });
+        $agencias = collect();
+        $asignacionesAgencia = collect();
 
         return view('coordinador_operador.index', compact('registros', 'agencias', 'asignacionesAgencia'));
     }
 
+    public function asignacionData()
+    {
+        $tablaCoordinador = $this->coordinadorOperadorTable();
+
+        $data = Cache::remember('coordinador_operador.agencias_asignacion_data', now()->addMinutes(10), function () use ($tablaCoordinador) {
+            $agencias = Agencia::query()
+                ->selectRaw('id, terminal, ' . $this->agenciaCodeSelect() . ', ' . $this->agenciaNameSelect())
+                ->orderBy($this->agenciaCodeColumn())
+                ->get()
+                ->map(fn ($agencia) => [
+                    'id' => (int) $agencia->id,
+                    'terminal' => (string) ($agencia->terminal ?? ''),
+                    'codigo' => (string) ($agencia->codigo ?? ''),
+                    'nombre' => (string) ($agencia->nombre ?? ''),
+                ])
+                ->values();
+
+            $asignacionesAgencia = DB::table('coordinador_operador_agencia as coa')
+                ->join($tablaCoordinador . ' as co', 'co.id', '=', 'coa.coordinador_operador_id')
+                ->select(
+                    'coa.agencia_id',
+                    'co.id as coordinador_id',
+                    DB::raw($this->coordinadorNombreSql('co') . ' as nombre')
+                )
+                ->get()
+                ->groupBy('agencia_id')
+                ->map(function ($rows) {
+                    return $rows->map(function ($row) {
+                        return [
+                            'id' => (int) $row->coordinador_id,
+                            'nombre' => trim((string) ($row->nombre ?? '')),
+                        ];
+                    })->values();
+                });
+
+            return [
+                'agencias' => $agencias,
+                'asignacionesAgencia' => $asignacionesAgencia,
+            ];
+        });
+
+        return response()->json($data);
+    }
+
     public function create()
     {
-        return view('coordinador_operador.create');
+        return view('coordinador_operador.create', [
+            'cargosDisponibles' => self::CARGOS_DISPONIBLES,
+        ]);
     }
 
     public function store(Request $request)
@@ -127,17 +168,22 @@ class CoordinadorOperadorController extends Controller
             'nombre' => ['required', 'string', 'max:150'],
             'apellido' => ['nullable', 'string', 'max:100'],
             'correo' => ['required', 'email', 'max:150'],
-            'cedula' => ['required', 'regex:/^\d{11}$/', 'unique:' . $this->coordinadorOperadorTable() . ',cedula'],
-            'telefono' => ['required', 'regex:/^\d{10}$/'],
+            'cargo' => ['required', 'in:' . implode(',', self::CARGOS_DISPONIBLES)],
+            'cedula' => ['nullable', 'regex:/^\d{11}$/', 'unique:' . $this->coordinadorOperadorTable() . ',cedula'],
+            'telefono' => ['required', 'regex:/^\d{11}$/'],
             'puesto' => ['nullable', 'in:coordinador,operador'],
         ], [
             'cedula.regex' => 'La cédula debe contener exactamente 11 dígitos numéricos.',
-            'telefono.required' => 'Campo de 10 Digitos obligatorios',
-            'telefono.regex' => 'Campo de 10 Digitos obligatorios',
+            'cargo.required' => 'Debe seleccionar un cargo.',
+            'cargo.in' => 'El cargo seleccionado no es valido.',
+            'cedula.regex' => 'La cedula debe contener exactamente 11 digitos numericos.',
+            'telefono.required' => 'Campo de 11 Digitos obligatorios',
+            'telefono.regex' => 'Campo de 11 Digitos obligatorios',
             'puesto.in' => 'El puesto debe ser coordinador u operador.',
         ]);
 
         CoordinadorOperador::create($this->coordinadorOperadorPayload($validated));
+        $this->clearIndexCache();
 
         return redirect()->route('coordinador-operador.index')
             ->with('success', 'Registro creado correctamente.');
@@ -147,6 +193,7 @@ class CoordinadorOperadorController extends Controller
     {
         return view('coordinador_operador.edit', [
             'registro' => $coordinador_operador,
+            'cargosDisponibles' => self::CARGOS_DISPONIBLES,
         ]);
     }
 
@@ -156,17 +203,19 @@ class CoordinadorOperadorController extends Controller
             'nombre' => ['required', 'string', 'max:150'],
             'apellido' => ['nullable', 'string', 'max:100'],
             'correo' => ['required', 'email', 'max:150'],
-            'cedula' => ['required', 'regex:/^\d{11}$/', 'unique:' . $this->coordinadorOperadorTable() . ',cedula,' . $coordinador_operador->id],
-            'telefono' => ['required', 'regex:/^\d{10}$/'],
+            'cargo' => ['required', 'in:' . implode(',', self::CARGOS_DISPONIBLES)],
+            'cedula' => ['nullable', 'regex:/^\d{11}$/', 'unique:' . $this->coordinadorOperadorTable() . ',cedula,' . $coordinador_operador->id],
+            'telefono' => ['required', 'regex:/^\d{11}$/'],
             'puesto' => ['nullable', 'in:coordinador,operador'],
         ], [
             'cedula.regex' => 'La cédula debe contener exactamente 11 dígitos numéricos.',
-            'telefono.required' => 'Campo de 10 Digitos obligatorios',
-            'telefono.regex' => 'Campo de 10 Digitos obligatorios',
+            'telefono.required' => 'Campo de 11 Digitos obligatorios',
+            'telefono.regex' => 'Campo de 11 Digitos obligatorios',
             'puesto.in' => 'El puesto debe ser coordinador u operador.',
         ]);
 
         $coordinador_operador->update($this->coordinadorOperadorPayload($validated));
+        $this->clearIndexCache();
 
         return redirect()->route('coordinador-operador.index')
             ->with('success', 'Registro actualizado correctamente.');
@@ -175,6 +224,7 @@ class CoordinadorOperadorController extends Controller
     public function destroy(CoordinadorOperador $coordinador_operador)
     {
         $coordinador_operador->delete();
+        $this->clearIndexCache();
 
         return redirect()->route('coordinador-operador.index')
             ->with('success', 'Registro eliminado correctamente.');
@@ -219,6 +269,7 @@ class CoordinadorOperadorController extends Controller
         }
 
         $coordinador_operador->agencias()->sync($agenciasSeleccionadas->all());
+        $this->clearIndexCache();
 
         return redirect()->route('coordinador-operador.index')
             ->with('success', 'Agencias asignadas correctamente.');

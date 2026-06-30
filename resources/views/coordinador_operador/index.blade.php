@@ -40,7 +40,7 @@
                                 <div class="row mb-3">
                                     <div class="col-12 col-md-5 col-lg-4">
                                         <label for="buscarCoordinador" class="form-label">Buscar coordinador</label>
-                                        <input type="text" id="buscarCoordinador" class="form-control" placeholder="Escribe nombre o cedula...">
+                                        <input type="text" id="buscarCoordinador" class="form-control" placeholder="Escribe nombre, cargo o cedula...">
                                     </div>
                                 </div>
 
@@ -51,6 +51,7 @@
                                                 <th class="text-center" style="width:80px;">ID</th>
                                                 <th>Nombre</th>
                                                 <th>Correo</th>
+                                                <th>Cargo</th>
                                                 <th>Cédula</th>
                                                 <th>Teléfono</th>
                                                 <th class="text-center">Agencias Asignadas</th>
@@ -63,7 +64,8 @@
                                                     <td class="text-center">{{ $item->id }}</td>
                                                     <td>{{ $item->nombre }}</td>
                                                     <td>{{ $item->correo }}</td>
-                                                    <td>{{ $item->cedula }}</td>
+                                                    <td>{{ $item->cargo ?: '-' }}</td>
+                                                    <td>{{ $item->cedula ?: '-' }}</td>
                                                     <td>{{ $item->telefono }}</td>
                                                     <td class="text-center">
                                                         <button
@@ -90,7 +92,7 @@
                                                             <a href="{{ route('coordinador-operador.edit', $item->id) }}" class="btn btn-success btn-sm" title="Editar">
                                                                 <i class="ri-pencil-line"></i>
                                                             </a>
-                                                            <form action="{{ route('coordinador-operador.destroy', $item->id) }}" method="POST" onsubmit="return confirm('¿Está seguro de eliminar este registro?')">
+                                                            <form action="{{ route('coordinador-operador.destroy', $item->id) }}" method="POST" class="form-eliminar-coordinador" data-nombre="{{ $item->nombre }}">
                                                                 @csrf
                                                                 @method('DELETE')
                                                                 <button type="submit" class="btn btn-danger btn-sm" title="Eliminar">
@@ -102,7 +104,7 @@
                                                 </tr>
                                             @empty
                                                 <tr>
-                                                    <td colspan="7" class="text-center text-muted">No hay registros disponibles.</td>
+                                                    <td colspan="8" class="text-center text-muted">No hay registros disponibles.</td>
                                                 </tr>
                                             @endforelse
                                         </tbody>
@@ -153,20 +155,9 @@
 
                         <div class="border rounded p-3" style="max-height: 380px; overflow-y: auto;">
                             <div class="row g-2" id="listaAgenciasAsignacion">
-                                @forelse($agencias as $agencia)
-                                    <div class="col-12 col-md-6 item-agencia" data-agencia-id="{{ $agencia->id }}" data-terminal="{{ strtolower($agencia->terminal ?? '') }}" data-texto="{{ strtolower(($agencia->terminal ?? '') . ' ' . ($agencia->codigo ?? '') . ' ' . ($agencia->nombre ?? '')) }}">
-                                        <div class="form-check">
-                                            <input class="form-check-input checkbox-agencia" type="checkbox" name="agencias[]" value="{{ $agencia->id }}" id="agencia_{{ $agencia->id }}">
-                                            <label class="form-check-label" for="agencia_{{ $agencia->id }}">
-                                                {{ $agencia->terminal ?: '-' }} - {{ $agencia->nombre ?: 'Sin nombre' }}
-                                            </label>
-                                        </div>
-                                    </div>
-                                @empty
-                                    <div class="col-12 text-muted">
-                                        No hay agencias disponibles para asignar.
-                                    </div>
-                                @endforelse
+                                <div class="col-12 text-muted">
+                                    Las agencias se cargaran al abrir este modal.
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -201,7 +192,8 @@
 @section('script')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const asignacionesAgencia = @json($asignacionesAgencia ?? []);
+        let asignacionesAgencia = {};
+        let datosAsignacionCargados = false;
         const modalElement = document.getElementById('asignarAgenciasModal');
         const modal = new bootstrap.Modal(modalElement);
         const modalVerAgenciasElement = document.getElementById('verAgenciasAsignadasModal');
@@ -211,9 +203,10 @@
         const nombreVerAgencias = document.getElementById('nombreVerAgencias');
         const contadorVerAgencias = document.getElementById('contadorVerAgencias');
         const contenidoVerAgencias = document.getElementById('contenidoVerAgencias');
-        const checkboxes = document.querySelectorAll('.checkbox-agencia');
+        let checkboxes = [];
         const buscarTerminalAgencia = document.getElementById('buscarTerminalAgencia');
-        const itemsAgencia = document.querySelectorAll('.item-agencia');
+        let itemsAgencia = [];
+        const listaAgenciasAsignacion = document.getElementById('listaAgenciasAsignacion');
         const buscarCoordinador = document.getElementById('buscarCoordinador');
         const filasTablaCoordinador = document.querySelectorAll('#tablaCoordinadorOperador tbody tr');
         const terminalesMasivos = document.getElementById('terminalesMasivos');
@@ -358,18 +351,124 @@
                 .replace(/'/g, '&#039;');
         }
 
+        function renderAgenciasAsignacion(agencias) {
+            if (!listaAgenciasAsignacion) {
+                return;
+            }
+
+            if (!agencias.length) {
+                listaAgenciasAsignacion.innerHTML = '<div class="col-12 text-muted">No hay agencias disponibles para asignar.</div>';
+                itemsAgencia = [];
+                checkboxes = [];
+                return;
+            }
+
+            listaAgenciasAsignacion.innerHTML = agencias.map(function (agencia) {
+                const id = Number(agencia.id || 0);
+                const terminal = agencia.terminal || '';
+                const codigo = agencia.codigo || '';
+                const nombre = agencia.nombre || 'Sin nombre';
+                const texto = `${terminal} ${codigo} ${nombre}`.toLowerCase();
+
+                return `
+                    <div class="col-12 col-md-6 item-agencia" data-agencia-id="${id}" data-terminal="${escaparHtml(terminal.toLowerCase())}" data-texto="${escaparHtml(texto)}">
+                        <div class="form-check">
+                            <input class="form-check-input checkbox-agencia" type="checkbox" name="agencias[]" value="${id}" id="agencia_${id}">
+                            <label class="form-check-label" for="agencia_${id}">
+                                ${escaparHtml(terminal || '-')} - ${escaparHtml(nombre)}
+                            </label>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            itemsAgencia = document.querySelectorAll('.item-agencia');
+            checkboxes = document.querySelectorAll('.checkbox-agencia');
+        }
+
+        async function cargarDatosAsignacion() {
+            if (datosAsignacionCargados) {
+                return true;
+            }
+
+            if (listaAgenciasAsignacion) {
+                listaAgenciasAsignacion.innerHTML = '<div class="col-12 text-muted">Cargando agencias...</div>';
+            }
+
+            try {
+                const respuesta = await fetch('{{ route('coordinador-operador.asignacion-data') }}', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                });
+
+                if (!respuesta.ok) {
+                    throw new Error('No se pudieron cargar las agencias.');
+                }
+
+                const data = await respuesta.json();
+                asignacionesAgencia = data.asignacionesAgencia || {};
+                renderAgenciasAsignacion(data.agencias || []);
+                datosAsignacionCargados = true;
+                return true;
+            } catch (error) {
+                if (listaAgenciasAsignacion) {
+                    listaAgenciasAsignacion.innerHTML = '<div class="col-12 text-danger">No se pudieron cargar las agencias.</div>';
+                }
+
+                if (window.Swal && typeof window.Swal.fire === 'function') {
+                    window.Swal.fire('Error', error.message || 'No se pudieron cargar las agencias.', 'error');
+                }
+
+                return false;
+            }
+        }
+
+        document.querySelectorAll('.form-eliminar-coordinador').forEach(function (deleteForm) {
+            deleteForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const nombre = this.dataset.nombre || 'este registro';
+
+                if (!window.Swal || typeof window.Swal.fire !== 'function') {
+                    if (confirm('¿Está seguro de eliminar este registro?')) {
+                        this.submit();
+                    }
+                    return;
+                }
+
+                window.Swal.fire({
+                    icon: 'warning',
+                    title: 'Eliminar registro',
+                    html: `¿Está seguro de eliminar <strong>${escaparHtml(nombre)}</strong>?`,
+                    showCancelButton: true,
+                    confirmButtonText: 'Si, eliminar',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#f06548',
+                    cancelButtonColor: '#6c757d',
+                    reverseButtons: true,
+                }).then((resultado) => {
+                    if (resultado.isConfirmed) {
+                        this.submit();
+                    }
+                });
+            });
+        });
+
         function filtrarCoordinadorTabla() {
             const termino = (buscarCoordinador?.value || '').toLowerCase().trim();
 
             filasTablaCoordinador.forEach(function (fila) {
                 const celdas = fila.querySelectorAll('td');
-                if (!celdas.length || celdas.length < 4) {
+                if (!celdas.length || celdas.length < 5) {
                     return;
                 }
 
                 const nombre = (celdas[1]?.textContent || '').toLowerCase();
-                const cedula = (celdas[3]?.textContent || '').toLowerCase();
-                const coincide = !termino || nombre.includes(termino) || cedula.includes(termino);
+                const cargo = (celdas[3]?.textContent || '').toLowerCase();
+                const cedula = (celdas[4]?.textContent || '').toLowerCase();
+                const coincide = !termino || nombre.includes(termino) || cargo.includes(termino) || cedula.includes(termino);
 
                 fila.style.display = coincide ? '' : 'none';
             });
@@ -385,7 +484,7 @@
         }
 
         document.querySelectorAll('.btn-asignar-agencias').forEach(function (button) {
-            button.addEventListener('click', function () {
+            button.addEventListener('click', async function () {
                 const id = this.dataset.id;
                 const nombre = this.dataset.nombre || '-';
                 const asignadas = JSON.parse(this.dataset.asignadas || '[]');
@@ -399,10 +498,6 @@
                     confirmarReasignacion.value = '0';
                 }
 
-                checkboxes.forEach(function (checkbox) {
-                    checkbox.checked = asignadas.includes(Number(checkbox.value));
-                });
-
                 if (buscarTerminalAgencia) {
                     buscarTerminalAgencia.value = '';
                     filtrarAgenciasModal();
@@ -411,6 +506,17 @@
                 limpiarTerminalesMasivos();
 
                 modal.show();
+
+                const datosCargados = await cargarDatosAsignacion();
+                if (!datosCargados) {
+                    return;
+                }
+
+                filtrarAgenciasModal();
+
+                checkboxes.forEach(function (checkbox) {
+                    checkbox.checked = asignadas.includes(Number(checkbox.value));
+                });
             });
         });
 
