@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class CoordinadorOperador extends Model
@@ -28,23 +29,35 @@ class CoordinadorOperador extends Model
         'activo' => 'boolean',
     ];
 
+    private static ?string $resolvedTableName = null;
+
     public static function resolveTableName(): string
     {
+        if (self::$resolvedTableName !== null) {
+            return self::$resolvedTableName;
+        }
+
         $candidatas = ['coordinador_operador', 'coordinadores_operador'];
 
         foreach ($candidatas as $table) {
+            if (Schema::hasTable($table) && DB::table($table)->exists()) {
+                return self::$resolvedTableName = $table;
+            }
+        }
+
+        foreach ($candidatas as $table) {
             if (Schema::hasTable($table) && Schema::hasColumn($table, 'puesto')) {
-                return $table;
+                return self::$resolvedTableName = $table;
             }
         }
 
         foreach ($candidatas as $table) {
             if (Schema::hasTable($table)) {
-                return $table;
+                return self::$resolvedTableName = $table;
             }
         }
 
-        return 'coordinador_operador';
+        return self::$resolvedTableName = 'coordinador_operador';
     }
 
     public static function hasResolvedColumn(string $column): bool
