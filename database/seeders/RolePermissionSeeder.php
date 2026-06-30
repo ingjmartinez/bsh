@@ -116,6 +116,13 @@ class RolePermissionSeeder extends Seeder
             $this->itemPermissionsFromConfig('reportes', config('reportes', []))
         )));
 
+        foreach ($this->vpsBackfillModuleItemPermissions() as $module => $moduleBackfillPermissions) {
+            $permissions[$module] = array_values(array_unique(array_merge(
+                $permissions[$module] ?? [],
+                $moduleBackfillPermissions
+            )));
+        }
+
         $permissions['proyecto'] = [
             'module.proyecto.view',
         ];
@@ -141,6 +148,25 @@ class RolePermissionSeeder extends Seeder
         )));
 
         return $permissions;
+    }
+
+    private function vpsBackfillModuleItemPermissions(): array
+    {
+        return [
+            'dashboard' => [
+                'module.dashboard.item.lotedom_ventas.view',
+                'module.dashboard.item.lotobet_real_flash.view',
+                'module.dashboard.item.lotobet_real_ventas.view',
+                'module.dashboard.item.tickets_whatsapp.view',
+            ],
+            'mantenimiento' => [
+                'module.mantenimiento.item.agencias_lotedom.view',
+            ],
+            'reportes' => [
+                'module.reportes.item.faltantes_lotobet_real.view',
+                'module.reportes.item.ventas_por_usuario_lotobet_real.view',
+            ],
+        ];
     }
 
     private function permissionsForModule(string $module): array
