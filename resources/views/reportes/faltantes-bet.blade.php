@@ -74,7 +74,7 @@
                                             type="text"
                                             class="form-control"
                                             id="buscar"
-                                            placeholder="Cedula, agencia o nombre">
+                                            placeholder="Cedula, agencia, grupo, division o nombre">
                                     </div>
 
                                     <button id="btnFiltrar" class="btn btn-primary">
@@ -103,7 +103,7 @@
                                                 <th class="sortable-column" data-sort="identificacion">Cedula <span class="sort-indicator"></span></th>
                                                 <th class="sortable-column" data-sort="nombre_empleado">Nombre Empleado <span class="sort-indicator"></span></th>
                                                 <th class="sortable-column" data-sort="id_grupo">Grupo <span class="sort-indicator"></span></th>
-                                                <th class="sortable-column" data-sort="id_sub_grupo">Sub Grupo <span class="sort-indicator"></span></th>
+                                                <th class="sortable-column" data-sort="id_division">Id Division <span class="sort-indicator"></span></th>
                                                 <th class="sortable-column" data-sort="agencia_id">Agencia ID <span class="sort-indicator"></span></th>
                                                 <th class="sortable-column" data-sort="cantidad_faltantes">Cantidad de Faltantes <span class="sort-indicator"></span></th>
                                                 <th class="sortable-column" data-sort="total_monto">Monto Total <span class="sort-indicator"></span></th>
@@ -185,6 +185,10 @@
                         <div class="col-md-3">
                             <label class="form-label text-muted mb-1">Sub Grupo</label>
                             <div class="fw-semibold" id="detalleSubGrupo">-</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label text-muted mb-1">Id Division</label>
+                            <div class="fw-semibold" id="detalleDivision">-</div>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label text-muted mb-1">Total de Faltantes</label>
@@ -369,6 +373,7 @@
                 const idCentroCosto = registro.id_centro_costo ?? '';
                 const grupo = registro.id_grupo || '';
                 const subGrupo = registro.id_sub_grupo || '';
+                const division = registro.id_division || '';
                 const detallesFaltantes = registro.detalles_faltantes || '';
                 const totalMonto = parseFloat(registro.total_monto || 0);
 
@@ -379,7 +384,7 @@
                     <td>${escapeHtml(registro.identificacion)}</td>
                     <td>${escapeHtml(nombreEmpleado)}</td>
                     <td>${escapeHtml(grupo)}</td>
-                    <td>${escapeHtml(subGrupo)}</td>
+                    <td>${escapeHtml(division)}</td>
                     <td class="text-center">${escapeHtml(agenciaId)}</td>
                     <td class="text-center">${escapeHtml(registro.cantidad_faltantes)}</td>
                     <td class="text-end">$${totalMonto.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
@@ -392,6 +397,7 @@
                             data-centro-costo="${escapeAttribute(idCentroCosto)}"
                             data-grupo="${escapeAttribute(grupo)}"
                             data-sub-grupo="${escapeAttribute(subGrupo)}"
+                            data-division="${escapeAttribute(division)}"
                             data-total="${escapeAttribute(registro.cantidad_faltantes)}"
                             data-monto="${escapeAttribute(totalMonto)}"
                             data-detalles="${escapeAttribute(detallesFaltantes)}"
@@ -439,6 +445,7 @@
             document.getElementById('detalleCentroCosto').textContent = button.dataset.centroCosto || '-';
             document.getElementById('detalleGrupo').textContent = button.dataset.grupo || '-';
             document.getElementById('detalleSubGrupo').textContent = button.dataset.subGrupo || '-';
+            document.getElementById('detalleDivision').textContent = button.dataset.division || '-';
             document.getElementById('detalleTotalFaltantes').textContent = button.dataset.total || '0';
             document.getElementById('detalleMontoTotal').textContent = formatearMonto(button.dataset.monto);
 

@@ -23,6 +23,18 @@
                                 <a href="{{ route('contabilidad.electricidad') }}" class="btn btn-outline-primary btn-sm">
                                     Electricidad
                                 </a>
+                                <a href="{{ route('contabilidad.movimiento-mayor') }}" class="btn btn-outline-primary btn-sm">
+                                    Movimiento Mayor
+                                </a>
+                                <a href="{{ route('contabilidad.cuentas-cobrar-faltantes') }}" class="btn btn-outline-primary btn-sm">
+                                    CxC Faltantes
+                                </a>
+                                <a href="{{ route('contabilidad.reportes.estado-resultado') }}" class="btn btn-outline-primary btn-sm">
+                                    Estado de Resultado
+                                </a>
+                                <a href="{{ route('contabilidad.reportes.flujo-ruta') }}" class="btn btn-outline-primary btn-sm">
+                                    Flujo de ruta
+                                </a>
                             </div>
                         </div>
                     </div>

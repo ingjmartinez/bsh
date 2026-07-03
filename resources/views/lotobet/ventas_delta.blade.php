@@ -70,8 +70,8 @@
                                     <thead>
                                         <tr>
                                             <th>Grupo</th>
+                                            <th>Nombre de banca</th>
                                             <th>Banca</th>
-                                            <th>N Externo</th>
                                             <th>Ventas Tradicional</th>
                                             <th>Premios Pagados</th>
                                             <th>Ventas Recargas</th>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CentroDeCosto;
 use App\Models\CuentaContable;
 use App\Models\DetalleCuenta;
+use App\Models\EntradaDiario;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -335,6 +336,319 @@ class Api extends Controller
                 'empresas' => $syncResult['empresas'] ?? [],
             ],
         ]);
+    }
+
+    public function getEntradasDiario(Request $request)
+    {
+        $validated = $this->validateEntradasDiarioRequest($request);
+        if (isset($validated['response'])) {
+            return $validated['response'];
+        }
+
+        $query = EntradaDiario::query()
+            ->where('company_id', $validated['empresa'])
+            ->whereBetween('fecha', [$validated['inicio']->toDateString(), $validated['fin']->toDateString()]);
+
+        if ($validated['cuenta'] !== '') {
+            $query->where('cuenta', $validated['cuenta']);
+        }
+
+        if ($validated['centro_costo'] !== '') {
+            $query->where('id_centro_costo', $validated['centro_costo']);
+        }
+
+        if ($validated['cuentas_filtro'] !== null) {
+            if ($validated['cuentas_filtro'] === []) {
+                return response()->json([
+                    'data' => [],
+                    'summary' => ['registros' => 0, 'debito' => 0, 'credito' => 0],
+                    'displayed' => 0,
+                    'limit' => 0,
+                    'truncated' => false,
+                ]);
+            }
+
+            $query->whereIn('cuenta', $validated['cuentas_filtro']);
+        }
+
+        $summary = (clone $query)
+            ->selectRaw('COUNT(*) as registros, COALESCE(SUM(debito), 0) as debito, COALESCE(SUM(credito), 0) as credito')
+            ->first();
+        $limit = max(1, min((int) $request->query('limit', 5000), 10000));
+
+        $items = $query
+            ->orderBy('fecha')
+            ->orderBy('no_asiento')
+            ->orderBy('cuenta')
+            ->limit($limit)
+            ->get();
+
+        return response()->json([
+            'data' => $items->map(fn (EntradaDiario $item) => $this->mapEntradaDiario($item))->values(),
+            'summary' => [
+                'registros' => (int) ($summary->registros ?? 0),
+                'debito' => round((float) ($summary->debito ?? 0), 2),
+                'credito' => round((float) ($summary->credito ?? 0), 2),
+            ],
+            'displayed' => $items->count(),
+            'limit' => $limit,
+            'truncated' => (int) ($summary->registros ?? 0) > $items->count(),
+        ]);
+    }
+
+    public function syncEntradasDiario(Request $request)
+    {
+        $validated = $this->validateEntradasDiarioRequest($request, 7);
+        if (isset($validated['response'])) {
+            return $validated['response'];
+        }
+
+        if ($validated['cuentas_filtro'] === []) {
+            return response()->json([
+                'message' => 'No hay cuentas configuradas para los filtros seleccionados.',
+                'empresa' => $validated['empresa'],
+                'fecha_inicio' => $validated['inicio']->toDateString(),
+                'fecha_fin' => $validated['fin']->toDateString(),
+                'total_recibidos' => 0,
+                'creados' => 0,
+                'actualizados' => 0,
+                'sin_cambios' => 0,
+                'omitidos' => 0,
+            ]);
+        }
+
+        $result = $this->syncEntradasDiarioFromExternal(
+            $validated['empresa'],
+            $validated['inicio'],
+            $validated['fin'],
+            $validated['cuentas_filtro']
+        );
+
+        if (! $result['ok']) {
+            return response()->json([
+                'message' => $result['message'],
+                'status' => $result['status'] ?? null,
+                'error' => $result['error'] ?? null,
+            ], $result['status'] ?? 500);
+        }
+
+        return response()->json([
+            'message' => 'Sincronizacion de entradas de diario completada.',
+            'empresa' => $validated['empresa'],
+            'fecha_inicio' => $validated['inicio']->toDateString(),
+            'fecha_fin' => $validated['fin']->toDateString(),
+            'total_recibidos' => $result['total_recibidos'],
+            'creados' => $result['creados'],
+            'actualizados' => $result['actualizados'],
+            'sin_cambios' => $result['sin_cambios'],
+            'omitidos' => $result['omitidos'],
+        ]);
+    }
+
+    public function deleteEntradasDiario(Request $request)
+    {
+        $validated = $this->validateEntradasDiarioRequest($request);
+        if (isset($validated['response'])) {
+            return $validated['response'];
+        }
+
+        $query = EntradaDiario::query()
+            ->where('company_id', $validated['empresa'])
+            ->whereBetween('fecha', [$validated['inicio']->toDateString(), $validated['fin']->toDateString()]);
+
+        if ($validated['cuenta'] !== '') {
+            $query->where('cuenta', $validated['cuenta']);
+        }
+
+        if ($validated['centro_costo'] !== '') {
+            $query->where('id_centro_costo', $validated['centro_costo']);
+        }
+
+        if ($validated['cuentas_filtro'] !== null) {
+            if ($validated['cuentas_filtro'] === []) {
+                return response()->json([
+                    'message' => 'No hay cuentas configuradas para los filtros seleccionados.',
+                    'empresa' => $validated['empresa'],
+                    'fecha_inicio' => $validated['inicio']->toDateString(),
+                    'fecha_fin' => $validated['fin']->toDateString(),
+                    'eliminados' => 0,
+                ]);
+            }
+
+            $query->whereIn('cuenta', $validated['cuentas_filtro']);
+        }
+
+        $total = (clone $query)->count();
+        $eliminados = $total > 0 ? $query->delete() : 0;
+
+        return response()->json([
+            'message' => $eliminados > 0 ? 'Data eliminada correctamente.' : 'No habia registros para eliminar en el rango seleccionado.',
+            'empresa' => $validated['empresa'],
+            'fecha_inicio' => $validated['inicio']->toDateString(),
+            'fecha_fin' => $validated['fin']->toDateString(),
+            'eliminados' => $eliminados,
+        ]);
+    }
+
+    private function validateEntradasDiarioRequest(Request $request, ?int $maxDays = null): array
+    {
+        $empresa = $this->empresaContabilidadFromRequest($request);
+
+        if ($empresa === 'todos') {
+            return [
+                'response' => response()->json([
+                    'message' => 'Debes seleccionar una empresa especifica para movimiento del mayor.',
+                ], 422),
+            ];
+        }
+
+        $fechaInicio = (string) $request->input('fecha_inicio', $request->query('fecha_inicio', $request->query('fecha', date('Y-m-d'))));
+        $fechaFin = (string) $request->input('fecha_fin', $request->query('fecha_fin', $fechaInicio));
+
+        try {
+            $inicio = Carbon::createFromFormat('Y-m-d', $fechaInicio)->startOfDay();
+            $fin = Carbon::createFromFormat('Y-m-d', $fechaFin)->startOfDay();
+        } catch (\Throwable) {
+            return [
+                'response' => response()->json([
+                    'message' => 'Formato de fechas invalido. Use YYYY-MM-DD.',
+                ], 422),
+            ];
+        }
+
+        if ($inicio->gt($fin)) {
+            return [
+                'response' => response()->json([
+                    'message' => 'La fecha inicio no puede ser mayor que la fecha fin.',
+                ], 422),
+            ];
+        }
+
+        if ($maxDays !== null && ($inicio->diffInDays($fin) + 1) > $maxDays) {
+            return [
+                'response' => response()->json([
+                    'message' => "El rango maximo permitido es de {$maxDays} dias por consulta.",
+                ], 422),
+            ];
+        }
+
+        $tipos = $this->normalizeEntradaDiarioTipos($request->input('tipos', $request->query('tipos', [])));
+        $cuenta = trim((string) $request->input('cuenta', $request->query('cuenta', '')));
+        $cuentasTipo = $this->resolveEntradaDiarioCuentasPorTipo($tipos, $empresa);
+
+        return [
+            'empresa' => $empresa,
+            'inicio' => $inicio,
+            'fin' => $fin,
+            'cuenta' => $cuenta,
+            'centro_costo' => trim((string) $request->input('centro_costo', $request->query('centro_costo', ''))),
+            'tipos' => $tipos,
+            'cuentas_tipo' => $cuentasTipo,
+            'cuentas_filtro' => $this->resolveEntradaDiarioCuentasFiltro($cuenta, $cuentasTipo),
+        ];
+    }
+
+    private function normalizeEntradaDiarioTipos(mixed $tipos): array
+    {
+        if (is_string($tipos)) {
+            $tipos = array_filter(array_map('trim', explode(',', $tipos)));
+        }
+
+        if (!is_array($tipos)) {
+            return [];
+        }
+
+        $map = [
+            'ingreso' => 'Ingreso',
+            'ingresos' => 'Ingreso',
+            'costo' => 'Costo',
+            'costos' => 'Costo',
+            'gasto' => 'Gasto',
+            'gastos' => 'Gasto',
+        ];
+
+        return collect($tipos)
+            ->map(fn ($tipo) => mb_strtolower(trim((string) $tipo)))
+            ->filter(fn ($tipo) => $tipo !== '' && $tipo !== 'todos')
+            ->map(fn ($tipo) => $map[$tipo] ?? null)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function resolveEntradaDiarioCuentasPorTipo(array $tipos, string $empresa): ?array
+    {
+        if ($tipos === []) {
+            return null;
+        }
+
+        $tiposNormalizados = collect($tipos)
+            ->map(fn ($tipo) => mb_strtolower(trim((string) $tipo)))
+            ->values();
+
+        return CuentaContable::query()
+            ->where('company_id', $empresa)
+            ->whereNotNull('tipo')
+            ->whereRaw("TRIM(tipo) <> ''")
+            ->whereRaw(
+                'LOWER(TRIM(COALESCE(tipo, ""))) IN (' . implode(',', array_fill(0, $tiposNormalizados->count(), '?')) . ')',
+                $tiposNormalizados->all()
+            )
+            ->pluck('cuenta')
+            ->map(fn ($cuenta) => trim((string) $cuenta))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function resolveEntradaDiarioCuentasFiltro(string $cuenta, ?array $cuentasTipo): ?array
+    {
+        if ($cuenta !== '') {
+            if ($cuentasTipo === null) {
+                return [$cuenta];
+            }
+
+            return in_array($cuenta, $cuentasTipo, true) ? [$cuenta] : [];
+        }
+
+        return $cuentasTipo;
+    }
+
+    private function mapEntradaDiario(EntradaDiario $item): array
+    {
+        return [
+            'id' => $item->id,
+            'NoAsiento' => $item->no_asiento,
+            'CompanyID' => $item->company_id,
+            'Fecha' => optional($item->fecha)->toDateString(),
+            'FechaRaw' => $item->fecha_raw,
+            'Ref' => $item->ref,
+            'NoRef' => $item->no_ref,
+            'Cuenta' => $item->cuenta,
+            'Debito' => (float) $item->debito,
+            'Credito' => (float) $item->credito,
+            'Descripcion' => $item->descripcion,
+            'IdCentroCosto' => $item->id_centro_costo,
+            'IdGrupo' => $item->id_grupo,
+            'IdSubGrupo' => $item->id_sub_grupo,
+            'IdDivision' => $item->id_division,
+            'IdSociedad' => $item->id_sociedad,
+            'Conciliado' => (bool) $item->conciliado,
+            'Modulo' => $item->modulo,
+            'FechaGrabado' => optional($item->fecha_grabado)->toDateTimeString(),
+            'FechaModificado' => optional($item->fecha_modificado)->toDateTimeString(),
+            'IdViejo' => $item->id_viejo,
+            'CentroCosto' => $item->centro_costo,
+            'Grupo' => $item->grupo,
+            'SubGrupo' => $item->sub_grupo,
+            'Division' => $item->division,
+            'CreadoPor' => $item->creado_por,
+            'ModificadoPor' => $item->modificado_por,
+            'RefDesc' => $item->ref_desc,
+            'Sociedad' => $item->sociedad,
+        ];
     }
 
     private function empresaContabilidadFromRequest(Request $request): string
@@ -880,6 +1194,306 @@ class Api extends Controller
         }
 
         return [];
+    }
+
+    private function syncEntradasDiarioFromExternal(string $empresa, Carbon $inicio, Carbon $fin, ?array $cuentasPermitidas = null): array
+    {
+        $created = 0;
+        $updated = 0;
+        $unchanged = 0;
+        $skipped = 0;
+        $received = 0;
+        $cuentasPermitidasSet = $cuentasPermitidas === null ? null : array_fill_keys($cuentasPermitidas, true);
+        $fechaActual = $inicio->copy();
+
+        while ($fechaActual->lte($fin)) {
+            $fetch = $this->fetchEntradasDiarioByDate($empresa, $fechaActual->toDateString());
+
+            if (! $fetch['ok']) {
+                return $fetch + [
+                    'total_recibidos' => $received,
+                    'creados' => $created,
+                    'actualizados' => $updated,
+                    'sin_cambios' => $unchanged,
+                    'omitidos' => $skipped,
+                ];
+            }
+
+            $rows = [];
+
+            foreach ($fetch['items'] as $rawItem) {
+                $received++;
+
+                if (!is_array($rawItem)) {
+                    $skipped++;
+                    continue;
+                }
+
+                $row = $this->buildEntradaDiarioUpsertRow($empresa, $fechaActual->toDateString(), $rawItem);
+
+                if ($row === null) {
+                    $skipped++;
+                    continue;
+                }
+
+                if ($cuentasPermitidasSet !== null && !isset($cuentasPermitidasSet[$row['cuenta']])) {
+                    $skipped++;
+                    continue;
+                }
+
+                $rows[$row['external_key']] = $row;
+            }
+
+            $persisted = $this->persistEntradaDiarioRows(array_values($rows));
+            $created += $persisted['creados'];
+            $updated += $persisted['actualizados'];
+            $unchanged += $persisted['sin_cambios'];
+
+            $fechaActual->addDay();
+        }
+
+        return [
+            'ok' => true,
+            'total_recibidos' => $received,
+            'creados' => $created,
+            'actualizados' => $updated,
+            'sin_cambios' => $unchanged,
+            'omitidos' => $skipped,
+            'status' => 200,
+        ];
+    }
+
+    private function buildEntradaDiarioUpsertRow(string $empresa, string $fechaConsulta, array $rawItem): ?array
+    {
+        $item = $this->normalizeKeys($rawItem);
+        $fechaRaw = (string) ($item['FECHA'] ?? $fechaConsulta);
+        $fecha = $this->parseDate($fechaRaw) ?? $fechaConsulta;
+        $noAsiento = $this->nullableString($item['NOASIENTO'] ?? null);
+        $cuenta = $this->nullableString($item['CUENTA'] ?? null);
+
+        if ($noAsiento === null || $cuenta === null) {
+            return null;
+        }
+
+        $externalKey = sha1(implode('|', [
+            $empresa,
+            $noAsiento,
+            $fecha,
+            $cuenta,
+            (string) ($item['REF'] ?? ''),
+            (string) ($item['NOREF'] ?? ''),
+            (string) ($item['IDCENTROCOSTO'] ?? ''),
+            (string) ($item['IDVIEJO'] ?? ''),
+            (string) ($item['MODULO'] ?? ''),
+        ]));
+
+        $payload = [
+            'no_asiento' => $noAsiento,
+            'company_id' => (string) ($this->extractContabilidadCompanyId($item['COMPANYID'] ?? null) ?? $empresa),
+            'fecha' => $fecha,
+            'fecha_raw' => $fechaRaw,
+            'ref' => $this->nullableString($item['REF'] ?? null),
+            'no_ref' => $this->nullableString($item['NOREF'] ?? null),
+            'cuenta' => $cuenta,
+            'debito' => $this->parseDecimal($item['DEBITO'] ?? null) ?? 0,
+            'credito' => $this->parseDecimal($item['CREDITO'] ?? null) ?? 0,
+            'descripcion' => $this->nullableString($item['DESCRIPCION'] ?? null),
+            'id_centro_costo' => $this->nullableString($item['IDCENTROCOSTO'] ?? null),
+            'id_grupo' => $this->nullableString($item['IDGRUPO'] ?? null),
+            'id_sub_grupo' => $this->nullableString($item['IDSUBGRUPO'] ?? null),
+            'id_division' => $this->nullableString($item['IDDIVISION'] ?? null),
+            'id_sociedad' => $this->nullableString($item['IDSOCIEDAD'] ?? null),
+            'conciliado' => filter_var($item['CONCILIADO'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'modulo' => $this->nullableString($item['MODULO'] ?? null),
+            'fecha_grabado' => $this->parseDateTime($this->nullableString($item['FECHAGRABADO'] ?? null)),
+            'fecha_modificado' => $this->parseDateTime($this->nullableString($item['FECHAMODIFICADO'] ?? null)),
+            'id_viejo' => $this->nullableString($item['IDVIEJO'] ?? null),
+            'centro_costo' => $this->nullableString($item['CENTROCOSTO'] ?? null),
+            'grupo' => $this->nullableString($item['GRUPO'] ?? null),
+            'sub_grupo' => $this->nullableString($item['SUBGRUPO'] ?? null),
+            'division' => $this->nullableString($item['DIVISION'] ?? null),
+            'creado_por' => $this->nullableString($item['CREADOPOR'] ?? null),
+            'modificado_por' => $this->nullableString($item['MODIFICADOPOR'] ?? null),
+            'ref_desc' => $this->nullableString($item['REFDESC'] ?? null),
+            'sociedad' => $this->nullableString($item['SOCIEDAD'] ?? null),
+        ];
+
+        $timestamp = now()->toDateTimeString();
+
+        return $payload + [
+            'external_key' => $externalKey,
+            'payload_hash' => sha1(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION)),
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ];
+    }
+
+    private function persistEntradaDiarioRows(array $rows): array
+    {
+        if ($rows === []) {
+            return ['creados' => 0, 'actualizados' => 0, 'sin_cambios' => 0];
+        }
+
+        $created = 0;
+        $updated = 0;
+        $unchanged = 0;
+        $rowsToUpsert = [];
+
+        foreach (array_chunk($rows, 1000) as $chunk) {
+            $existingHashes = EntradaDiario::query()
+                ->whereIn('external_key', array_column($chunk, 'external_key'))
+                ->pluck('payload_hash', 'external_key')
+                ->all();
+
+            foreach ($chunk as $row) {
+                $exists = array_key_exists($row['external_key'], $existingHashes);
+                $existingHash = $existingHashes[$row['external_key']] ?? null;
+
+                if (!$exists) {
+                    $created++;
+                    $rowsToUpsert[] = $row;
+                    continue;
+                }
+
+                if ($existingHash === $row['payload_hash']) {
+                    $unchanged++;
+                    continue;
+                }
+
+                $updated++;
+                $rowsToUpsert[] = $row;
+            }
+        }
+
+        if ($rowsToUpsert !== []) {
+            $updateColumns = array_values(array_diff(array_keys($rowsToUpsert[0]), ['external_key', 'created_at']));
+
+            foreach (array_chunk($rowsToUpsert, 500) as $chunk) {
+                EntradaDiario::query()->upsert($chunk, ['external_key'], $updateColumns);
+            }
+        }
+
+        return [
+            'creados' => $created,
+            'actualizados' => $updated,
+            'sin_cambios' => $unchanged,
+        ];
+    }
+
+    private function fetchEntradasDiarioByDate(string $empresa, string $fecha): array
+    {
+        $url = 'https://apisj.azurewebsites.net/ApiSJ/EntradaDiario/Listar?strToken=' . urlencode(self::CONTABILIDAD_TOKEN)
+            . '&intIdEmpresa=' . urlencode($empresa)
+            . '&dtFecha=' . urlencode($fecha);
+
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 60,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_HTTPHEADER => [
+                'Accept: application/text',
+            ],
+            CURLOPT_PROXY => '',
+            CURLOPT_NOPROXY => '*',
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_SSL_VERIFYPEER => 0,
+        ]);
+
+        $response = curl_exec($curl);
+
+        if ($response === false) {
+            $error = curl_error($curl);
+            curl_close($curl);
+
+            return [
+                'ok' => false,
+                'message' => 'Error consultando API externa de entradas de diario.',
+                'error' => $error,
+                'status' => 500,
+                'items' => [],
+            ];
+        }
+
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        curl_close($curl);
+
+        if ($httpCode < 200 || $httpCode >= 300) {
+            return [
+                'ok' => false,
+                'message' => 'La API externa de entradas de diario respondio con error.',
+                'status' => 502,
+                'items' => [],
+            ];
+        }
+
+        $decoded = json_decode($response, true);
+
+        if (!is_array($decoded)) {
+            return [
+                'ok' => false,
+                'message' => 'Respuesta invalida de API externa de entradas de diario.',
+                'status' => 502,
+                'items' => [],
+            ];
+        }
+
+        return [
+            'ok' => true,
+            'items' => $this->extractExternalEntradasDiario($decoded),
+            'status' => 200,
+        ];
+    }
+
+    private function extractExternalEntradasDiario(array $payload): array
+    {
+        if (array_is_list($payload)) {
+            return $payload;
+        }
+
+        foreach (['result', 'Result', 'RESULT'] as $key) {
+            if (isset($payload[$key]) && is_array($payload[$key])) {
+                foreach (['Det', 'DET', 'det'] as $subKey) {
+                    if (isset($payload[$key][$subKey]) && is_array($payload[$key][$subKey])) {
+                        return $payload[$key][$subKey];
+                    }
+                }
+
+                if (array_is_list($payload[$key])) {
+                    return $payload[$key];
+                }
+            }
+        }
+
+        foreach (['Det', 'DET', 'det'] as $key) {
+            if (isset($payload[$key]) && is_array($payload[$key])) {
+                return $payload[$key];
+            }
+        }
+
+        return [];
+    }
+
+    private function extractContabilidadCompanyId(mixed $value): ?string
+    {
+        $raw = trim((string) $value);
+
+        if ($raw === '') {
+            return null;
+        }
+
+        foreach (self::CONTABILIDAD_EMPRESAS as $empresa) {
+            if (preg_match('/^' . preg_quote($empresa, '/') . '(?:\\D|$)/', $raw) === 1) {
+                return $empresa;
+            }
+        }
+
+        return $raw;
     }
 
     private function parseDate(?string $value): ?string

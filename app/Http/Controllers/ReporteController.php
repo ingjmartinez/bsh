@@ -393,7 +393,8 @@ class ReporteController extends Controller
                 TRIM(cc.id_viejo) AS agencia_id,
                 CAST(SUBSTRING_INDEX(GROUP_CONCAT(cc.id_centro_costo ORDER BY {$ordenPreferencia} SEPARATOR ','), ',', 1) AS UNSIGNED) AS id_centro_costo,
                 SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(cc.id_grupo, '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1) AS id_grupo,
-                SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(cc.id_sub_grupo, '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1) AS id_sub_grupo
+                SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(cc.id_sub_grupo, '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1) AS id_sub_grupo,
+                SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(cc.id_division, '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1) AS id_division
             ")
             ->whereNotNull('cc.id_viejo')
             ->where('cc.id_viejo', '!=', '')
@@ -422,6 +423,8 @@ class ReporteController extends Controller
             $subQuery
                 ->where('faltantes.identificacion', 'like', $like)
                 ->orWhere('faltantes.agencia_id', 'like', $like)
+                ->orWhere('ccosto.id_grupo', 'like', $like)
+                ->orWhere('ccosto.id_division', 'like', $like)
                 ->orWhereRaw("COALESCE(emp_cc.empleadoid, emp_ced.empleadoid) LIKE ?", [$like])
                 ->orWhereRaw("COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto) LIKE ?", [$like])
                 ->orWhereRaw("COALESCE(emp_cc.companyid, emp_ced.companyid) LIKE ?", [$like])
@@ -443,6 +446,7 @@ class ReporteController extends Controller
             'nombre_empleado' => 'nombre_empleado',
             'id_grupo' => 'id_grupo',
             'id_sub_grupo' => 'id_sub_grupo',
+            'id_division' => 'id_division',
             'agencia_id' => 'agencia_id',
             'cantidad_faltantes' => 'cantidad_faltantes',
             'total_monto' => 'total_monto',
@@ -539,6 +543,7 @@ class ReporteController extends Controller
                 'ccosto.id_centro_costo',
                 'ccosto.id_grupo',
                 'ccosto.id_sub_grupo',
+                'ccosto.id_division',
                 DB::raw("{$empresaExpr} as companyid"),
                 DB::raw("{$empleadoExpr} as empleadoid"),
                 DB::raw("{$idCcEmpleadoExpr} as idcentrocosto"),
@@ -559,6 +564,7 @@ class ReporteController extends Controller
                 'ccosto.id_centro_costo',
                 'ccosto.id_grupo',
                 'ccosto.id_sub_grupo',
+                'ccosto.id_division',
                 DB::raw($empresaExpr),
                 DB::raw($empleadoExpr),
                 DB::raw($idCcEmpleadoExpr),
@@ -601,6 +607,7 @@ class ReporteController extends Controller
                 'ccosto.id_centro_costo',
                 'ccosto.id_grupo',
                 'ccosto.id_sub_grupo',
+                'ccosto.id_division',
                 DB::raw("{$empresaExpr} as companyid"),
                 DB::raw("{$empleadoExpr} as empleadoid"),
                 DB::raw("{$idCcEmpleadoExpr} as idcentrocosto"),
@@ -614,7 +621,7 @@ class ReporteController extends Controller
         $this->applyFaltantesSort($query, $sortBy, $sortDir);
 
         $registros = $query
-            ->groupBy('faltantes.identificacion', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo', DB::raw($empresaExpr), DB::raw($empleadoExpr), DB::raw($idCcEmpleadoExpr), DB::raw($nombreExpr))
+            ->groupBy('faltantes.identificacion', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo', 'ccosto.id_division', DB::raw($empresaExpr), DB::raw($empleadoExpr), DB::raw($idCcEmpleadoExpr), DB::raw($nombreExpr))
             ->get();
 
         $fileName = 'faltantes_' . $config['tipo'] . '_' . now()->format('Ymd_His') . '.xlsx';
@@ -653,6 +660,7 @@ class ReporteController extends Controller
                 'ccosto.id_centro_costo',
                 'ccosto.id_grupo',
                 'ccosto.id_sub_grupo',
+                'ccosto.id_division',
                 DB::raw("{$empresaExpr} as companyid"),
                 DB::raw("{$empleadoExpr} as empleadoid"),
                 DB::raw("{$idCcEmpleadoExpr} as idcentrocosto"),
@@ -666,7 +674,7 @@ class ReporteController extends Controller
         $this->applyFaltantesSort($query, $sortBy, $sortDir);
 
         $registros = $query
-            ->groupBy('faltantes.identificacion', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo', DB::raw($empresaExpr), DB::raw($empleadoExpr), DB::raw($idCcEmpleadoExpr), DB::raw($nombreExpr))
+            ->groupBy('faltantes.identificacion', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo', 'ccosto.id_division', DB::raw($empresaExpr), DB::raw($empleadoExpr), DB::raw($idCcEmpleadoExpr), DB::raw($nombreExpr))
             ->get();
 
         $sistema = $config['nombre'];

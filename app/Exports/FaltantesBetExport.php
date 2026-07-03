@@ -32,6 +32,7 @@ class FaltantesBetExport implements FromCollection, WithHeadings, WithMapping, S
             'Nombre Empleado',
             'Grupo',
             'Sub Grupo',
+            'Id Division',
             'Cantidad de Faltantes',
             'Monto Total',
         ];
@@ -48,6 +49,7 @@ class FaltantesBetExport implements FromCollection, WithHeadings, WithMapping, S
             trim($row->nombre_empleado ?? '') ?: 'Sin especificar',
             trim($row->id_grupo ?? ''),
             trim($row->id_sub_grupo ?? ''),
+            trim($row->id_division ?? ''),
             $row->cantidad_faltantes,
             number_format($row->total_monto, 2, '.', ''),
         ];
