@@ -19,6 +19,7 @@ class Agencia extends Model
         'nombre_agencia',
         'nombre',
         'terminal',
+        'ciudad_id',
         'horario_am',
         'horario_pm',
         'sistema',
@@ -37,6 +38,16 @@ class Agencia extends Model
         'estatus' => 'integer',
         'aplica_incentivo' => 'boolean',
     ];
+
+    public function getAgenciaAttribute($value): ?string
+    {
+        return $value ?? $this->attributes['codigo'] ?? null;
+    }
+
+    public function getNombreAgenciaAttribute($value): ?string
+    {
+        return $value ?? $this->attributes['nombre'] ?? null;
+    }
 
     public function coordinadoresOperadores()
     {

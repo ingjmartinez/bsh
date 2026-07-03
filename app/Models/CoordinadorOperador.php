@@ -80,6 +80,17 @@ class CoordinadorOperador extends Model
         return static::resolveTableName();
     }
 
+    public function scopePuesto($query, string $puesto)
+    {
+        if (static::hasResolvedColumn('puesto')) {
+            return $query->where('puesto', $puesto);
+        }
+
+        return strtolower($puesto) === 'coordinador'
+            ? $query
+            : $query->whereRaw('1 = 0');
+    }
+
     public function getCedulaAttribute($value): ?string
     {
         if ($value === null || $value === '') {

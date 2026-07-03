@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\AgenciasExport;
@@ -74,7 +75,7 @@ class AgenciaController extends Controller
             'coordinador.in' => 'Seleccione un coordinador válido de la lista.',
         ]);
 
-        $agencia = Agencia::create($validated);
+        $agencia = Agencia::create($this->agenciaPayload($validated));
         $this->sincronizarAsignacionesCoordinadorOperador(
             $agencia->id,
             $validated['coordinador'] ?? '',
@@ -138,7 +139,7 @@ class AgenciaController extends Controller
             'coordinador.in' => 'Seleccione un coordinador válido de la lista.',
         ]);
 
-        $agencia->update($validated);
+        $agencia->update($this->agenciaPayload($validated));
         $this->sincronizarAsignacionesCoordinadorOperador(
             $agencia->id,
             $validated['coordinador'] ?? '',
@@ -155,10 +156,48 @@ class AgenciaController extends Controller
         $this->sincronizarAsignacionOperadorRuta($agenciaId, $operadorNombre);
     }
 
+    private function agenciaPayload(array $validated): array
+    {
+        $columns = array_flip(Schema::getColumnListing('agencias'));
+        $payload = $validated;
+
+        if (!isset($columns['agencia']) && isset($columns['codigo'])) {
+            $payload['codigo'] = $validated['agencia'] ?? null;
+            unset($payload['agencia']);
+        }
+
+        if (!isset($columns['nombre_agencia']) && isset($columns['nombre'])) {
+            $payload['nombre'] = $validated['nombre_agencia'] ?? null;
+            unset($payload['nombre_agencia']);
+        }
+
+        if (!isset($columns['ciudad']) && isset($columns['ciudad_id'])) {
+            $payload['ciudad_id'] = $this->resolverCiudadId($validated['ciudad'] ?? null);
+            unset($payload['ciudad']);
+        }
+
+        return array_intersect_key($payload, $columns);
+    }
+
+    private function resolverCiudadId(?string $ciudad): ?int
+    {
+        $ciudad = trim((string) $ciudad);
+
+        if ($ciudad === '' || !Schema::hasTable('ciudades')) {
+            return null;
+        }
+
+        $id = DB::table('ciudades')
+            ->whereRaw('LOWER(TRIM(nombre)) = ?', [mb_strtolower($ciudad)])
+            ->value('id');
+
+        return $id ? (int) $id : null;
+    }
+
     private function sincronizarAsignacionCoordinador(int $agenciaId, string $nombreCompleto): void
     {
         $idsPuesto = CoordinadorOperador::query()
-            ->where('puesto', 'coordinador')
+            ->puesto('coordinador')
             ->pluck('id');
 
         if ($idsPuesto->isNotEmpty()) {
@@ -178,7 +217,7 @@ class AgenciaController extends Controller
             : "TRIM(COALESCE(nombre, ''))";
 
         $coordinadorOperadorId = CoordinadorOperador::query()
-            ->where('puesto', 'coordinador')
+            ->puesto('coordinador')
             ->whereRaw("{$nombreCoordinadorSql} = ?", [$nombreCompleto])
             ->value('id');
 
@@ -280,6 +319,8 @@ class AgenciaController extends Controller
      */
     public function list(Request $request)
     {
+        return $this->listCompatible($request);
+
         $query = Agencia::query();
         $estatusFilter = $request->input('estatus_filter', 'todos');
         $empresaFilter = $request->input('empresa_filter', 'todas');
@@ -345,6 +386,112 @@ class AgenciaController extends Controller
             })
             ->count();
         $totalNegosur = Agencia::query()->whereRaw('LOWER(COALESCE(empresa, "")) LIKE ?', ['%negosur%'])->count();
+
+        return response()->json([
+            'draw' => intval($request->input('draw')),
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $filteredRecords,
+            'data' => $agencias,
+            'total_activas' => $totalActivas,
+            'total_inactivas' => $totalInactivas,
+            'total_bsh_support' => $totalBshSupport,
+            'total_negosur' => $totalNegosur,
+        ]);
+    }
+
+    private function listCompatible(Request $request)
+    {
+        $columns = array_flip(Schema::getColumnListing('agencias'));
+        $usaCiudadRelacion = isset($columns['ciudad_id'])
+            && !isset($columns['ciudad'])
+            && Schema::hasTable('ciudades');
+
+        $query = Agencia::query()->from('agencias');
+
+        if ($usaCiudadRelacion) {
+            $query->leftJoin('ciudades as ciudad_agencia', 'ciudad_agencia.id', '=', 'agencias.ciudad_id');
+        }
+
+        $selectExpr = [
+            'agencia' => isset($columns['agencia']) ? 'agencias.agencia' : (isset($columns['codigo']) ? 'agencias.codigo' : "''"),
+            'terminal' => isset($columns['terminal']) ? 'agencias.terminal' : "''",
+            'horario_am' => isset($columns['horario_am']) ? 'agencias.horario_am' : "''",
+            'horario_pm' => isset($columns['horario_pm']) ? 'agencias.horario_pm' : "''",
+            'nombre_agencia' => isset($columns['nombre_agencia']) ? 'agencias.nombre_agencia' : (isset($columns['nombre']) ? 'agencias.nombre' : "''"),
+            'sistema' => isset($columns['sistema']) ? 'agencias.sistema' : "''",
+            'empresa' => isset($columns['empresa']) ? 'agencias.empresa' : "''",
+            'ciudad' => isset($columns['ciudad']) ? 'agencias.ciudad' : ($usaCiudadRelacion ? 'ciudad_agencia.nombre' : "''"),
+            'ruta' => isset($columns['ruta']) ? 'agencias.ruta' : "''",
+            'operador' => isset($columns['operador']) ? 'agencias.operador' : "''",
+            'coordinador' => isset($columns['coordinador']) ? 'agencias.coordinador' : "''",
+            'estatus' => isset($columns['estatus']) ? 'agencias.estatus' : '1',
+            'aplica_incentivo' => isset($columns['aplica_incentivo']) ? 'agencias.aplica_incentivo' : '0',
+        ];
+
+        $estatusFilter = $request->input('estatus_filter', 'todos');
+        $empresaFilter = $request->input('empresa_filter', 'todas');
+
+        if (isset($columns['estatus']) && $estatusFilter === 'activo') {
+            $query->where('agencias.estatus', 1);
+        } elseif (isset($columns['estatus']) && $estatusFilter === 'inactivo') {
+            $query->where('agencias.estatus', 0);
+        }
+
+        if (isset($columns['empresa']) && in_array($empresaFilter, ['bsh_support', 'joselito'], true)) {
+            $query->where(function ($empresaQuery) {
+                $empresaQuery
+                    ->whereRaw('LOWER(COALESCE(agencias.empresa, "")) LIKE ?', ['%joselito%'])
+                    ->orWhereRaw('LOWER(COALESCE(agencias.empresa, "")) LIKE ?', ['%bsh support%'])
+                    ->orWhereRaw('LOWER(COALESCE(agencias.empresa, "")) LIKE ?', ['%business support hub%']);
+            });
+        } elseif (isset($columns['empresa']) && $empresaFilter === 'negosur') {
+            $query->whereRaw('LOWER(COALESCE(agencias.empresa, "")) LIKE ?', ['%negosur%']);
+        }
+
+        $search = (string) data_get($request->input('search'), 'value', '');
+        if ($search !== '') {
+            $query->where(function ($subQuery) use ($search, $selectExpr) {
+                foreach ($selectExpr as $expr) {
+                    if ($expr === "''") {
+                        continue;
+                    }
+
+                    $subQuery->orWhereRaw("CAST({$expr} AS CHAR) LIKE ?", ["%{$search}%"]);
+                }
+            });
+        }
+
+        $totalRecords = Agencia::count();
+        $filteredRecords = (clone $query)->count('agencias.id');
+
+        $selects = ['agencias.id'];
+        foreach ($selectExpr as $alias => $expr) {
+            $selects[] = DB::raw("{$expr} AS {$alias}");
+        }
+
+        $orderColumn = isset($columns['created_at']) ? 'agencias.created_at' : 'agencias.id';
+        $agencias = $query
+            ->select($selects)
+            ->orderBy($orderColumn, 'desc')
+            ->skip((int) $request->input('start', 0))
+            ->take((int) $request->input('length', 10))
+            ->get();
+
+        $totalActivas = isset($columns['estatus']) ? Agencia::query()->where('estatus', 1)->count() : 0;
+        $totalInactivas = isset($columns['estatus']) ? Agencia::query()->where('estatus', 0)->count() : 0;
+        $totalBshSupport = isset($columns['empresa'])
+            ? Agencia::query()
+                ->where(function ($empresaQuery) {
+                    $empresaQuery
+                        ->whereRaw('LOWER(COALESCE(empresa, "")) LIKE ?', ['%joselito%'])
+                        ->orWhereRaw('LOWER(COALESCE(empresa, "")) LIKE ?', ['%bsh support%'])
+                        ->orWhereRaw('LOWER(COALESCE(empresa, "")) LIKE ?', ['%business support hub%']);
+                })
+                ->count()
+            : 0;
+        $totalNegosur = isset($columns['empresa'])
+            ? Agencia::query()->whereRaw('LOWER(COALESCE(empresa, "")) LIKE ?', ['%negosur%'])->count()
+            : 0;
 
         return response()->json([
             'draw' => intval($request->input('draw')),

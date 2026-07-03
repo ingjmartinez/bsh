@@ -174,7 +174,7 @@ class AgenciaLotedomController extends Controller
     private function sincronizarAsignacionCoordinador(int $agenciaId, string $nombreCompleto): void
     {
         $idsPuesto = CoordinadorOperador::query()
-            ->where('puesto', 'coordinador')
+            ->puesto('coordinador')
             ->pluck('id');
 
         if ($idsPuesto->isNotEmpty()) {
@@ -194,7 +194,7 @@ class AgenciaLotedomController extends Controller
             : "TRIM(COALESCE(nombre, ''))";
 
         $coordinadorOperadorId = CoordinadorOperador::query()
-            ->where('puesto', 'coordinador')
+            ->puesto('coordinador')
             ->whereRaw("{$nombreCoordinadorSql} = ?", [$nombreCompleto])
             ->value('id');
 
