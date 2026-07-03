@@ -42,6 +42,7 @@ use App\Http\Controllers\RutaController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SuperAdminSesionController;
 use App\Http\Controllers\ServicioGeneralRequerimientoController;
+use App\Http\Controllers\ServicioGeneralRutaInspeccionController;
 use App\Http\Controllers\TareaController;
 use App\Http\Controllers\TecnologiaSolicitudController;
 use App\Http\Controllers\TicketSolicitudController;
@@ -517,6 +518,8 @@ Route::prefix('servicios-generales')->name('servicios-generales.')
     ->middleware('permission:servicios_generales.view')
     ->group(function () {
         Route::get('/', [ModuleHubController::class, 'serviciosGenerales'])->name('index');
+        Route::get('/ruta-inspeccion', [ServicioGeneralRutaInspeccionController::class, 'index'])
+            ->name('ruta-inspeccion.index');
         Route::get('/requerimientos', [ServicioGeneralRequerimientoController::class, 'index'])->name('requerimientos.index');
         Route::get('/requerimientos/list', [ServicioGeneralRequerimientoController::class, 'list'])->name('requerimientos.list');
         Route::get('/requerimientos/activity', [ServicioGeneralRequerimientoController::class, 'activity'])->name('requerimientos.activity');

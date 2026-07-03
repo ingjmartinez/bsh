@@ -403,6 +403,16 @@ return [
                 'permission' => 'servicios_generales.view',
                 'activo' => true,
             ],
+            [
+                'nombre' => 'Ruta de inspeccion',
+                'descripcion' => 'Espacio base para preparar y gestionar rutas de inspeccion.',
+                'url' => '/servicios-generales/ruta-inspeccion',
+                'icono' => 'ri-route-line',
+                'categoria' => 'Inspeccion',
+                'tags' => ['servicios generales', 'ruta', 'inspeccion'],
+                'permission' => 'servicios_generales.view',
+                'activo' => true,
+            ],
         ],
     ],
 
