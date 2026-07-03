@@ -13,16 +13,15 @@ class RutaController extends Controller
     public function index()
     {
         $registros = Ruta::with([
-                'operadorAsignado:id,nombre,apellido',
+                'operadorAsignado',
                 'agencias:id,agencia,nombre_agencia,terminal',
             ])
             ->withCount('agencias')
             ->orderByDesc('id')
             ->paginate(15);
 
-        $operadores = OperadorRuta::query()
-            ->where('puesto', 'operador')
-            ->select('id', 'nombre', 'apellido')
+        $operadores = OperadorRuta::queryConIdentidad()
+            ->puesto('operador')
             ->orderBy('nombre')
             ->orderBy('apellido')
             ->get();
@@ -55,9 +54,8 @@ class RutaController extends Controller
 
     public function create()
     {
-        $operadores = OperadorRuta::query()
-            ->where('puesto', 'operador')
-            ->select('id', 'nombre', 'apellido')
+        $operadores = OperadorRuta::queryConIdentidad()
+            ->puesto('operador')
             ->orderBy('nombre')
             ->orderBy('apellido')
             ->get();
@@ -69,10 +67,12 @@ class RutaController extends Controller
 
     public function store(Request $request)
     {
+        $tablaOperadorRuta = OperadorRuta::resolveTableName();
+
         $validated = $request->validate([
             'nombre_ruta' => ['required', 'string', 'max:100', 'unique:rutas,nombre_ruta'],
             'empresa' => ['required', 'in:Negosur,BSH Support'],
-            'operador_ruta_id' => ['required', 'integer', 'exists:operador_ruta,id'],
+            'operador_ruta_id' => ['required', 'integer', 'exists:' . $tablaOperadorRuta . ',id'],
         ], [
             'nombre_ruta.required' => 'El nombre de ruta es obligatorio.',
             'nombre_ruta.unique' => 'Ya existe una ruta con ese nombre.',
@@ -89,9 +89,8 @@ class RutaController extends Controller
 
     public function edit(Ruta $ruta)
     {
-        $operadores = OperadorRuta::query()
-            ->where('puesto', 'operador')
-            ->select('id', 'nombre', 'apellido')
+        $operadores = OperadorRuta::queryConIdentidad()
+            ->puesto('operador')
             ->orderBy('nombre')
             ->orderBy('apellido')
             ->get();
@@ -106,10 +105,12 @@ class RutaController extends Controller
 
     public function update(Request $request, Ruta $ruta)
     {
+        $tablaOperadorRuta = OperadorRuta::resolveTableName();
+
         $validated = $request->validate([
             'nombre_ruta' => ['required', 'string', 'max:100', 'unique:rutas,nombre_ruta,' . $ruta->id],
             'empresa' => ['required', 'in:Negosur,BSH Support'],
-            'operador_ruta_id' => ['required', 'integer', 'exists:operador_ruta,id'],
+            'operador_ruta_id' => ['required', 'integer', 'exists:' . $tablaOperadorRuta . ',id'],
         ], [
             'nombre_ruta.required' => 'El nombre de ruta es obligatorio.',
             'nombre_ruta.unique' => 'Ya existe una ruta con ese nombre.',
@@ -176,7 +177,7 @@ class RutaController extends Controller
 
     public function detalle(Ruta $ruta)
     {
-        $ruta->loadMissing('operadorAsignado:id,nombre,apellido,correo');
+        $ruta->loadMissing('operadorAsignado');
 
         $operador = $ruta->operadorAsignado;
         $nombreOperador = trim((($operador->nombre ?? '') . ' ' . ($operador->apellido ?? '')));

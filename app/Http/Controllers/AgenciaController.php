@@ -173,9 +173,13 @@ class AgenciaController extends Controller
             return;
         }
 
+        $nombreCoordinadorSql = CoordinadorOperador::hasResolvedColumn('apellido')
+            ? "TRIM(CONCAT(COALESCE(nombre, ''), ' ', COALESCE(apellido, '')))"
+            : "TRIM(COALESCE(nombre, ''))";
+
         $coordinadorOperadorId = CoordinadorOperador::query()
             ->where('puesto', 'coordinador')
-            ->whereRaw("TRIM(CONCAT(COALESCE(nombre, ''), ' ', COALESCE(apellido, ''))) = ?", [$nombreCompleto])
+            ->whereRaw("{$nombreCoordinadorSql} = ?", [$nombreCompleto])
             ->value('id');
 
         if (!$coordinadorOperadorId) {
@@ -193,7 +197,7 @@ class AgenciaController extends Controller
     private function sincronizarAsignacionOperadorRuta(int $agenciaId, string $nombreCompleto): void
     {
         $idsPuesto = OperadorRuta::query()
-            ->where('puesto', 'operador')
+            ->puesto('operador')
             ->pluck('id');
 
         if ($idsPuesto->isNotEmpty()) {
@@ -208,9 +212,13 @@ class AgenciaController extends Controller
             return;
         }
 
+        $nombreOperadorSql = OperadorRuta::hasResolvedColumn('apellido')
+            ? "TRIM(CONCAT(COALESCE(nombre, ''), ' ', COALESCE(apellido, '')))"
+            : "TRIM(COALESCE(nombre, ''))";
+
         $operadorRutaId = OperadorRuta::query()
-            ->where('puesto', 'operador')
-            ->whereRaw("TRIM(CONCAT(COALESCE(nombre, ''), ' ', COALESCE(apellido, ''))) = ?", [$nombreCompleto])
+            ->puesto('operador')
+            ->whereRaw("{$nombreOperadorSql} = ?", [$nombreCompleto])
             ->value('id');
 
         if (!$operadorRutaId) {
@@ -227,12 +235,12 @@ class AgenciaController extends Controller
 
     private function obtenerOpcionesCoordinadorOperador(): array
     {
-        $registrosOperadorRuta = OperadorRuta::select('nombre', 'apellido', 'puesto')
+        $registrosOperadorRuta = OperadorRuta::queryConNombreApellidoPuesto()
             ->orderBy('nombre')
             ->orderBy('apellido')
             ->get();
 
-        $registrosCoordinador = CoordinadorOperador::select('nombre', 'apellido', 'puesto')
+        $registrosCoordinador = CoordinadorOperador::queryConNombreApellidoPuesto()
             ->orderBy('nombre')
             ->orderBy('apellido')
             ->get();

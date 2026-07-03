@@ -11,6 +11,8 @@ class OperadorRutaController extends Controller
 {
     public function index()
     {
+        $tablaOperadorRuta = OperadorRuta::resolveTableName();
+
         $registros = OperadorRuta::with('agencias:id,agencia,nombre_agencia,terminal')
             ->withCount('agencias')
             ->orderByDesc('id')
@@ -22,13 +24,13 @@ class OperadorRutaController extends Controller
             ->get();
 
         $asignacionesAgencia = DB::table('operador_ruta_agencia as ora')
-            ->join('operador_ruta as oru', 'oru.id', '=', 'ora.operador_ruta_id')
+            ->join($tablaOperadorRuta . ' as oru', 'oru.id', '=', 'ora.operador_ruta_id')
             ->select(
                 'ora.agencia_id',
                 'oru.id as operador_ruta_id',
-                'oru.nombre',
-                'oru.apellido'
+                'oru.nombre'
             )
+            ->selectRaw(OperadorRuta::hasResolvedColumn('apellido') ? 'oru.apellido' : "'' AS apellido")
             ->get()
             ->groupBy('agencia_id')
             ->map(function ($rows) {
@@ -50,11 +52,13 @@ class OperadorRutaController extends Controller
 
     public function store(Request $request)
     {
+        $tablaOperadorRuta = OperadorRuta::resolveTableName();
+
         $validated = $request->validate([
             'nombre' => ['required', 'string', 'max:100'],
             'apellido' => ['required', 'string', 'max:100'],
             'correo' => ['required', 'email', 'max:150'],
-            'cedula' => ['required', 'regex:/^\d{11}$/', 'unique:operador_ruta,cedula'],
+            'cedula' => ['required', 'regex:/^\d{11}$/', 'unique:' . $tablaOperadorRuta . ',cedula'],
             'telefono' => ['required', 'regex:/^\d{10}$/'],
             'puesto' => ['required', 'in:coordinador,operador'],
         ], [
@@ -64,7 +68,7 @@ class OperadorRutaController extends Controller
             'puesto.in' => 'El puesto debe ser coordinador u operador.',
         ]);
 
-        OperadorRuta::create($validated);
+        OperadorRuta::create($this->operadorRutaPayload($validated));
 
         return redirect()->route('operador-ruta.index')
             ->with('success', 'Registro creado correctamente.');
@@ -79,11 +83,13 @@ class OperadorRutaController extends Controller
 
     public function update(Request $request, OperadorRuta $operador_ruta)
     {
+        $tablaOperadorRuta = OperadorRuta::resolveTableName();
+
         $validated = $request->validate([
             'nombre' => ['required', 'string', 'max:100'],
             'apellido' => ['required', 'string', 'max:100'],
             'correo' => ['required', 'email', 'max:150'],
-            'cedula' => ['required', 'regex:/^\d{11}$/', 'unique:operador_ruta,cedula,' . $operador_ruta->id],
+            'cedula' => ['required', 'regex:/^\d{11}$/', 'unique:' . $tablaOperadorRuta . ',cedula,' . $operador_ruta->id],
             'telefono' => ['required', 'regex:/^\d{10}$/'],
             'puesto' => ['required', 'in:coordinador,operador'],
         ], [
@@ -93,7 +99,7 @@ class OperadorRutaController extends Controller
             'puesto.in' => 'El puesto debe ser coordinador u operador.',
         ]);
 
-        $operador_ruta->update($validated);
+        $operador_ruta->update($this->operadorRutaPayload($validated));
 
         return redirect()->route('operador-ruta.index')
             ->with('success', 'Registro actualizado correctamente.');
@@ -109,6 +115,8 @@ class OperadorRutaController extends Controller
 
     public function asignarAgencias(Request $request, OperadorRuta $operador_ruta)
     {
+        $tablaOperadorRuta = OperadorRuta::resolveTableName();
+
         $validated = $request->validate([
             'agencias' => ['nullable', 'array'],
             'agencias.*' => ['integer', 'exists:agencias,id'],
@@ -118,16 +126,16 @@ class OperadorRutaController extends Controller
         $agenciasSeleccionadas = collect($validated['agencias'] ?? [])->map(fn($id) => (int) $id)->values();
 
         $conflictos = DB::table('operador_ruta_agencia as ora')
-            ->join('operador_ruta as oru', 'oru.id', '=', 'ora.operador_ruta_id')
+            ->join($tablaOperadorRuta . ' as oru', 'oru.id', '=', 'ora.operador_ruta_id')
             ->join('agencias as a', 'a.id', '=', 'ora.agencia_id')
             ->whereIn('ora.agencia_id', $agenciasSeleccionadas)
             ->where('ora.operador_ruta_id', '!=', $operador_ruta->id)
             ->select(
                 'ora.agencia_id',
                 'a.terminal',
-                'oru.nombre',
-                'oru.apellido'
+                'oru.nombre'
             )
+            ->selectRaw(OperadorRuta::hasResolvedColumn('apellido') ? 'oru.apellido' : "'' AS apellido")
             ->get();
 
         $confirmarReasignacion = (bool) ($validated['confirmar_reasignacion'] ?? false);
@@ -148,5 +156,25 @@ class OperadorRutaController extends Controller
 
         return redirect()->route('operador-ruta.index')
             ->with('success', 'Agencias asignadas correctamente.');
+    }
+
+    private function operadorRutaPayload(array $validated): array
+    {
+        $payload = $validated;
+
+        if (!OperadorRuta::hasResolvedColumn('apellido')) {
+            unset($payload['apellido']);
+        }
+
+        if (!OperadorRuta::hasResolvedColumn('puesto')) {
+            unset($payload['puesto']);
+        }
+
+        if (!OperadorRuta::hasResolvedColumn('correo') && OperadorRuta::hasResolvedColumn('email')) {
+            $payload['email'] = $payload['correo'] ?? null;
+            unset($payload['correo']);
+        }
+
+        return $payload;
     }
 }

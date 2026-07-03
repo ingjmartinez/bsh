@@ -401,7 +401,7 @@ class ReporteController extends Controller
             ->groupBy(DB::raw('TRIM(cc.id_viejo)'));
     }
 
-    private function applyFaltantesFilters($query, ?string $fechaInicio, ?string $fechaFin, ?string $buscar)
+    private function applyFaltantesFilters($query, ?string $fechaInicio, ?string $fechaFin, ?string $buscar, ?string $estadoEmpleado = null)
     {
         $query
             ->whereNotNull('faltantes.identificacion')
@@ -409,6 +409,20 @@ class ReporteController extends Controller
 
         if ($fechaInicio && $fechaFin) {
             $query->whereBetween('faltantes.fecha', [$fechaInicio, $fechaFin]);
+        }
+
+        $estadoEmpleado = strtolower(trim((string) $estadoEmpleado));
+
+        if ($estadoEmpleado === 'activo') {
+            $query->whereRaw('COALESCE(emp_cc.estatus, emp_ced.estatus) = 1')
+                ->whereRaw('COALESCE(emp_cc.fecha_egreso, emp_ced.fecha_egreso) IS NULL');
+        } elseif ($estadoEmpleado === 'inactivo') {
+            $query->whereNotNull(DB::raw('COALESCE(emp_cc.empleadoid, emp_ced.empleadoid)'))
+                ->where(function ($subQuery) {
+                    $subQuery
+                        ->whereRaw('COALESCE(emp_cc.estatus, emp_ced.estatus, 0) <> 1')
+                        ->orWhereRaw('COALESCE(emp_cc.fecha_egreso, emp_ced.fecha_egreso) IS NOT NULL');
+                });
         }
 
         $buscar = trim((string) $buscar);
@@ -479,14 +493,14 @@ class ReporteController extends Controller
                 CAST(SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(CAST(e.companyid AS CHAR), '') ORDER BY {$ordenPreferencia} SEPARATOR ','), ',', 1) AS UNSIGNED) AS companyid,
                 CAST(SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(CAST(e.empleadoid AS CHAR), '') ORDER BY {$ordenPreferencia} SEPARATOR ','), ',', 1) AS UNSIGNED) AS empleadoid,
                 CAST(SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(CAST(e.idcentrocosto AS CHAR), '') ORDER BY {$ordenPreferencia} SEPARATOR ','), ',', 1) AS UNSIGNED) AS idcentrocosto,
+                CAST(SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(CAST(e.estatus AS CHAR), '0') ORDER BY {$ordenPreferencia} SEPARATOR ','), ',', 1) AS UNSIGNED) AS estatus,
+                NULLIF(SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(CAST(e.fecha_egreso AS CHAR), '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1), '') AS fecha_egreso,
                 SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(e.nombres, '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1) AS nombres,
                 SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(e.apellidos, '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1) AS apellidos
             ")
             ->whereNotNull('e.cedula')
             ->where('e.cedula', '!=', '')
             ->whereNotNull('e.idcentrocosto')
-            ->where('e.estatus', 1)
-            ->whereNull('e.fecha_egreso')
             ->groupBy(DB::raw($cedulaNormalizada), 'e.idcentrocosto');
     }
 
@@ -501,13 +515,13 @@ class ReporteController extends Controller
                 CAST(SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(CAST(e.companyid AS CHAR), '') ORDER BY {$ordenPreferencia} SEPARATOR ','), ',', 1) AS UNSIGNED) AS companyid,
                 CAST(SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(CAST(e.empleadoid AS CHAR), '') ORDER BY {$ordenPreferencia} SEPARATOR ','), ',', 1) AS UNSIGNED) AS empleadoid,
                 CAST(SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(CAST(e.idcentrocosto AS CHAR), '') ORDER BY {$ordenPreferencia} SEPARATOR ','), ',', 1) AS UNSIGNED) AS idcentrocosto,
+                CAST(SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(CAST(e.estatus AS CHAR), '0') ORDER BY {$ordenPreferencia} SEPARATOR ','), ',', 1) AS UNSIGNED) AS estatus,
+                NULLIF(SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(CAST(e.fecha_egreso AS CHAR), '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1), '') AS fecha_egreso,
                 SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(e.nombres, '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1) AS nombres,
                 SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(e.apellidos, '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1) AS apellidos
             ")
             ->whereNotNull('e.cedula')
             ->where('e.cedula', '!=', '')
-            ->where('e.estatus', 1)
-            ->whereNull('e.fecha_egreso')
             ->groupBy(DB::raw($cedulaNormalizada));
     }
 
@@ -518,6 +532,7 @@ class ReporteController extends Controller
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
         $buscar = $request->input('buscar');
+        $estadoEmpleado = $request->input('estado_empleado');
         $sortBy = $request->input('sort_by');
         $sortDir = $request->input('sort_dir');
         $config = $this->getFaltantesConfig($request->input('tipo'));
@@ -525,6 +540,7 @@ class ReporteController extends Controller
         $empleadoExpr = "COALESCE(emp_cc.empleadoid, emp_ced.empleadoid)";
         $idCcEmpleadoExpr = "COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto)";
         $nombreExpr = "CONCAT(COALESCE(emp_cc.nombres, emp_ced.nombres, ''), ' ', COALESCE(emp_cc.apellidos, emp_ced.apellidos, ''))";
+        $estadoEmpleadoExpr = "CASE WHEN {$empleadoExpr} IS NULL THEN NULL WHEN COALESCE(emp_cc.estatus, emp_ced.estatus) = 1 AND COALESCE(emp_cc.fecha_egreso, emp_ced.fecha_egreso) IS NULL THEN 'Activo' ELSE 'Inactivo' END";
 
         $query = $this->faltantesBaseQuery($config['tipo'])
             ->leftJoinSub($this->centrosCostoPorTerminalQuery(), 'ccosto', function ($join) {
@@ -548,13 +564,14 @@ class ReporteController extends Controller
                 DB::raw("{$empleadoExpr} as empleadoid"),
                 DB::raw("{$idCcEmpleadoExpr} as idcentrocosto"),
                 DB::raw("{$nombreExpr} as nombre_empleado"),
+                DB::raw("{$estadoEmpleadoExpr} as estado_empleado"),
                 DB::raw("COUNT(faltantes.fila_id) as cantidad_faltantes"),
                 DB::raw("SUM(faltantes.monto) as total_monto"),
                 DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(faltantes.fecha, '%d/%m/%Y') ORDER BY faltantes.fecha SEPARATOR ', ') as fechas_faltantes"),
                 DB::raw("GROUP_CONCAT(CONCAT(DATE_FORMAT(faltantes.fecha, '%d/%m/%Y'), '|', COALESCE(faltantes.monto, 0)) ORDER BY faltantes.fecha SEPARATOR ';;') as detalles_faltantes")
             );
 
-        $this->applyFaltantesFilters($query, $fechaInicio, $fechaFin, $buscar);
+        $this->applyFaltantesFilters($query, $fechaInicio, $fechaFin, $buscar, $estadoEmpleado);
         $this->applyFaltantesSort($query, $sortBy, $sortDir);
 
         $registros = $query
@@ -568,7 +585,8 @@ class ReporteController extends Controller
                 DB::raw($empresaExpr),
                 DB::raw($empleadoExpr),
                 DB::raw($idCcEmpleadoExpr),
-                DB::raw($nombreExpr)
+                DB::raw($nombreExpr),
+                DB::raw($estadoEmpleadoExpr)
             )
             ->paginate(10);
 
@@ -583,6 +601,7 @@ class ReporteController extends Controller
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
         $buscar = $request->input('buscar');
+        $estadoEmpleado = $request->input('estado_empleado');
         $sortBy = $request->input('sort_by');
         $sortDir = $request->input('sort_dir');
         $config = $this->getFaltantesConfig($request->input('tipo'));
@@ -590,6 +609,7 @@ class ReporteController extends Controller
         $empleadoExpr = "COALESCE(emp_cc.empleadoid, emp_ced.empleadoid)";
         $idCcEmpleadoExpr = "COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto)";
         $nombreExpr = "CONCAT(COALESCE(emp_cc.nombres, emp_ced.nombres, ''), ' ', COALESCE(emp_cc.apellidos, emp_ced.apellidos, ''))";
+        $estadoEmpleadoExpr = "CASE WHEN {$empleadoExpr} IS NULL THEN NULL WHEN COALESCE(emp_cc.estatus, emp_ced.estatus) = 1 AND COALESCE(emp_cc.fecha_egreso, emp_ced.fecha_egreso) IS NULL THEN 'Activo' ELSE 'Inactivo' END";
 
         $query = $this->faltantesBaseQuery($config['tipo'])
             ->leftJoinSub($this->centrosCostoPorTerminalQuery(), 'ccosto', function ($join) {
@@ -612,16 +632,17 @@ class ReporteController extends Controller
                 DB::raw("{$empleadoExpr} as empleadoid"),
                 DB::raw("{$idCcEmpleadoExpr} as idcentrocosto"),
                 DB::raw("{$nombreExpr} as nombre_empleado"),
+                DB::raw("{$estadoEmpleadoExpr} as estado_empleado"),
                 DB::raw("COUNT(faltantes.fila_id) as cantidad_faltantes"),
                 DB::raw("SUM(faltantes.monto) as total_monto"),
                 DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(faltantes.fecha, '%d/%m/%Y') ORDER BY faltantes.fecha SEPARATOR ', ') as fechas_faltantes")
             );
 
-        $this->applyFaltantesFilters($query, $fechaInicio, $fechaFin, $buscar);
+        $this->applyFaltantesFilters($query, $fechaInicio, $fechaFin, $buscar, $estadoEmpleado);
         $this->applyFaltantesSort($query, $sortBy, $sortDir);
 
         $registros = $query
-            ->groupBy('faltantes.identificacion', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo', 'ccosto.id_division', DB::raw($empresaExpr), DB::raw($empleadoExpr), DB::raw($idCcEmpleadoExpr), DB::raw($nombreExpr))
+            ->groupBy('faltantes.identificacion', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo', 'ccosto.id_division', DB::raw($empresaExpr), DB::raw($empleadoExpr), DB::raw($idCcEmpleadoExpr), DB::raw($nombreExpr), DB::raw($estadoEmpleadoExpr))
             ->get();
 
         $fileName = 'faltantes_' . $config['tipo'] . '_' . now()->format('Ymd_His') . '.xlsx';
@@ -636,6 +657,7 @@ class ReporteController extends Controller
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
         $buscar = $request->input('buscar');
+        $estadoEmpleado = $request->input('estado_empleado');
         $sortBy = $request->input('sort_by');
         $sortDir = $request->input('sort_dir');
         $config = $this->getFaltantesConfig($request->input('tipo'));
@@ -643,6 +665,7 @@ class ReporteController extends Controller
         $empleadoExpr = "COALESCE(emp_cc.empleadoid, emp_ced.empleadoid)";
         $idCcEmpleadoExpr = "COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto)";
         $nombreExpr = "CONCAT(COALESCE(emp_cc.nombres, emp_ced.nombres, ''), ' ', COALESCE(emp_cc.apellidos, emp_ced.apellidos, ''))";
+        $estadoEmpleadoExpr = "CASE WHEN {$empleadoExpr} IS NULL THEN NULL WHEN COALESCE(emp_cc.estatus, emp_ced.estatus) = 1 AND COALESCE(emp_cc.fecha_egreso, emp_ced.fecha_egreso) IS NULL THEN 'Activo' ELSE 'Inactivo' END";
 
         $query = $this->faltantesBaseQuery($config['tipo'])
             ->leftJoinSub($this->centrosCostoPorTerminalQuery(), 'ccosto', function ($join) {
@@ -665,16 +688,17 @@ class ReporteController extends Controller
                 DB::raw("{$empleadoExpr} as empleadoid"),
                 DB::raw("{$idCcEmpleadoExpr} as idcentrocosto"),
                 DB::raw("{$nombreExpr} as nombre_empleado"),
+                DB::raw("{$estadoEmpleadoExpr} as estado_empleado"),
                 DB::raw("COUNT(faltantes.fila_id) as cantidad_faltantes"),
                 DB::raw("SUM(faltantes.monto) as total_monto"),
                 DB::raw("GROUP_CONCAT(DISTINCT DATE_FORMAT(faltantes.fecha, '%d/%m/%Y') ORDER BY faltantes.fecha SEPARATOR ', ') as fechas_faltantes")
             );
 
-        $this->applyFaltantesFilters($query, $fechaInicio, $fechaFin, $buscar);
+        $this->applyFaltantesFilters($query, $fechaInicio, $fechaFin, $buscar, $estadoEmpleado);
         $this->applyFaltantesSort($query, $sortBy, $sortDir);
 
         $registros = $query
-            ->groupBy('faltantes.identificacion', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo', 'ccosto.id_division', DB::raw($empresaExpr), DB::raw($empleadoExpr), DB::raw($idCcEmpleadoExpr), DB::raw($nombreExpr))
+            ->groupBy('faltantes.identificacion', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo', 'ccosto.id_division', DB::raw($empresaExpr), DB::raw($empleadoExpr), DB::raw($idCcEmpleadoExpr), DB::raw($nombreExpr), DB::raw($estadoEmpleadoExpr))
             ->get();
 
         $sistema = $config['nombre'];

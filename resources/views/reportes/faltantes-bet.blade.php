@@ -19,6 +19,10 @@
             #tableFaltantes thead th.sortable-column.active {
                 background-color: #eef4ff;
             }
+
+            #tableFaltantes tbody tr.empleado-inactivo > td {
+                background-color: #fff8db;
+            }
         </style>
 
         <div class="page-content">
@@ -55,6 +59,15 @@
                                             <option value="all" selected>Todos</option>
                                             <option value="bet">Lotobet Real</option>
                                             <option value="net">Lotedom</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="mb-0" for="estado_empleado">Estado</label>
+                                        <select class="form-select" id="estado_empleado">
+                                            <option value="" selected>Todos</option>
+                                            <option value="activo">Activos</option>
+                                            <option value="inactivo">Inactivos</option>
                                         </select>
                                     </div>
 
@@ -102,6 +115,7 @@
                                                 <th class="sortable-column" data-sort="idcentrocosto">Id CC Empleado <span class="sort-indicator"></span></th>
                                                 <th class="sortable-column" data-sort="identificacion">Cedula <span class="sort-indicator"></span></th>
                                                 <th class="sortable-column" data-sort="nombre_empleado">Nombre Empleado <span class="sort-indicator"></span></th>
+                                                <th>Estado</th>
                                                 <th class="sortable-column" data-sort="id_grupo">Grupo <span class="sort-indicator"></span></th>
                                                 <th class="sortable-column" data-sort="id_division">Id Division <span class="sort-indicator"></span></th>
                                                 <th class="sortable-column" data-sort="agencia_id">Agencia ID <span class="sort-indicator"></span></th>
@@ -329,10 +343,12 @@
             const fechaInicio = document.getElementById('fecha_inicio').value;
             const fechaFin = document.getElementById('fecha_fin').value;
             const tipo = obtenerTipoFaltante();
+            const estadoEmpleado = document.getElementById('estado_empleado').value;
             const buscar = document.getElementById('buscar').value.trim();
 
             const params = new URLSearchParams({
                 tipo: tipo,
+                estado_empleado: estadoEmpleado,
                 fecha_inicio: fechaInicio,
                 fecha_fin: fechaFin,
                 page: page,
@@ -376,6 +392,9 @@
                 const division = registro.id_division || '';
                 const detallesFaltantes = registro.detalles_faltantes || '';
                 const totalMonto = parseFloat(registro.total_monto || 0);
+                const estadoEmpleado = registro.estado_empleado || '';
+
+                row.classList.toggle('empleado-inactivo', estadoEmpleado === 'Inactivo');
 
                 row.innerHTML = `
                     <td class="text-center">${escapeHtml(registro.companyid ?? '')}</td>
@@ -383,6 +402,7 @@
                     <td class="text-center">${escapeHtml(registro.idcentrocosto ?? '')}</td>
                     <td>${escapeHtml(registro.identificacion)}</td>
                     <td>${escapeHtml(nombreEmpleado)}</td>
+                    <td class="text-center">${escapeHtml(estadoEmpleado || '-')}</td>
                     <td>${escapeHtml(grupo)}</td>
                     <td>${escapeHtml(division)}</td>
                     <td class="text-center">${escapeHtml(agenciaId)}</td>
@@ -511,10 +531,12 @@
             const fechaInicio = document.getElementById('fecha_inicio').value;
             const fechaFin = document.getElementById('fecha_fin').value;
             const tipo = obtenerTipoFaltante();
+            const estadoEmpleado = document.getElementById('estado_empleado').value;
             const buscar = document.getElementById('buscar').value.trim();
 
             const params = new URLSearchParams({
                 tipo: tipo,
+                estado_empleado: estadoEmpleado,
                 fecha_inicio: fechaInicio,
                 fecha_fin: fechaFin,
                 sort_by: currentSort.by,
@@ -532,10 +554,12 @@
             const fechaInicio = document.getElementById('fecha_inicio').value;
             const fechaFin = document.getElementById('fecha_fin').value;
             const tipo = obtenerTipoFaltante();
+            const estadoEmpleado = document.getElementById('estado_empleado').value;
             const buscar = document.getElementById('buscar').value.trim();
 
             const params = new URLSearchParams({
                 tipo: tipo,
+                estado_empleado: estadoEmpleado,
                 fecha_inicio: fechaInicio,
                 fecha_fin: fechaFin,
                 sort_by: currentSort.by,

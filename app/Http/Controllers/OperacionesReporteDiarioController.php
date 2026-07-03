@@ -22,7 +22,7 @@ class OperacionesReporteDiarioController extends Controller
         $fechaFiltro = (string) $request->input('fecha', now()->toDateString());
 
         $rutas = Ruta::query()
-            ->with('operadorAsignado:id,nombre,apellido,correo')
+            ->with('operadorAsignado')
             ->orderBy('nombre_ruta')
             ->get();
 
@@ -57,12 +57,14 @@ class OperacionesReporteDiarioController extends Controller
 
     public function guardar(Request $request)
     {
+        $tablaOperadorRuta = OperadorRuta::resolveTableName();
+
         $validated = $request->validate([
             'accion' => ['required', 'in:guardar,guardar_enviar'],
             'fecha' => ['required', 'date'],
             'serial_ruta' => ['required', 'string', 'max:20', 'regex:/^\d{1,20}$/'],
             'ruta_id' => ['required', 'integer', 'exists:rutas,id'],
-            'operador_ruta_id' => ['required', 'integer', 'exists:operador_ruta,id'],
+            'operador_ruta_id' => ['required', 'integer', 'exists:' . $tablaOperadorRuta . ',id'],
             'banco_nombre' => ['nullable', 'string', 'max:150'],
             'entregado' => ['nullable', 'numeric', 'min:0'],
             'procesado' => ['required', 'numeric', 'min:0'],
@@ -73,11 +75,10 @@ class OperacionesReporteDiarioController extends Controller
         ]);
 
         $ruta = Ruta::query()
-            ->with('operadorAsignado:id,nombre,apellido')
+            ->with('operadorAsignado')
             ->findOrFail((int) $validated['ruta_id']);
 
-        $operador = OperadorRuta::query()
-            ->select('id', 'nombre', 'apellido', 'correo')
+        $operador = OperadorRuta::queryConIdentidad()
             ->findOrFail((int) $validated['operador_ruta_id']);
 
         if ((int) $ruta->operador_ruta_id !== (int) $operador->id) {

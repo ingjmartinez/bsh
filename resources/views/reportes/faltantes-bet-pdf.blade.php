@@ -41,6 +41,9 @@
         table tbody tr:nth-child(even) {
             background-color: #f9f9f9;
         }
+        table tbody tr.empleado-inactivo {
+            background-color: #fff8db;
+        }
         .text-center {
             text-align: center;
         }
@@ -68,6 +71,7 @@
                 <th>Id CC Empleado</th>
                 <th>Cedula</th>
                 <th>Nombre Empleado</th>
+                <th>Estado</th>
                 <th>Id Centro Costo</th>
                 <th>Grupo</th>
                 <th>Sub Grupo</th>
@@ -86,12 +90,13 @@
                     $totalMonto += $registro->total_monto;
                     $totalFaltantes += $registro->cantidad_faltantes;
                 @endphp
-                <tr>
+                <tr class="{{ ($registro->estado_empleado ?? '') === 'Inactivo' ? 'empleado-inactivo' : '' }}">
                     <td>{{ $registro->companyid ?? '' }}</td>
                     <td>{{ $registro->empleadoid ?? '' }}</td>
                     <td>{{ $registro->idcentrocosto ?? '' }}</td>
                     <td>{{ $registro->identificacion }}</td>
                     <td>{{ trim($registro->nombre_empleado) ?: 'Sin especificar' }}</td>
+                    <td>{{ $registro->estado_empleado ?? '' }}</td>
                     <td>{{ $registro->id_centro_costo ?? '' }}</td>
                     <td>{{ trim($registro->id_grupo ?? '') }}</td>
                     <td>{{ trim($registro->id_sub_grupo ?? '') }}</td>

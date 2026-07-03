@@ -65,6 +65,16 @@ class CoordinadorOperador extends Model
         return Schema::hasColumn(static::resolveTableName(), $column);
     }
 
+    public static function queryConNombreApellidoPuesto()
+    {
+        $query = static::query()->select('nombre');
+
+        $query->addSelect(static::hasResolvedColumn('apellido') ? 'apellido' : DB::raw("'' AS apellido"));
+        $query->addSelect(static::hasResolvedColumn('puesto') ? 'puesto' : DB::raw("'coordinador' AS puesto"));
+
+        return $query;
+    }
+
     public function getTable()
     {
         return static::resolveTableName();
