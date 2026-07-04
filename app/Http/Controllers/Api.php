@@ -1413,7 +1413,7 @@ class Api extends Controller
 
             return [
                 'ok' => false,
-                'message' => 'Error consultando API externa de entradas de diario.',
+                'message' => "Error consultando API externa de entradas de diario. Empresa {$empresa}, fecha {$fecha}.",
                 'error' => $error,
                 'status' => 500,
                 'items' => [],
@@ -1426,18 +1426,35 @@ class Api extends Controller
         if ($httpCode < 200 || $httpCode >= 300) {
             return [
                 'ok' => false,
-                'message' => 'La API externa de entradas de diario respondio con error.',
+                'message' => "La API externa de entradas de diario respondio con error. Empresa {$empresa}, fecha {$fecha}.",
                 'status' => 502,
                 'items' => [],
+            ];
+        }
+
+        $trimmedResponse = trim((string) $response);
+
+        if ($trimmedResponse === '' || preg_match('/no existen datos/i', $trimmedResponse) === 1) {
+            return [
+                'ok' => true,
+                'items' => [],
+                'status' => 200,
             ];
         }
 
         $decoded = json_decode($response, true);
 
         if (!is_array($decoded)) {
+            Log::warning('Respuesta invalida de API externa de entradas de diario.', [
+                'empresa' => $empresa,
+                'fecha' => $fecha,
+                'http_code' => $httpCode,
+                'response_preview' => mb_substr($trimmedResponse, 0, 500),
+            ]);
+
             return [
                 'ok' => false,
-                'message' => 'Respuesta invalida de API externa de entradas de diario.',
+                'message' => "Respuesta invalida de API externa de entradas de diario. Empresa {$empresa}, fecha {$fecha}.",
                 'status' => 502,
                 'items' => [],
             ];
