@@ -100,7 +100,7 @@ class AutoProcesoConfigController extends Controller
 
     private function validateSistema(string $sistema): void
     {
-        if (!in_array(strtolower($sistema), ['lotobet', 'lotedom'], true)) {
+        if (!in_array(strtolower($sistema), ['lotobet', 'lotedom', 'delta'], true)) {
             abort(404);
         }
     }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AgenciaController;
+use App\Http\Controllers\AgenciaDeltaController;
 use App\Http\Controllers\AgenciaLotedomController;
 use App\Http\Controllers\Api;
 use App\Http\Controllers\AsistenciaComparativaController;
@@ -150,6 +151,7 @@ Route::post('/auto-proceso/{sistema}/config', [AutoProcesoConfigController::clas
 
 Route::get('/ventas-por-usuario-lotobet', fn() => view('lotobet.ventas-usuario'));
 Route::get('/faltantes-lotobet', fn() => view('lotobet.faltantes'));
+Route::get('/faltantes-delta', fn() => view('lotobet.faltantes_delta'));
 Route::get('/faltantes-lotedom', fn() => view('lotedom.faltantes'));
 Route::get('/ventas-por-producto-lotobet', fn() => view('lotobet.ventas-productos'));
 Route::get('/recargas-lotobet', fn() => view('lotobet.recargas'));
@@ -166,6 +168,9 @@ Route::get('/delete-ventas-usuarios-lotobet', [VentasController::class, 'deleteV
 Route::get('/get-faltantes-lotobet', [FaltantesController::class, 'getFaltantesLotobet']);
 Route::get('/save-faltantes-lotobet', [FaltantesController::class, 'saveFaltantesLotobet']);
 Route::get('/delete-faltantes-lotobet', [FaltantesController::class, 'deleteFaltantesLotobet']);
+Route::get('/get-faltantes-delta', [FaltantesController::class, 'getFaltantesDelta']);
+Route::get('/save-faltantes-delta', [FaltantesController::class, 'saveFaltantesDelta']);
+Route::get('/delete-faltantes-delta', [FaltantesController::class, 'deleteFaltantesDelta']);
 
 Route::get('/ventas-producto-lotobet', [VentasProductosController::class, 'getVentasProductosLotobet']);
 Route::get('/save-ventas-producto-lotobet', [VentasProductosController::class, 'saveVentasProductosLotobet']);
@@ -541,9 +546,37 @@ Route::prefix('servicios-generales')->name('servicios-generales.')
 Route::middleware('role:superadmin|admin')->group(function () {
 Route::get('/generar-lotobet', fn() => view('lotobet.index'));
 Route::get('/generar-lotedom', fn() => view('lotedom.index'));
+Route::get('/generar-delta', fn() => view('lotobet.delta_index'));
 
 Route::get('/ventas_delta', [VentasDeltaController::class, 'ventasDelta']);
+Route::resource('agencias-delta', AgenciaDeltaController::class)
+    ->except(['show'])
+    ->names('agencias-delta')
+    ->parameters(['agencias-delta' => 'agenciaLotedom']);
+Route::get('agencias-delta-list', [AgenciaDeltaController::class, 'list'])->name('agencias-delta.list');
+Route::get('agencias-delta-export', [AgenciaDeltaController::class, 'export'])->name('agencias-delta.export');
+Route::post('agencias-delta-import', [AgenciaDeltaController::class, 'import'])->name('agencias-delta.import');
+Route::post('agencias-delta-mass-update', [AgenciaDeltaController::class, 'massUpdate'])->name('agencias-delta.mass-update');
+Route::post('agencias-delta-mass-update-preview', [AgenciaDeltaController::class, 'massUpdatePreview'])->name('agencias-delta.mass-update-preview');
+Route::get('agencias-delta-no-registradas-venta-fija-semana', [AgenciaDeltaController::class, 'noRegistradasVentaFijaSemana'])->name('agencias-delta.no-registradas-venta-fija-semana');
+Route::post('agencias-delta-no-registradas-registrar', [AgenciaDeltaController::class, 'registrarNoRegistradasVentaFija'])->name('agencias-delta.no-registradas.registrar');
+Route::post('agencias-delta-no-registradas-registrar-terminal', [AgenciaDeltaController::class, 'registrarTerminalNoRegistrada'])->name('agencias-delta.no-registradas.registrar-terminal');
+Route::get('agencias-delta-no-registradas-desde-ventas', [AgenciaDeltaController::class, 'noRegistradasDesdeVentasUsuarios'])->name('agencias-delta.no-registradas-desde-ventas');
+Route::post('agencias-delta-no-registradas-sincronizar-desde-ventas', [AgenciaDeltaController::class, 'sincronizarNoRegistradasDesdeVentasUsuarios'])->name('agencias-delta.no-registradas.sincronizar-desde-ventas');
+Route::get('agencias-delta-inactivas', [AgenciaDeltaController::class, 'agenciasInactivas'])->name('agencias-delta.inactivas');
+Route::get('agencias-delta-sin-venta-30-dias', [AgenciaDeltaController::class, 'agenciasSinVentaTreintaDias'])->name('agencias-delta.sin-venta-30-dias');
+Route::get('agencias-delta-inactivas-con-venta-30-dias', [AgenciaDeltaController::class, 'agenciasInactivasConVentaTreintaDias'])->name('agencias-delta.inactivas-con-venta-30-dias');
+Route::get('agencias-delta-no-registradas-con-venta-30-dias', [AgenciaDeltaController::class, 'agenciasNoRegistradasConVentaTreintaDias'])->name('agencias-delta.no-registradas-con-venta-30-dias');
+Route::post('agencias-delta-sin-venta-30-dias-desactivar', [AgenciaDeltaController::class, 'desactivarAgenciasSinVentaTreintaDias'])->name('agencias-delta.sin-venta-30-dias.desactivar');
+Route::post('agencias-delta-actualizar-estatus', [AgenciaDeltaController::class, 'actualizarEstatusAgencia'])->name('agencias-delta.actualizar-estatus');
+Route::get('agencias-delta-para-actualizar', [AgenciaDeltaController::class, 'agenciasParaActualizar'])->name('agencias-delta.para-actualizar');
+Route::get('agencias-delta-template', [AgenciaDeltaController::class, 'template'])->name('agencias-delta.template');
+Route::get('agencias-delta-mass-update-template', [AgenciaDeltaController::class, 'massUpdateTemplate'])->name('agencias-delta.mass-update-template');
+Route::get('agencias-delta-incumplimientos-horario', [AgenciaDeltaController::class, 'incumplimientosHorario'])->name('agencias-delta.incumplimientos');
+Route::get('agencias-delta-incumplimientos-horario/list', [AgenciaDeltaController::class, 'listIncumplimientosHorario'])->name('agencias-delta.incumplimientos.list');
+Route::post('agencias-delta-incumplimientos-horario/send-mail', [AgenciaDeltaController::class, 'enviarMiniReporteIncumplimiento'])->name('agencias-delta.incumplimientos.send-mail');
 Route::get('/get-ventas_delta', [VentasDeltaController::class, 'getVentasDelta']);
+Route::get('/save-ventas_delta', [VentasDeltaController::class, 'saveVentasDelta']);
 Route::post('/save-ventas_delta', [VentasDeltaController::class, 'saveVentasDelta']);
 Route::get('/delete-ventas_delta', [VentasDeltaController::class, 'deleteVentasDelta']);
 });

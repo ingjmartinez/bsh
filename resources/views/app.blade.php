@@ -983,6 +983,11 @@
                                             <span data-key="t-dashboards">Generar Lotedom</span>
                                         </a>
                                     </li>
+                                    <li class="nav-item">
+                                        <a href="{{ url('/generar-delta') }}" class="nav-link">
+                                            <span data-key="t-dashboards">Generar Delta</span>
+                                        </a>
+                                    </li>
 
                                     <li class="nav-item">
                                         <a href="#sidebarEmail" class="nav-link collapsed" data-bs-toggle="collapse"
@@ -1095,6 +1100,11 @@
                                     <li class="nav-item">
                                         <a href="{{ url('/ventas_delta') }}" class="nav-link">
                                             <span data-key="t-dashboards">Ventas Delta</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ url('/faltantes-delta') }}" class="nav-link">
+                                            <span data-key="t-dashboards">Faltantes Delta</span>
                                         </a>
                                     </li>
                                     <li class="nav-item d-none">

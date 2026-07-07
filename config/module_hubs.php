@@ -296,6 +296,15 @@ return [
                 'activo' => true,
             ],
             [
+                'nombre' => 'Agencias Delta',
+                'descripcion' => 'Consulta y administra la data de agencias Delta desde la vista de ventas.',
+                'url' => '/agencias-delta',
+                'icono' => 'ri-building-4-line',
+                'categoria' => 'Agencias',
+                'tags' => ['agencias', 'delta', 'terminales', 'ventas'],
+                'activo' => true,
+            ],
+            [
                 'nombre' => 'Incumplimientos Horario',
                 'descripcion' => 'Da seguimiento a incumplimientos y asistencia por horario.',
                 'url' => '/agencias-incumplimientos-horario',

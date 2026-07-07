@@ -11,6 +11,7 @@ use App\Http\Controllers\PaqueticoController;
 use App\Http\Controllers\PremioController;
 use App\Http\Controllers\RecargasController;
 use App\Http\Controllers\TokenController;
+use App\Http\Controllers\VentasDeltaController;
 use App\Http\Controllers\VentasController;
 use App\Http\Controllers\VentasProductosController;
 use Illuminate\Http\JsonResponse;
@@ -23,7 +24,7 @@ class AutoProcesoService
         $startedAt = microtime(true);
         $sistema = strtolower($sistema);
 
-        if (!in_array($sistema, ['lotobet', 'lotedom'], true)) {
+        if (!in_array($sistema, ['lotobet', 'lotedom', 'delta'], true)) {
             return [
                 'ok' => false,
                 'message' => 'Sistema no soportado',
@@ -67,7 +68,11 @@ class AutoProcesoService
 
     private function runTokenStep(string $sistema): array
     {
-        $method = $sistema === 'lotobet' ? 'generateToken' : 'iniciarSession';
+        $method = match ($sistema) {
+            'lotobet' => 'generateToken',
+            'delta' => 'loginFlash',
+            default => 'iniciarSession',
+        };
 
         return $this->runModule('Token', TokenController::class, $method, null);
     }
@@ -201,6 +206,13 @@ class AutoProcesoService
                 ['modulo' => 'Recargas', 'controller' => RecargasController::class, 'method' => 'saveRecargasLotobet'],
                 ['modulo' => 'Ventas por producto', 'controller' => VentasProductosController::class, 'method' => 'saveVentasProductosLotobet'],
                 ['modulo' => 'Ventas por usuario', 'controller' => VentasController::class, 'method' => 'saveVentasUsuariosLotobet'],
+            ];
+        }
+
+        if ($sistema === 'delta') {
+            return [
+                ['modulo' => 'Ventas Delta', 'controller' => VentasDeltaController::class, 'method' => 'saveVentasDelta'],
+                ['modulo' => 'Faltantes Delta', 'controller' => FaltantesController::class, 'method' => 'saveFaltantesDelta'],
             ];
         }
 

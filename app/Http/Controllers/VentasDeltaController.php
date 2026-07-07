@@ -9,6 +9,13 @@ use Illuminate\Http\Request;
 
 class VentasDeltaController extends Controller
 {
+    private const DELTA_TOKEN_ID = 2;
+    private const DELTA_API_URL = 'https://bdeltaadapi.lotobet.bet/api/V1/FALUhPLdFAD';
+    private const DELTA_API_HEADERS = [
+        'AhfCC: VJgej8Mn2yFYNXEr',
+        'AhfVB: tnusa4hPNsSbAVPQ',
+    ];
+
     public function ventasDelta()
     {
         return view('lotobet.ventas_delta');
@@ -28,38 +35,27 @@ class VentasDeltaController extends Controller
     {
         header('Content-Type: application/json');
 
-        $curl = curl_init();
         $fecha = $request->query('fecha');
-        $token = Token::find(2);
 
+        if (!$this->isValidDate($fecha)) {
+            return response()->json(['message' => 'Fecha invalida'], 422);
+        }
+
+        $token = $this->getDeltaToken();
         if (!$token) {
             return response()->json(['error' => 'Genere un token'], 404);
         }
 
-        $fechaActual = now();
-        if ($fechaActual->greaterThan($token->fecha)) {
+        if ($this->tokenExpired($token)) {
             return response()->json(['error' => 'El token ha expirado, genere uno nuevo'], 401);
         }
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => "https://bjoselitoadapi.lotobet.bet/api/v1/FALUhPLdFAD/{$token->token}/{$fecha}/{$fecha}",
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_HTTPHEADER => array(
-                'AhfCC: VJgej8Mn2yFYNXEr',
-                'AhfVB: tnusa4hPNsSbAVPQ'
-            ),
-            CURLOPT_SSL_VERIFYHOST => 0,
-            CURLOPT_SSL_VERIFYPEER => 0,
-        ));
+        $ventas = $this->fetchVentasDelta($fecha, $token->token);
 
-        $response = curl_exec($curl);
-        $ventas = json_decode($response, true);
+        if ($ventas['code'] !== 0) {
+            return response()->json(['ventas' => [], 'code' => $ventas['code'], 'message' => $ventas['msg']], 502);
+        }
+
         return response()->json(['ventas' => $ventas['Content'], 'code' => $ventas['code'], 'message' => $ventas['msg']]);
     }
 
@@ -70,17 +66,10 @@ class VentasDeltaController extends Controller
         set_time_limit(360);                // alternativa equivalente
         header('Content-Type: application/json');
 
-        $curl = curl_init();
         $fecha = $request->query('fecha');
-        $token = Token::find(2);
 
-        if (!$token) {
-            return response()->json(['error' => 'Genere un token'], 404);
-        }
-
-        $fechaActual = now();
-        if ($fechaActual->greaterThan($token->fecha)) {
-            return response()->json(['error' => 'El token ha expirado, genere uno nuevo'], 401);
+        if (!$this->isValidDate($fecha)) {
+            return response()->json(['message' => 'Fecha invalida'], 422);
         }
 
         $existe = VentasDelta::query()->whereDate('fecha', $fecha)->exists();
@@ -89,42 +78,38 @@ class VentasDeltaController extends Controller
             return response()->json(['message' => 'Ya hay data guardada en la fecha: ' . $fecha]);
         }
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => "https://bjoselitoadapi.lotobet.bet/api/v1/FALUhPLdFAD/{$token->token}/{$fecha}/{$fecha}",
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_HTTPHEADER => array(
-                'AhfCC: VJgej8Mn2yFYNXEr',
-                'AhfVB: tnusa4hPNsSbAVPQ'
-            ),
-            CURLOPT_SSL_VERIFYHOST => 0,
-            CURLOPT_SSL_VERIFYPEER => 0,
-        ));
+        $token = $this->getDeltaToken();
+        if (!$token) {
+            return response()->json(['message' => 'Genere un token'], 404);
+        }
 
-        $response = curl_exec($curl);
-        $ventas = json_decode($response, true);
+        if ($this->tokenExpired($token)) {
+            return response()->json(['message' => 'El token ha expirado, genere uno nuevo'], 401);
+        }
+
+        $ventas = $this->fetchVentasDelta($fecha, $token->token);
+
+        if ($ventas['code'] !== 0) {
+            return response()->json(['message' => $ventas['msg'], 'code' => $ventas['code']], 502);
+        }
+
         $data = [];
 
         foreach ($ventas['Content'] as $v) {
             $data[] = [
                 'fecha' => $fecha,
-                'grupo' => $v['Grupo'],
-                'banca' => $v['Banca'],
-                'numero_externo' => $v['NumeroExterno'],
-                'venta_loteria' => $v['VentaLoteria'],
-                'comision_loteria' => $v['ComisionLoteria'],
-                'premios_pagado' => $v['PremiosPagado'],
-                'venta_recarga' => $v['VentaRecarga'],
-                'comision_recarga' => $v['ComisionRecarga'],
-                'ventas_no_tradicional' => $v['VentasNoTrad'],
-                'premios_pagados_no_tradicional' => $v['PremiosPagadosNoTrad'],
-                'comision_loterias_lot_no_tradicional' => $v['ComisionLoteriasLotNoTrad'],
-                'comision_gobierno' => $v['ComisionGobierno'],
+                'grupo' => $v['Grupo'] ?? null,
+                'banca' => $v['Banca'] ?? null,
+                'numero_externo' => $v['NumeroExterno'] ?? null,
+                'venta_loteria' => $v['VentaLoteria'] ?? null,
+                'comision_loteria' => $v['ComisionLoteria'] ?? null,
+                'premios_pagado' => $v['PremiosPagado'] ?? null,
+                'venta_recarga' => $v['VentaRecarga'] ?? null,
+                'comision_recarga' => $v['ComisionRecarga'] ?? null,
+                'ventas_no_tradicional' => $v['VentasNoTrad'] ?? null,
+                'premios_pagados_no_tradicional' => $v['PremiosPagadosNoTrad'] ?? null,
+                'comision_loterias_lot_no_tradicional' => $v['ComisionLoteriasLotNoTrad'] ?? null,
+                'comision_gobierno' => $v['ComisionGobierno'] ?? null,
             ];
         }
 
@@ -381,5 +366,88 @@ class VentasDeltaController extends Controller
                 'banca' => $selectedAgencia->banca,
             ] : null,
         ]);
+    }
+
+    private function fetchVentasDelta(string $fecha, string $token): array
+    {
+        $curl = curl_init();
+
+        curl_setopt_array($curl, [
+            CURLOPT_URL => self::DELTA_API_URL . "/{$token}/{$fecha}/{$fecha}",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'GET',
+            CURLOPT_HTTPHEADER => self::DELTA_API_HEADERS,
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_SSL_VERIFYPEER => 0,
+        ]);
+
+        $response = curl_exec($curl);
+
+        if ($response === false) {
+            $error = curl_error($curl);
+            curl_close($curl);
+
+            return [
+                'code' => 1,
+                'msg' => 'Error consultando API Delta: ' . $error,
+                'Content' => [],
+            ];
+        }
+
+        curl_close($curl);
+
+        $ventas = json_decode($response, true);
+
+        if (!is_array($ventas)) {
+            return [
+                'code' => 1,
+                'msg' => 'La API Delta no devolvio un JSON valido',
+                'Content' => [],
+            ];
+        }
+
+        return [
+            'Content' => $ventas['Content'] ?? $ventas['content'] ?? (array_is_list($ventas) ? $ventas : []),
+            'code' => (int) ($ventas['code'] ?? 0),
+            'msg' => $ventas['msg'] ?? $ventas['message'] ?? 'Datos obtenidos correctamente',
+        ];
+    }
+
+    private function isValidDate(?string $date): bool
+    {
+        if (!$date || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            return false;
+        }
+
+        try {
+            return Carbon::createFromFormat('Y-m-d', $date)->format('Y-m-d') === $date;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    private function getDeltaToken(): ?Token
+    {
+        $token = Token::find(self::DELTA_TOKEN_ID);
+
+        if (!$token || empty($token->token)) {
+            return null;
+        }
+
+        return $token;
+    }
+
+    private function tokenExpired(Token $token): bool
+    {
+        if (empty($token->fecha)) {
+            return true;
+        }
+
+        return now()->greaterThan(Carbon::parse($token->fecha));
     }
 }

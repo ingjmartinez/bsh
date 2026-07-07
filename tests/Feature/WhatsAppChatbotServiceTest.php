@@ -60,6 +60,8 @@ class WhatsAppChatbotServiceTest extends TestCase
         Schema::create('agencias_lotedom', function (Blueprint $table): void {
             $table->id();
             $table->string('terminal', 25)->nullable();
+            $table->string('sistema', 55)->nullable();
+            $table->string('empresa', 60)->nullable();
             $table->unsignedTinyInteger('estatus')->default(1);
             $table->timestamps();
         });
@@ -77,17 +79,59 @@ class WhatsAppChatbotServiceTest extends TestCase
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'terminal' => 'SHARED-001',
+                'estatus' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
 
         DB::table('agencias_lotedom')->insert([
             [
                 'terminal' => '08007777',
+                'sistema' => 'lotedom',
+                'empresa' => 'Lotedom',
                 'estatus' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
                 'terminal' => 'LOTE-321',
+                'sistema' => 'lotedom',
+                'empresa' => 'Lotedom',
+                'estatus' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'terminal' => 'SHARED-001',
+                'sistema' => 'lotedom',
+                'empresa' => 'Lotedom',
+                'estatus' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'terminal' => '09006666',
+                'sistema' => 'delta',
+                'empresa' => 'Delta',
+                'estatus' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'terminal' => 'DELTA-777',
+                'sistema' => 'delta',
+                'empresa' => 'Delta',
+                'estatus' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'terminal' => 'SHARED-001',
+                'sistema' => 'delta',
+                'empresa' => 'Delta',
                 'estatus' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -356,6 +400,71 @@ class WhatsAppChatbotServiceTest extends TestCase
         $this->assertSame('lotedom', $reply['session']->context['sistema']);
     }
 
+    public function test_delta_rechaza_terminal_de_real_o_lotedom_en_ticket_y_mantiene_el_paso(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550137', 'hola');
+        $service->handleIncoming('8095550137', '2');
+        $service->handleIncoming('8095550137', '3');
+
+        $realReply = $service->handleIncoming('8095550137', '07068888');
+        $this->assertSame('Ese id no existe, por favor escribir el id de tu agencia.', $realReply['reply']);
+        $this->assertSame('ticket_numero', $realReply['session']->step);
+        $this->assertSame('delta', $realReply['session']->context['sistema']);
+        $this->assertArrayNotHasKey('ticket_numero', $realReply['session']->context);
+
+        $lotedomReply = $service->handleIncoming('8095550137', '08007777');
+        $this->assertSame('Ese id no existe, por favor escribir el id de tu agencia.', $lotedomReply['reply']);
+        $this->assertSame('ticket_numero', $lotedomReply['session']->step);
+        $this->assertArrayNotHasKey('ticket_numero', $lotedomReply['session']->context);
+    }
+
+    public function test_delta_acepta_terminal_existente_en_agencias_delta_para_ticket(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550138', 'hola');
+        $service->handleIncoming('8095550138', '2');
+        $service->handleIncoming('8095550138', '3');
+
+        $reply = $service->handleIncoming('8095550138', '09006666');
+
+        $this->assertStringContainsString('Codigo de terminal 09006666 recibido.', $reply['reply']);
+        $this->assertSame('ticket_imagen', $reply['session']->step);
+        $this->assertSame('09006666', $reply['session']->context['ticket_numero']);
+        $this->assertSame('delta', $reply['session']->context['sistema']);
+    }
+
+    public function test_mismo_codigo_repetido_se_valida_por_el_catalogo_del_sistema_seleccionado(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550140', 'hola');
+        $service->handleIncoming('8095550140', '1');
+        $service->handleIncoming('8095550140', '3');
+        $realReply = $service->handleIncoming('8095550140', 'SHARED-001');
+
+        $this->assertStringContainsString('Codigo de terminal SHARED-001 recibido.', $realReply['reply']);
+        $this->assertSame('real', $realReply['session']->context['sistema']);
+
+        $service->handleIncoming('8095550141', 'hola');
+        $service->handleIncoming('8095550141', '2');
+        $service->handleIncoming('8095550141', '3');
+        $deltaReply = $service->handleIncoming('8095550141', 'SHARED-001');
+
+        $this->assertStringContainsString('Codigo de terminal SHARED-001 recibido.', $deltaReply['reply']);
+        $this->assertSame('delta', $deltaReply['session']->context['sistema']);
+
+        $service->handleIncoming('8095550142', 'hola');
+        $service->handleIncoming('8095550142', '3');
+        $service->handleIncoming('8095550142', '3');
+        $lotedomReply = $service->handleIncoming('8095550142', 'SHARED-001');
+
+        $this->assertStringContainsString('Codigo de terminal SHARED-001 recibido.', $lotedomReply['reply']);
+        $this->assertSame('lotedom', $lotedomReply['session']->context['sistema']);
+    }
+
     public function test_real_rechaza_terminal_inexistente_en_anular_ticket_y_mantiene_el_paso(): void
     {
         $service = new WhatsAppChatbotService();
@@ -454,6 +563,23 @@ class WhatsAppChatbotServiceTest extends TestCase
         $this->assertSame('servicios_generales_imagen', $reply['session']->step);
         $this->assertSame('08007777', $reply['session']->context['terminal_codigo']);
         $this->assertSame('lotedom', $reply['session']->context['sistema']);
+    }
+
+    public function test_delta_acepta_terminal_existente_en_agencias_delta_para_averia(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550139', 'hola');
+        $service->handleIncoming('8095550139', '2');
+        $service->handleIncoming('8095550139', '6');
+        $service->handleIncoming('8095550139', '1');
+
+        $reply = $service->handleIncoming('8095550139', 'DELTA-777');
+
+        $this->assertStringContainsString('Terminal DELTA-777 recibido.', $reply['reply']);
+        $this->assertSame('servicios_generales_imagen', $reply['session']->step);
+        $this->assertSame('DELTA-777', $reply['session']->context['terminal_codigo']);
+        $this->assertSame('delta', $reply['session']->context['sistema']);
     }
 
     public function test_hola_en_sesion_abierta_puede_cerrar_sesion(): void

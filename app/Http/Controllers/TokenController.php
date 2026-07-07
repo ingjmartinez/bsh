@@ -110,7 +110,7 @@ class TokenController extends Controller
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-            CURLOPT_URL => 'https://bjoselitoadapi.lotobet.bet/api/v1/MfgFGBXCFF/JCtLkiQNHi/QTpWZl9XId',
+            CURLOPT_URL => 'https://bdeltaadapi.lotobet.bet/api/v1/MfgFGBXCFF/36Wwxr6h6WuV/V0mVbv1IAs9Q',
             CURLOPT_PROXY => '',
             CURLOPT_NOPROXY => '*',
             CURLOPT_RETURNTRANSFER => true,

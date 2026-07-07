@@ -38,6 +38,8 @@ class WhatsAppChatbotService
     private const SERVICE_END_HOUR = 22;
     private const ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'heic', 'heif'];
     private const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif'];
+    private const TABLA_AGENCIAS_REAL = 'agencias';
+    private const TABLA_AGENCIAS_LOTEDOM_DELTA = 'agencias_lotedom';
 
     public static function sessionClosedMessage(): string
     {
@@ -939,20 +941,86 @@ class WhatsAppChatbotService
 
     private function terminalRealExiste(string $terminalCodigo): bool
     {
-        return $this->terminalExisteEnTabla('agencias', $terminalCodigo);
+        return $this->terminalExisteEnTabla(self::TABLA_AGENCIAS_REAL, $terminalCodigo);
     }
 
     private function terminalLotedomExiste(string $terminalCodigo): bool
     {
-        return $this->terminalExisteEnTabla('agencias_lotedom', $terminalCodigo);
+        return $this->terminalExisteEnCatalogoLotedomDelta($terminalCodigo, 'lotedom');
+    }
+
+    private function terminalDeltaExiste(string $terminalCodigo): bool
+    {
+        return $this->terminalExisteEnCatalogoLotedomDelta($terminalCodigo, 'delta');
     }
 
     private function terminalExisteParaSistema(string $sistema, string $terminalCodigo): bool
     {
         return match (Str::lower(trim($sistema))) {
+            'delta' => $this->terminalDeltaExiste($terminalCodigo),
             'lotedom' => $this->terminalLotedomExiste($terminalCodigo),
             default => $this->terminalRealExiste($terminalCodigo),
         };
+    }
+
+    private function terminalExisteEnCatalogoLotedomDelta(string $terminalCodigo, string $sistema): bool
+    {
+        $tabla = self::TABLA_AGENCIAS_LOTEDOM_DELTA;
+
+        if (!Schema::hasTable($tabla) || !Schema::hasColumn($tabla, 'terminal')) {
+            return false;
+        }
+
+        $terminalNormalizado = $this->normalizarTerminalReal($terminalCodigo);
+
+        if ($terminalNormalizado === '') {
+            return false;
+        }
+
+        $hasSistema = Schema::hasColumn($tabla, 'sistema');
+        $hasEmpresa = Schema::hasColumn($tabla, 'empresa');
+
+        if (!$hasSistema && !$hasEmpresa) {
+            return false;
+        }
+
+        $query = DB::table($tabla)->whereNotNull('terminal');
+
+        if (Schema::hasColumn($tabla, 'estatus')) {
+            $query->where('estatus', 1);
+        }
+
+        $sistema = Str::lower(trim($sistema));
+        $columns = ['terminal'];
+
+        if ($hasSistema) {
+            $columns[] = 'sistema';
+        }
+
+        if ($hasEmpresa) {
+            $columns[] = 'empresa';
+        }
+
+        return $query
+            ->get($columns)
+            ->contains(function ($row) use ($terminalNormalizado, $sistema, $hasSistema, $hasEmpresa) {
+                if ($this->normalizarTerminalReal((string) ($row->terminal ?? '')) !== $terminalNormalizado) {
+                    return false;
+                }
+
+                $sistemaValor = $hasSistema ? Str::lower((string) ($row->sistema ?? '')) : '';
+                $empresaValor = $hasEmpresa ? Str::lower((string) ($row->empresa ?? '')) : '';
+
+                if ($sistema === 'delta') {
+                    return str_contains($sistemaValor, 'delta') || str_contains($empresaValor, 'delta');
+                }
+
+                if ($sistema === 'lotedom') {
+                    return str_contains($sistemaValor, 'lotedom') || str_contains($empresaValor, 'lotedom');
+                }
+
+                return false;
+            });
     }
 
     private function terminalExisteEnTabla(string $tabla, string $terminalCodigo): bool

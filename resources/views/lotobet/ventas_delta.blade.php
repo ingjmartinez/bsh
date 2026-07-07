@@ -70,13 +70,13 @@
                                     <thead>
                                         <tr>
                                             <th>Grupo</th>
-                                            <th>Nombre de banca</th>
                                             <th>Banca</th>
-                                            <th>Ventas Tradicional</th>
-                                            <th>Premios Pagados</th>
-                                            <th>Ventas Recargas</th>
-                                            <th>Ventas No Tradi.</th>
-                                            <th>Premios Pagados No Trad.</th>
+                                            <th>Terminal</th>
+                                            <th>Venta Loteria</th>
+                                            <th>Premios Pagado</th>
+                                            <th>Venta Recarga</th>
+                                            <th>Ventas No Trad.</th>
+                                            <th>Premios No Trad.</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -126,16 +126,41 @@
     <script>
         const btnGenerarToken = document.getElementById('btnGenerarToken');
         btnGenerarToken.addEventListener('click', () => {
+            Swal.fire({
+                title: "Generando token ...",
+                icon: 'info',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                timerProgressBar: true,
+                didOpen: () => Swal.showLoading()
+            });
+
             fetch("/login-flash")
                 .then(response => response.json())
                 .then(data => {
+                    if (data.message) {
+                        Swal.fire({
+                            title: "Error",
+                            text: data.message,
+                            icon: "error"
+                        });
+                        return;
+                    }
+
                     Swal.fire({
                         title: "Listo",
                         text: data.success,
                         icon: "success"
                     });
                 })
-                .catch(error => console.error('Error fetching data:', error));
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    Swal.fire({
+                        title: "Error",
+                        text: "No se pudo generar el token",
+                        icon: "error"
+                    });
+                });
         });
 
         const btnGenerarData = document.getElementById('btnGenerarData');
@@ -169,7 +194,7 @@
                     if (data.code != 0) {
                         Swal.fire({
                             title: "Error",
-                            text: data.message,
+                            text: data.message || data.error || "No se pudo obtener la data",
                             icon: "error"
                         });
                     } else {
@@ -187,11 +212,11 @@
                                 <td>${item.Grupo}</td>
                                 <td>${item.Banca}</td>
                                 <td>${item.NumeroExterno}</td>
-                                <td>${item.VentaLoteria}</td>                               
+                                <td>${item.VentaLoteria}</td>
                                 <td>${item.PremiosPagado}</td>
-                                <td>${item.VentaRecarga}</td>                               
+                                <td>${item.VentaRecarga}</td>
                                 <td>${item.VentasNoTrad}</td>
-                                <td>${item.PremiosPagadosNoTrad}</td>                                                              
+                                <td>${item.PremiosPagadosNoTrad}</td>
                             `;
                             tableBody.appendChild(row);
                         });
