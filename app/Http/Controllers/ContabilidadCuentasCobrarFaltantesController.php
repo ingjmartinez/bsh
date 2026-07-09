@@ -231,6 +231,41 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
         ]);
     }
 
+    public function faltantes(Request $request)
+    {
+        $validated = $request->validate([
+            'id_cc_empleado' => ['required', 'string', 'max:50'],
+            'agencia_id' => ['required', 'string', 'max:50'],
+            'fecha_inicio' => ['nullable', 'date_format:Y-m-d'],
+            'fecha_fin' => ['nullable', 'date_format:Y-m-d'],
+        ]);
+
+        [$fechaInicio, $fechaFin] = $this->normalizarFechas(
+            $validated['fecha_inicio'] ?? null,
+            $validated['fecha_fin'] ?? null
+        );
+
+        $idCcEmpleado = trim((string) $validated['id_cc_empleado']);
+        $agenciaId = trim((string) $validated['agencia_id']);
+        $items = $this->faltantesMovimientosPorAgenciaQuery($idCcEmpleado, $agenciaId, $fechaInicio, $fechaFin)
+            ->get()
+            ->map(fn ($row) => $this->mapFaltanteRow($row));
+
+        return response()->json([
+            'data' => $items,
+            'summary' => [
+                'faltantes' => $items->count(),
+                'total_faltantes' => round($items->sum('monto'), 2),
+            ],
+            'filters' => [
+                'id_cc_empleado' => $idCcEmpleado,
+                'agencia_id' => $agenciaId,
+                'fecha_inicio' => $fechaInicio->toDateString(),
+                'fecha_fin' => $fechaFin->toDateString(),
+            ],
+        ]);
+    }
+
     private function normalizarFechas(?string $fechaInicio, ?string $fechaFin): array
     {
         $inicio = $fechaInicio
@@ -327,6 +362,45 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
                 DB::raw($empleadoExpr),
                 DB::raw($nombreExpr)
             );
+    }
+
+    private function faltantesMovimientosPorAgenciaQuery(string $idCcEmpleado, string $agenciaId, Carbon $fechaInicio, Carbon $fechaFin)
+    {
+        $base = $this->faltantesSourceQuery()
+            ->where('f.agencia_id', $agenciaId)
+            ->whereBetween('f.fecha', [$fechaInicio->toDateString(), $fechaFin->toDateString()]);
+
+        $empresaExpr = "COALESCE(emp_cc.companyid, emp_ced.companyid)";
+        $empleadoExpr = "COALESCE(emp_cc.empleadoid, emp_ced.empleadoid)";
+        $idCcEmpleadoExpr = "COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto)";
+        $nombreExpr = "TRIM(CONCAT(COALESCE(emp_cc.nombres, emp_ced.nombres, ''), ' ', COALESCE(emp_cc.apellidos, emp_ced.apellidos, '')))";
+
+        return DB::query()
+            ->fromSub($base, 'faltantes')
+            ->leftJoinSub($this->centrosCostoPorTerminalQuery(), 'ccosto', function ($join) {
+                $join->on('faltantes.agencia_id', '=', 'ccosto.agencia_id');
+            })
+            ->leftJoinSub($this->empleadosPreferidosPorCedulaCostoQuery(), 'emp_cc', function ($join) {
+                $join->on('faltantes.identificacion', '=', 'emp_cc.cedula_normalizada')
+                    ->on('ccosto.id_centro_costo', '=', 'emp_cc.idcentrocosto_clave');
+            })
+            ->leftJoinSub($this->empleadosPreferidosPorCedulaQuery(), 'emp_ced', function ($join) {
+                $join->on('faltantes.identificacion', '=', 'emp_ced.cedula_normalizada');
+            })
+            ->whereRaw("{$idCcEmpleadoExpr} = ?", [$idCcEmpleado])
+            ->selectRaw("
+                faltantes.fila_id,
+                faltantes.agencia_id,
+                faltantes.fecha,
+                faltantes.monto,
+                faltantes.identificacion AS cedula,
+                {$idCcEmpleadoExpr} AS id_cc_empleado,
+                {$empresaExpr} AS companyid,
+                {$empleadoExpr} AS empleadoid,
+                {$nombreExpr} AS nombre_empleado
+            ")
+            ->orderBy('faltantes.fecha')
+            ->orderBy('faltantes.fila_id');
     }
 
     private function faltantesSourceQuery()
@@ -548,6 +622,21 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
             'modulo' => (string) $row->modulo,
             'creado_por' => (string) $row->creado_por,
             'fecha_grabado' => $row->fecha_grabado,
+        ];
+    }
+
+    private function mapFaltanteRow($row): array
+    {
+        return [
+            'id' => (int) $row->fila_id,
+            'fecha' => $row->fecha,
+            'agencia_id' => (string) $row->agencia_id,
+            'id_cc_empleado' => (string) $row->id_cc_empleado,
+            'empleadoid' => $row->empleadoid,
+            'companyid' => $row->companyid,
+            'nombre_empleado' => trim((string) $row->nombre_empleado) ?: 'Sin especificar',
+            'monto' => round((float) $row->monto, 2),
+            'cedula' => (string) $row->cedula,
         ];
     }
 }

@@ -119,6 +119,7 @@ Route::prefix('contabilidad')->name('contabilidad.')
     Route::get('/cuentas-cobrar-faltantes', [ContabilidadCuentasCobrarFaltantesController::class, 'index'])->name('cuentas-cobrar-faltantes');
     Route::get('/cuentas-cobrar-faltantes/data', [ContabilidadCuentasCobrarFaltantesController::class, 'data'])->name('cuentas-cobrar-faltantes.data');
     Route::get('/cuentas-cobrar-faltantes/detalle', [ContabilidadCuentasCobrarFaltantesController::class, 'detalle'])->name('cuentas-cobrar-faltantes.detalle');
+    Route::get('/cuentas-cobrar-faltantes/faltantes', [ContabilidadCuentasCobrarFaltantesController::class, 'faltantes'])->name('cuentas-cobrar-faltantes.faltantes');
     Route::get('/cuentas-cobrar-faltantes/abonos', [ContabilidadCuentasCobrarFaltantesController::class, 'abonos'])->name('cuentas-cobrar-faltantes.abonos');
     Route::view('/reportes/comisiones', 'contabilidad.reportes.comisiones')->name('reportes.comisiones');
     Route::get('/reportes/estado-resultado', [ContabilidadEstadoResultadoController::class, 'index'])->name('reportes.estado-resultado');

@@ -3,28 +3,34 @@
 @section('content')
     <style>
         #detalleCxCModal .modal-dialog,
+        #faltantesCxCModal .modal-dialog,
         #abonosCxCModal .modal-dialog {
             max-width: min(1320px, calc(100vw - 1.5rem));
         }
 
         #detalleCxCModal .detalle-table-shell,
+        #faltantesCxCModal .detalle-table-shell,
         #abonosCxCModal .detalle-table-shell {
             overflow: hidden;
         }
 
         #detalleCxCModal .dataTables_scrollHead table,
         #detalleCxCModal .dataTables_scrollBody table,
+        #faltantesCxCModal .dataTables_scrollHead table,
+        #faltantesCxCModal .dataTables_scrollBody table,
         #abonosCxCModal .dataTables_scrollHead table,
         #abonosCxCModal .dataTables_scrollBody table {
             margin-bottom: 0 !important;
         }
 
         #detalleCxCModal .dataTables_scrollBody thead,
+        #faltantesCxCModal .dataTables_scrollBody thead,
         #abonosCxCModal .dataTables_scrollBody thead {
             visibility: collapse;
         }
 
         #detalleCxCModal .dataTables_wrapper .dt-buttons,
+        #faltantesCxCModal .dataTables_wrapper .dt-buttons,
         #abonosCxCModal .dataTables_wrapper .dt-buttons {
             margin-bottom: .75rem;
         }
@@ -196,12 +202,58 @@
                                     <th class="text-end">Cant. faltantes</th>
                                     <th class="text-end">Total faltantes</th>
                                     <th class="text-end">Credito</th>
-                                    <th class="text-end">Abono neto</th>
                                     <th class="text-end">Restante</th>
                                     <th class="text-end">% abonado</th>
                                     <th>Estado</th>
                                     <th>Ult. faltante</th>
                                     <th>Ult. abono</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="faltantesCxCModal" tabindex="-1" aria-labelledby="faltantesCxCModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title" id="faltantesCxCModalLabel">Detalle de faltantes</h5>
+                        <div class="text-muted small" id="faltantesCxCSubtitulo"></div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <div class="border rounded p-2">
+                                <div class="text-muted small text-uppercase">Faltantes</div>
+                                <div class="fw-semibold" id="faltantesTotalCantidad">0</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="border rounded p-2">
+                                <div class="text-muted small text-uppercase">Monto</div>
+                                <div class="fw-semibold text-danger" id="faltantesTotalMonto">0.00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detalle-table-shell">
+                        <table id="tablaFaltantesCxC" class="table table-bordered table-striped align-middle nowrap" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Agencia</th>
+                                    <th class="text-end">Monto</th>
+                                    <th>Cedula</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -287,6 +339,7 @@
     <script>
         const dataUrl = "{{ route('contabilidad.cuentas-cobrar-faltantes.data') }}";
         const detalleUrl = "{{ route('contabilidad.cuentas-cobrar-faltantes.detalle') }}";
+        const faltantesUrl = "{{ route('contabilidad.cuentas-cobrar-faltantes.faltantes') }}";
         const abonosUrl = "{{ route('contabilidad.cuentas-cobrar-faltantes.abonos') }}";
 
         document.addEventListener('DOMContentLoaded', function () {
@@ -468,10 +521,13 @@
                         <div class="fw-semibold">${escapeHtml(item.nombre_empleado)}</div>
                         <div class="text-muted small">Empleado: ${escapeHtml(item.empleadoid || '-')} / Empresa: ${escapeHtml(item.companyid || '-')}</div>
                     </td>
-                    <td class="text-end">${Number(item.cantidad_faltantes || 0).toLocaleString('es-DO')}</td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-outline-primary btn-sm px-2 py-0 fw-semibold" onclick="verFaltantesCxC('${escapeJs(item.id_cc_empleado)}', '${escapeJs(item.agencia_id)}')">
+                            ${Number(item.cantidad_faltantes || 0).toLocaleString('es-DO')}
+                        </button>
+                    </td>
                     <td class="text-end">${formatoMonto(item.total_faltantes)}</td>
                     <td class="text-end text-success">${formatoMonto(item.total_credito)}</td>
-                    <td class="text-end">${formatoMonto(item.total_abonos)}</td>
                     <td class="text-end ${Number(item.balance_pendiente || 0) > 0 ? 'text-danger' : 'text-success'} fw-semibold">${formatoMonto(item.balance_pendiente)}</td>
                     <td class="text-end">${Number(item.porcentaje_abonado || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%</td>
                     <td><span class="badge ${badgeClass(item.estado)}">${escapeHtml(item.estado)}</span></td>
@@ -488,9 +544,10 @@
                 scrollY: '45vh',
                 scrollCollapse: true,
                 pageLength: 10,
-                order: [[6, 'desc']],
+                order: [[5, 'desc']],
                 columnDefs: [
-                    { targets: [2, 3, 4, 5, 6, 7], className: 'text-end' },
+                    { targets: [2], className: 'text-center' },
+                    { targets: [3, 4, 5, 6], className: 'text-end' },
                     { targets: '_all', className: 'align-middle' }
                 ],
                 dom: 'Bfrtip',
@@ -503,6 +560,91 @@
         function ajustarTablaDetalleModal() {
             if ($.fn.DataTable.isDataTable('#tablaDetalleCxC')) {
                 $('#tablaDetalleCxC').DataTable().columns.adjust().draw(false);
+            }
+        }
+
+        async function verFaltantesCxC(idCcEmpleado, agenciaId) {
+            const params = new URLSearchParams({
+                id_cc_empleado: idCcEmpleado,
+                agencia_id: agenciaId,
+                fecha_inicio: document.getElementById('fechaInicio').value,
+                fecha_fin: document.getElementById('fechaFin').value,
+            });
+
+            try {
+                const response = await fetch(`${faltantesUrl}?${params.toString()}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                const payload = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(payload.message || 'No se pudo consultar los faltantes.');
+                }
+
+                document.getElementById('faltantesCxCModalLabel').textContent = `Faltantes - Agencia ${agenciaId}`;
+                document.getElementById('faltantesCxCSubtitulo').textContent = `CC ${idCcEmpleado} / ${payload.filters.fecha_inicio} a ${payload.filters.fecha_fin}`;
+                renderFaltantesResumen(payload.summary || {});
+                renderFaltantesTabla(payload.data || []);
+
+                const modalElement = document.getElementById('faltantesCxCModal');
+                const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+                modalElement.addEventListener('shown.bs.modal', ajustarTablaFaltantesModal, { once: true });
+                modal.show();
+            } catch (error) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Error', error.message || 'No se pudo consultar los faltantes.', 'error');
+                } else {
+                    alert(error.message || 'No se pudo consultar los faltantes.');
+                }
+            }
+        }
+
+        function renderFaltantesResumen(summary) {
+            document.getElementById('faltantesTotalCantidad').textContent = Number(summary.faltantes || 0).toLocaleString('es-DO');
+            document.getElementById('faltantesTotalMonto').textContent = formatoMonto(summary.total_faltantes);
+        }
+
+        function renderFaltantesTabla(items) {
+            const tbody = document.querySelector('#tablaFaltantesCxC tbody');
+            tbody.innerHTML = '';
+
+            if ($.fn.DataTable.isDataTable('#tablaFaltantesCxC')) {
+                $('#tablaFaltantesCxC').DataTable().clear().destroy();
+            }
+
+            items.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${escapeHtml(item.fecha || '-')}</td>
+                    <td>${escapeHtml(item.agencia_id || '-')}</td>
+                    <td class="text-end text-danger fw-semibold">${formatoMonto(item.monto)}</td>
+                    <td>${escapeHtml(item.cedula || '-')}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            const faltantesTable = $('#tablaFaltantesCxC').DataTable({
+                destroy: true,
+                responsive: false,
+                scrollX: true,
+                scrollY: '45vh',
+                scrollCollapse: true,
+                pageLength: 10,
+                order: [[0, 'asc']],
+                columnDefs: [
+                    { targets: [2], className: 'text-end' },
+                    { targets: '_all', className: 'align-middle' }
+                ],
+                dom: 'Bfrtip',
+                buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+            });
+
+            return faltantesTable;
+        }
+
+        function ajustarTablaFaltantesModal() {
+            if ($.fn.DataTable.isDataTable('#tablaFaltantesCxC')) {
+                $('#tablaFaltantesCxC').DataTable().columns.adjust().draw(false);
             }
         }
 
