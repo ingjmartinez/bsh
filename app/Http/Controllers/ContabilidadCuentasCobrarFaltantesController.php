@@ -15,6 +15,7 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
     {
         return view('contabilidad.cuentas-cobrar-faltantes', [
             'cuentaFaltantes' => self::CUENTA_FALTANTES,
+            'divisiones' => $this->divisionOptions(),
         ]);
     }
 
@@ -24,6 +25,7 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
             'fecha_inicio' => ['nullable', 'date_format:Y-m-d'],
             'fecha_fin' => ['nullable', 'date_format:Y-m-d'],
             'buscar' => ['nullable', 'string', 'max:120'],
+            'id_division' => ['nullable', 'string', 'max:50'],
             'estado' => ['nullable', 'in:todos,pendientes,saldados,sobregiro'],
             'limit' => ['nullable', 'integer', 'min:1', 'max:2000'],
         ]);
@@ -34,6 +36,7 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
         );
 
         $buscar = trim((string) ($validated['buscar'] ?? ''));
+        $idDivision = trim((string) ($validated['id_division'] ?? ''));
         $estado = $validated['estado'] ?? 'pendientes';
         $limit = (int) ($validated['limit'] ?? 500);
 
@@ -42,6 +45,7 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
 
         $rows = DB::query()
             ->fromSub($faltantes, 'faltantes')
+            ->leftJoin('centros_de_costo as cc_empleado', 'faltantes.id_cc_empleado', '=', 'cc_empleado.id_centro_costo')
             ->leftJoinSub($abonos, 'abonos', function ($join) {
                 $join->on('faltantes.id_cc_empleado', '=', 'abonos.id_cc_empleado');
             })
@@ -56,6 +60,8 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
                 faltantes.cantidad_agencias,
                 faltantes.primera_fecha_faltante,
                 faltantes.ultima_fecha_faltante,
+                cc_empleado.id_division,
+                COALESCE(NULLIF(abonos.division, ''), '') AS division,
                 COALESCE(abonos.cantidad_abonos, 0) AS cantidad_abonos,
                 COALESCE(abonos.total_credito, 0) AS total_credito,
                 COALESCE(abonos.total_debito, 0) AS total_debito,
@@ -64,6 +70,10 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
                 abonos.ultima_fecha_abono,
                 (faltantes.total_faltantes - COALESCE(abonos.total_credito, 0)) AS balance_pendiente
             ");
+
+        if ($idDivision !== '') {
+            $rows->where('cc_empleado.id_division', $idDivision);
+        }
 
         if ($buscar !== '') {
             $like = '%' . $buscar . '%';
@@ -108,6 +118,7 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
                 'fecha_fin' => $fechaFin->toDateString(),
                 'cuenta_abonos' => self::CUENTA_FALTANTES,
                 'estado' => $estado,
+                'id_division' => $idDivision,
                 'displayed' => min($limit, $allItems->count()),
                 'total' => $allItems->count(),
             ],
@@ -280,6 +291,38 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
         }
 
         return [$inicio, $fin];
+    }
+
+    private function divisionOptions()
+    {
+        $desdeEntradas = DB::table('entradas_diario')
+            ->selectRaw('TRIM(id_division) as id_division, MAX(NULLIF(TRIM(division), "")) as division')
+            ->whereNotNull('id_division')
+            ->whereRaw('TRIM(id_division) <> ""')
+            ->groupBy(DB::raw('TRIM(id_division)'))
+            ->get();
+
+        $idsDesdeCentros = DB::table('centros_de_costo')
+            ->whereNotNull('id_division')
+            ->whereRaw('TRIM(id_division) <> ""')
+            ->distinct()
+            ->pluck('id_division')
+            ->map(fn ($id) => trim((string) $id));
+
+        return $idsDesdeCentros
+            ->merge($desdeEntradas->pluck('id_division')->map(fn ($id) => trim((string) $id)))
+            ->filter()
+            ->unique()
+            ->map(function ($id) use ($desdeEntradas) {
+                $nombre = optional($desdeEntradas->firstWhere('id_division', $id))->division;
+
+                return [
+                    'id' => $id,
+                    'nombre' => trim((string) $nombre),
+                ];
+            })
+            ->sortBy(fn ($division) => str_pad((string) $division['id'], 8, '0', STR_PAD_LEFT))
+            ->values();
     }
 
     private function faltantesPorCentroCostoQuery(Carbon $fechaInicio, Carbon $fechaFin)
@@ -522,6 +565,7 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
                 SUM(debito) AS total_debito,
                 SUM(credito - debito) AS total_abonos,
                 GROUP_CONCAT(DISTINCT id_viejo ORDER BY id_viejo SEPARATOR ', ') AS agencias_abonos,
+                SUBSTRING_INDEX(GROUP_CONCAT(DISTINCT NULLIF(division, '') ORDER BY division SEPARATOR ', '), ',', 1) AS division,
                 MAX(fecha) AS ultima_fecha_abono
             ")
             ->groupBy('id_centro_costo');
@@ -557,6 +601,8 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
             'companyid' => $row->companyid,
             'empleadoid' => $row->empleadoid,
             'nombre_empleado' => trim((string) $row->nombre_empleado) ?: 'Sin especificar',
+            'id_division' => (string) $row->id_division,
+            'division' => (string) $row->division,
             'cantidad_faltantes' => (int) $row->cantidad_faltantes,
             'total_faltantes' => $totalFaltantes,
             'cantidad_abonos' => (int) $row->cantidad_abonos,

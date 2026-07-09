@@ -111,6 +111,15 @@
                                             <option value="sobregiro">Sobregiro</option>
                                         </select>
                                     </div>
+                                    <div style="min-width: 240px;">
+                                        <label class="form-label mb-1" for="divisionFiltro">Division</label>
+                                        <input type="text" class="form-control form-control-sm" id="divisionFiltro" list="divisionOpciones" placeholder="Numero o nombre">
+                                        <datalist id="divisionOpciones">
+                                            @foreach ($divisiones as $division)
+                                                <option value="{{ trim($division['id'] . ' - ' . ($division['nombre'] ?: 'Sin nombre')) }}" data-id="{{ $division['id'] }}"></option>
+                                            @endforeach
+                                        </datalist>
+                                    </div>
                                     <div class="flex-grow-1" style="min-width: 220px;">
                                         <label class="form-label mb-1" for="buscar">Buscar</label>
                                         <input type="text" class="form-control form-control-sm" id="buscar" placeholder="Centro costo, empleado, agencia">
@@ -341,6 +350,7 @@
         const detalleUrl = "{{ route('contabilidad.cuentas-cobrar-faltantes.detalle') }}";
         const faltantesUrl = "{{ route('contabilidad.cuentas-cobrar-faltantes.faltantes') }}";
         const abonosUrl = "{{ route('contabilidad.cuentas-cobrar-faltantes.abonos') }}";
+        const divisiones = @json($divisiones);
 
         document.addEventListener('DOMContentLoaded', function () {
             inicializarFechas();
@@ -370,6 +380,7 @@
                 fecha_inicio: document.getElementById('fechaInicio').value,
                 fecha_fin: document.getElementById('fechaFin').value,
                 estado: document.getElementById('estado').value,
+                id_division: obtenerIdDivisionSeleccionada(),
                 buscar: document.getElementById('buscar').value.trim(),
                 limit: 1000
             });
@@ -409,6 +420,21 @@
             document.getElementById('kpiAbonos').textContent = formatoMonto(summary.total_abonos);
             document.getElementById('kpiBalance').textContent = formatoMonto(summary.balance_pendiente);
             document.getElementById('kpiCentros').textContent = Number(summary.centros_pendientes || 0).toLocaleString('es-DO');
+        }
+
+        function obtenerIdDivisionSeleccionada() {
+            const valor = document.getElementById('divisionFiltro').value.trim();
+            if (valor === '') return '';
+
+            const division = divisiones.find(item => {
+                const etiqueta = `${item.id} - ${item.nombre || 'Sin nombre'}`;
+                return etiqueta.toLowerCase() === valor.toLowerCase()
+                    || String(item.id).toLowerCase() === valor.toLowerCase()
+                    || String(item.nombre || '').toLowerCase() === valor.toLowerCase();
+            });
+
+            const idExtraido = valor.match(/^\s*([^- ]+)/);
+            return division ? division.id : (idExtraido ? idExtraido[1] : valor);
         }
 
         function renderTabla(items) {
