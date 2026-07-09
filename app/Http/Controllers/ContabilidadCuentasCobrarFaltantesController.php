@@ -62,7 +62,7 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
                 COALESCE(abonos.total_abonos, 0) AS total_abonos,
                 COALESCE(abonos.agencias_abonos, '') AS agencias_abonos,
                 abonos.ultima_fecha_abono,
-                (faltantes.total_faltantes - COALESCE(abonos.total_abonos, 0)) AS balance_pendiente
+                (faltantes.total_faltantes - COALESCE(abonos.total_credito, 0)) AS balance_pendiente
             ");
 
         if ($buscar !== '') {

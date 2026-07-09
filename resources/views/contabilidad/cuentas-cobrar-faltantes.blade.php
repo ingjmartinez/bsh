@@ -132,7 +132,6 @@
                                                 <th class="text-end">Cant. faltantes</th>
                                                 <th class="text-end">Total faltantes</th>
                                                 <th class="text-end">Credito</th>
-                                                <th class="text-end">Abono neto</th>
                                                 <th class="text-end">Balance</th>
                                                 <th class="text-end">% abonado</th>
                                                 <th>Estado</th>
@@ -389,7 +388,6 @@
                     <td class="text-end">${Number(item.cantidad_faltantes || 0).toLocaleString('es-DO')}</td>
                     <td class="text-end">${formatoMonto(item.total_faltantes)}</td>
                     <td class="text-end text-success">${formatoMonto(item.total_credito)}</td>
-                    <td class="text-end">${formatoMonto(item.total_abonos)}</td>
                     <td class="text-end ${Number(item.balance_pendiente || 0) > 0 ? 'text-danger' : 'text-success'} fw-semibold">${formatoMonto(item.balance_pendiente)}</td>
                     <td class="text-end">${Number(item.porcentaje_abonado || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%</td>
                     <td><span class="badge ${badgeClass(item.estado)}">${escapeHtml(item.estado)}</span></td>
@@ -403,9 +401,9 @@
                 responsive: false,
                 scrollX: true,
                 pageLength: 25,
-                order: [[7, 'desc']],
+                order: [[6, 'desc']],
                 columnDefs: [
-                    { targets: [3, 4, 5, 6, 7, 8], className: 'text-end' },
+                    { targets: [3, 4, 5, 6, 7], className: 'text-end' },
                     { targets: '_all', className: 'align-middle' }
                 ],
                 dom: 'Bfrtip',
