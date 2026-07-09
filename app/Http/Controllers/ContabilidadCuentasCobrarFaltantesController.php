@@ -151,7 +151,7 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
                 COALESCE(abonos.total_debito, 0) AS total_debito,
                 COALESCE(abonos.total_abonos, 0) AS total_abonos,
                 abonos.ultima_fecha_abono,
-                (faltantes.total_faltantes - COALESCE(abonos.total_abonos, 0)) AS balance_pendiente
+                (faltantes.total_faltantes - COALESCE(abonos.total_credito, 0)) AS balance_pendiente
             ")
             ->orderByDesc('balance_pendiente')
             ->orderBy('faltantes.agencia_id')
@@ -163,6 +163,7 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
             'summary' => [
                 'agencias' => $items->count(),
                 'total_faltantes' => round($items->sum('total_faltantes'), 2),
+                'total_credito' => round($items->sum('total_credito'), 2),
                 'total_abonos' => round($items->sum('total_abonos'), 2),
                 'balance_pendiente' => round($items->sum('balance_pendiente'), 2),
             ],
