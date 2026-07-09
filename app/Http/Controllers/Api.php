@@ -357,6 +357,14 @@ class Api extends Controller
             $query->where('id_centro_costo', $validated['centro_costo']);
         }
 
+        if ($validated['no_asiento'] !== '') {
+            $query->where('no_asiento', $validated['no_asiento']);
+        }
+
+        if ($validated['id_viejo'] !== '') {
+            $query->where('id_viejo', $validated['id_viejo']);
+        }
+
         if ($validated['cuentas_filtro'] !== null) {
             if ($validated['cuentas_filtro'] === []) {
                 return response()->json([
@@ -371,10 +379,60 @@ class Api extends Controller
             $query->whereIn('cuenta', $validated['cuentas_filtro']);
         }
 
+        $buscar = trim((string) $request->query('buscar', ''));
+        if ($buscar !== '') {
+            $escapedBuscar = str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $buscar);
+            $like = '%' . $escapedBuscar . '%';
+            $numero = str_replace([',', ' '], '', $buscar);
+
+            if (is_numeric($numero)) {
+                $centroCostoExiste = EntradaDiario::query()
+                    ->where('company_id', $validated['empresa'])
+                    ->whereBetween('fecha', [$validated['inicio']->toDateString(), $validated['fin']->toDateString()])
+                    ->where('id_centro_costo', $buscar)
+                    ->exists();
+
+                if ($centroCostoExiste) {
+                    $query->where('id_centro_costo', $buscar);
+                } else {
+                    $query->where(function ($search) use ($buscar, $numero) {
+                        $search->where('no_asiento', $buscar)
+                            ->orWhere('cuenta', $buscar)
+                            ->orWhere('debito', (float) $numero)
+                            ->orWhere('credito', (float) $numero);
+                    });
+                }
+            } else {
+                $query->where(function ($search) use ($like) {
+                    $search->where('no_asiento', 'like', $like)
+                        ->orWhere('ref', 'like', $like)
+                        ->orWhere('no_ref', 'like', $like)
+                        ->orWhere('cuenta', 'like', $like)
+                        ->orWhere('descripcion', 'like', $like)
+                        ->orWhere('id_centro_costo', 'like', $like)
+                        ->orWhere('centro_costo', 'like', $like)
+                        ->orWhere('id_viejo', 'like', $like)
+                        ->orWhere('grupo', 'like', $like)
+                        ->orWhere('sub_grupo', 'like', $like)
+                        ->orWhere('division', 'like', $like)
+                        ->orWhere('creado_por', 'like', $like)
+                        ->orWhere('ref_desc', 'like', $like)
+                        ->orWhere('sociedad', 'like', $like);
+                });
+            }
+        }
+
         $summary = (clone $query)
             ->selectRaw('COUNT(*) as registros, COALESCE(SUM(debito), 0) as debito, COALESCE(SUM(credito), 0) as credito')
             ->first();
-        $limit = max(1, min((int) $request->query('limit', 5000), 10000));
+        $hasNarrowFilter = $validated['cuenta'] !== ''
+            || $validated['centro_costo'] !== ''
+            || $validated['no_asiento'] !== ''
+            || $validated['id_viejo'] !== ''
+            || $buscar !== '';
+        $defaultLimit = $hasNarrowFilter ? 50000 : 5000;
+        $maxLimit = $hasNarrowFilter ? 100000 : 10000;
+        $limit = max(1, min((int) $request->query('limit', $defaultLimit), $maxLimit));
 
         $items = $query
             ->orderBy('fecha')
@@ -464,6 +522,14 @@ class Api extends Controller
             $query->where('id_centro_costo', $validated['centro_costo']);
         }
 
+        if ($validated['no_asiento'] !== '') {
+            $query->where('no_asiento', $validated['no_asiento']);
+        }
+
+        if ($validated['id_viejo'] !== '') {
+            $query->where('id_viejo', $validated['id_viejo']);
+        }
+
         if ($validated['cuentas_filtro'] !== null) {
             if ($validated['cuentas_filtro'] === []) {
                 return response()->json([
@@ -542,6 +608,8 @@ class Api extends Controller
             'fin' => $fin,
             'cuenta' => $cuenta,
             'centro_costo' => trim((string) $request->input('centro_costo', $request->query('centro_costo', ''))),
+            'no_asiento' => trim((string) $request->input('no_asiento', $request->query('no_asiento', ''))),
+            'id_viejo' => trim((string) $request->input('id_viejo', $request->query('id_viejo', ''))),
             'tipos' => $tipos,
             'cuentas_tipo' => $cuentasTipo,
             'cuentas_filtro' => $this->resolveEntradaDiarioCuentasFiltro($cuenta, $cuentasTipo),

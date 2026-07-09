@@ -131,7 +131,6 @@
                                                 <th>Agencias faltantes</th>
                                                 <th class="text-end">Cant. faltantes</th>
                                                 <th class="text-end">Total faltantes</th>
-                                                <th class="text-end">Debito</th>
                                                 <th class="text-end">Credito</th>
                                                 <th class="text-end">Abono neto</th>
                                                 <th class="text-end">Balance</th>
@@ -389,7 +388,6 @@
                     </td>
                     <td class="text-end">${Number(item.cantidad_faltantes || 0).toLocaleString('es-DO')}</td>
                     <td class="text-end">${formatoMonto(item.total_faltantes)}</td>
-                    <td class="text-end text-warning">${formatoMonto(item.total_debito)}</td>
                     <td class="text-end text-success">${formatoMonto(item.total_credito)}</td>
                     <td class="text-end">${formatoMonto(item.total_abonos)}</td>
                     <td class="text-end ${Number(item.balance_pendiente || 0) > 0 ? 'text-danger' : 'text-success'} fw-semibold">${formatoMonto(item.balance_pendiente)}</td>
@@ -405,9 +403,9 @@
                 responsive: false,
                 scrollX: true,
                 pageLength: 25,
-                order: [[8, 'desc']],
+                order: [[7, 'desc']],
                 columnDefs: [
-                    { targets: [3, 4, 5, 6, 7, 8, 9], className: 'text-end' },
+                    { targets: [3, 4, 5, 6, 7, 8], className: 'text-end' },
                     { targets: '_all', className: 'align-middle' }
                 ],
                 dom: 'Bfrtip',

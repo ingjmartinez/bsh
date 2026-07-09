@@ -32,11 +32,14 @@
                                         <button type="button" class="btn btn-primary" id="btnConsultarEntradasDiario">
                                             Consultar data local
                                         </button>
+                                        <button type="button" class="btn btn-success" id="btnBuscarEntradasDiario">
+                                            Buscar
+                                        </button>
                                         <button type="button" class="btn btn-info" id="btnSincronizarEntradasDiario">
                                             Sincronizar API
                                         </button>
-                                        <button type="button" class="btn btn-danger" id="btnEliminarEntradasDiario">
-                                            Eliminar data
+                                        <button type="button" class="btn btn-danger" id="btnLimpiarEntradasDiario">
+                                            Limpiar tabla
                                         </button>
                                     </div>
                                 </div>
@@ -58,13 +61,21 @@
                                         <label class="form-label">Fecha fin</label>
                                         <input type="date" class="form-control form-control-sm" id="entradaDiarioFechaFin" value="<?php echo date('Y-m-d'); ?>">
                                     </div>
-                                    <div class="col-12 col-md-3">
+                                    <div class="col-12 col-md-2">
                                         <label class="form-label">Cuenta</label>
                                         <input type="text" class="form-control form-control-sm" id="entradaDiarioCuenta" placeholder="Opcional">
                                     </div>
-                                    <div class="col-12 col-md-3">
+                                    <div class="col-12 col-md-2">
                                         <label class="form-label">Centro costo</label>
                                         <input type="text" class="form-control form-control-sm" id="entradaDiarioCentroCosto" placeholder="Opcional">
+                                    </div>
+                                    <div class="col-12 col-md-2">
+                                        <label class="form-label">NoAsiento</label>
+                                        <input type="text" class="form-control form-control-sm" id="entradaDiarioNoAsiento" placeholder="Opcional">
+                                    </div>
+                                    <div class="col-12 col-md-2">
+                                        <label class="form-label">IdViejo</label>
+                                        <input type="text" class="form-control form-control-sm" id="entradaDiarioIdViejo" placeholder="Opcional">
                                     </div>
                                     <div class="col-12">
                                         <label class="form-label">Tipos contables</label>
@@ -152,10 +163,14 @@
 @section('script')
     <script>
         const csrfToken = '{{ csrf_token() }}';
+        let entradasDiarioUltimaConsultaTruncada = false;
+        let entradasDiarioBusquedaRemota = '';
+        let entradasDiarioBusquedaRemotaTimer = null;
 
         document.getElementById('btnConsultarEntradasDiario').addEventListener('click', consultarEntradasDiarioLocal);
+        document.getElementById('btnBuscarEntradasDiario').addEventListener('click', buscarEntradasDiarioLocal);
         document.getElementById('btnSincronizarEntradasDiario').addEventListener('click', sincronizarEntradasDiario);
-        document.getElementById('btnEliminarEntradasDiario').addEventListener('click', eliminarEntradasDiario);
+        document.getElementById('btnLimpiarEntradasDiario').addEventListener('click', limpiarTablaEntradasDiario);
         document.querySelectorAll('.check-entrada-tipo').forEach(check => {
             check.addEventListener('change', sincronizarChecksTipos);
         });
@@ -196,6 +211,8 @@
             const fechaFin = document.getElementById('entradaDiarioFechaFin').value;
             const cuenta = document.getElementById('entradaDiarioCuenta').value.trim();
             const centroCosto = document.getElementById('entradaDiarioCentroCosto').value.trim();
+            const noAsiento = document.getElementById('entradaDiarioNoAsiento').value.trim();
+            const idViejo = document.getElementById('entradaDiarioIdViejo').value.trim();
             const tipos = obtenerTiposEntradasDiario();
 
             if (!fechaInicio || !fechaFin) {
@@ -210,9 +227,11 @@
 
             if (cuenta !== '') params.set('cuenta', cuenta);
             if (centroCosto !== '') params.set('centro_costo', centroCosto);
+            if (noAsiento !== '') params.set('no_asiento', noAsiento);
+            if (idViejo !== '') params.set('id_viejo', idViejo);
             tipos.forEach(tipo => params.append('tipos[]', tipo));
 
-            return { empresa, fechaInicio, fechaFin, cuenta, centroCosto, tipos, params };
+            return { empresa, fechaInicio, fechaFin, cuenta, centroCosto, noAsiento, idViejo, tipos, params };
         }
 
         async function parseJsonResponse(response, fallbackMessage) {
@@ -365,13 +384,22 @@
             return parseJsonResponse(response, 'No se pudo sincronizar movimiento del mayor.');
         }
 
-        async function consultarEntradasDiarioLocal(mostrarExito = true) {
+        function buscarEntradasDiarioLocal() {
+            consultarEntradasDiarioLocal(false);
+        }
+
+        async function consultarEntradasDiarioLocal(mostrarExito = true, buscarRemoto = '') {
             let filtros;
             try {
                 filtros = getEntradasDiarioFiltros();
             } catch (error) {
                 alert(error.message);
                 return;
+            }
+
+            entradasDiarioBusquedaRemota = buscarRemoto.trim();
+            if (entradasDiarioBusquedaRemota !== '') {
+                filtros.params.set('buscar', entradasDiarioBusquedaRemota);
             }
 
             if (mostrarExito) {
@@ -399,6 +427,7 @@
                     headers: { 'Accept': 'application/json' },
                 });
                 const data = await parseJsonResponse(response, 'No se pudo consultar la data local.');
+                entradasDiarioUltimaConsultaTruncada = Boolean(data.truncated);
                 renderEntradasDiario(data.data || [], data.summary || {});
 
                 if (mostrarExito && typeof Swal !== 'undefined') {
@@ -427,6 +456,8 @@
             const detalleTipos = filtros.tipos.length > 0 ? filtros.tipos.join(', ') : 'Todos';
             const detalleCuenta = filtros.cuenta !== '' ? filtros.cuenta : 'Todas';
             const detalleCentroCosto = filtros.centroCosto !== '' ? filtros.centroCosto : 'Todos';
+            const detalleNoAsiento = filtros.noAsiento !== '' ? filtros.noAsiento : 'Todos';
+            const detalleIdViejo = filtros.idViejo !== '' ? filtros.idViejo : 'Todos';
 
             return Swal.fire({
                 icon: 'question',
@@ -437,6 +468,8 @@
                     `<strong>Periodo:</strong> ${filtros.fechaInicio} a ${filtros.fechaFin}<br>` +
                     `<strong>Cuenta:</strong> ${detalleCuenta}<br>` +
                     `<strong>Centro costo:</strong> ${detalleCentroCosto}<br>` +
+                    `<strong>NoAsiento:</strong> ${detalleNoAsiento}<br>` +
+                    `<strong>IdViejo:</strong> ${detalleIdViejo}<br>` +
                     `<strong>Tipos:</strong> ${detalleTipos}`,
                 showCancelButton: true,
                 confirmButtonText: 'Consultar',
@@ -556,68 +589,11 @@
             }
         }
 
-        async function eliminarEntradasDiario() {
-            let filtros;
-            try {
-                filtros = getEntradasDiarioFiltros();
-            } catch (error) {
-                alert(error.message);
-                return;
-            }
-
-            const confirmado = typeof Swal !== 'undefined'
-                ? await Swal.fire({
-                    icon: 'warning',
-                    title: 'Eliminar data local',
-                    html: `Se eliminara la data local del movimiento del mayor de la empresa <strong>${filtros.empresa}</strong> entre <strong>${filtros.fechaInicio}</strong> y <strong>${filtros.fechaFin}</strong>.`,
-                    showCancelButton: true,
-                    confirmButtonText: 'Si, eliminar',
-                    cancelButtonText: 'Cancelar',
-                    confirmButtonColor: '#dc3545',
-                }).then(result => result.isConfirmed)
-                : confirm('Eliminar data local del movimiento del mayor para el rango seleccionado?');
-
-            if (!confirmado) return;
-
-            const boton = document.getElementById('btnEliminarEntradasDiario');
-            const textoOriginal = boton.innerText;
-            boton.disabled = true;
-            boton.innerText = 'Eliminando...';
-
-            try {
-                const response = await fetch('/api-entradas-diario', {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        empresa: filtros.empresa,
-                        fecha_inicio: filtros.fechaInicio,
-                        fecha_fin: filtros.fechaFin,
-                        cuenta: filtros.cuenta,
-                        centro_costo: filtros.centroCosto,
-                        tipos: filtros.tipos,
-                    }),
-                });
-                const data = await parseJsonResponse(response, 'No se pudo eliminar la data local.');
-                renderEntradasDiario([], { registros: 0, debito: 0, credito: 0 });
-
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire('Eliminacion completada', `Eliminados: ${(data.eliminados ?? 0).toLocaleString('es-DO')}`, 'success');
-                } else {
-                    alert('Eliminados: ' + (data.eliminados ?? 0));
-                }
-            } catch (error) {
-                alert(error.message || 'No se pudo eliminar la data local.');
-            } finally {
-                boton.disabled = false;
-                boton.innerText = textoOriginal;
-            }
-        }
-
         function renderEntradasDiario(items, summary) {
+            if ($.fn.DataTable.isDataTable('#tableEntradasDiario')) {
+                $('#tableEntradasDiario').DataTable().clear().destroy();
+            }
+
             const tableBody = document.querySelector('#tableEntradasDiario tbody');
             tableBody.innerHTML = '';
 
@@ -652,7 +628,7 @@
             document.getElementById('entradaDiarioTotalDebito').textContent = formatMoney(summary.debito || 0);
             document.getElementById('entradaDiarioTotalCredito').textContent = formatMoney(summary.credito || 0);
 
-            $('#tableEntradasDiario').DataTable({
+            const dataTable = $('#tableEntradasDiario').DataTable({
                 destroy: true,
                 responsive: false,
                 scrollX: true,
@@ -663,6 +639,31 @@
                 ],
                 dom: 'Bfrtip',
                 buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+            });
+
+            configurarBusquedaRemotaEntradasDiario(dataTable);
+        }
+
+        function configurarBusquedaRemotaEntradasDiario(dataTable) {
+            const input = $('#tableEntradasDiario_filter input');
+            input.val(entradasDiarioBusquedaRemota);
+            input.off('.entradaDiarioRemoto');
+            input.on('input.entradaDiarioRemoto', function () {
+                const termino = this.value.trim();
+
+                if (!entradasDiarioUltimaConsultaTruncada || termino.length < 3) {
+                    return;
+                }
+
+                clearTimeout(entradasDiarioBusquedaRemotaTimer);
+                entradasDiarioBusquedaRemotaTimer = setTimeout(() => {
+                    if (termino === entradasDiarioBusquedaRemota) {
+                        return;
+                    }
+
+                    dataTable.search('').draw();
+                    consultarEntradasDiarioLocal(false, termino);
+                }, 700);
             });
         }
 
