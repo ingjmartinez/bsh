@@ -94,7 +94,7 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
             'centros' => $allItems->count(),
             'centros_pendientes' => $allItems->where('balance_pendiente', '>', 0.009)->count(),
             'total_faltantes' => round($allItems->sum('total_faltantes'), 2),
-            'total_abonos' => round($allItems->sum('total_abonos'), 2),
+            'total_abonos' => round($allItems->sum('total_credito'), 2),
             'balance_pendiente' => round($allItems->sum('balance_pendiente'), 2),
             'total_credito' => round($allItems->sum('total_credito'), 2),
             'total_debito' => round($allItems->sum('total_debito'), 2),
@@ -549,7 +549,7 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
     private function mapRow($row): array
     {
         $totalFaltantes = round((float) $row->total_faltantes, 2);
-        $totalAbonos = round((float) $row->total_abonos, 2);
+        $totalCredito = round((float) $row->total_credito, 2);
         $balance = round((float) $row->balance_pendiente, 2);
 
         return [
@@ -560,11 +560,11 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
             'cantidad_faltantes' => (int) $row->cantidad_faltantes,
             'total_faltantes' => $totalFaltantes,
             'cantidad_abonos' => (int) $row->cantidad_abonos,
-            'total_credito' => round((float) $row->total_credito, 2),
+            'total_credito' => $totalCredito,
             'total_debito' => round((float) $row->total_debito, 2),
-            'total_abonos' => $totalAbonos,
+            'total_abonos' => $totalCredito,
             'balance_pendiente' => $balance,
-            'porcentaje_abonado' => $totalFaltantes > 0 ? round(($totalAbonos / $totalFaltantes) * 100, 2) : 0,
+            'porcentaje_abonado' => $totalFaltantes > 0 ? round(($totalCredito / $totalFaltantes) * 100, 2) : 0,
             'agencias_faltantes' => (string) $row->agencias_faltantes,
             'agencias_abonos' => (string) $row->agencias_abonos,
             'cantidad_agencias' => (int) $row->cantidad_agencias,
