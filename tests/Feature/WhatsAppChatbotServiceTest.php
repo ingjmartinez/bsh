@@ -746,6 +746,45 @@ class WhatsAppChatbotServiceTest extends TestCase
         $this->assertSame(1, TicketSolicitud::count());
     }
 
+    public function test_acepta_foto_de_iphone_con_extension_opaca_y_mime_jpeg(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550129', 'hola');
+        $service->handleIncoming('8095550129', '1');
+        $service->handleIncoming('8095550129', '4');
+        $service->handleIncoming('8095550129', '07068888');
+
+        $reply = $service->handleIncoming('8095550129', '', null, [
+            'attachment_url' => 'https://example.com/media/foto.enc',
+            'attachment_extension' => 'enc',
+            'attachment_mime' => 'image/jpeg',
+            'attachment_type' => 'image',
+        ]);
+
+        $this->assertStringContainsString('Solicitud registrada correctamente.', $reply['reply']);
+        $this->assertSame(TicketSolicitud::CATEGORIA_ANULAR, TicketSolicitud::first()->categoria);
+    }
+
+    public function test_acepta_mime_heic_sequence_de_iphone(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550130', 'hola');
+        $service->handleIncoming('8095550130', '1');
+        $service->handleIncoming('8095550130', '4');
+        $service->handleIncoming('8095550130', '07068888');
+
+        $reply = $service->handleIncoming('8095550130', '', null, [
+            'attachment_url' => 'https://example.com/media/foto-temporal',
+            'attachment_mime' => 'image/heic-sequence',
+            'attachment_type' => 'image',
+        ]);
+
+        $this->assertStringContainsString('Solicitud registrada correctamente.', $reply['reply']);
+        $this->assertSame(TicketSolicitud::CATEGORIA_ANULAR, TicketSolicitud::first()->categoria);
+    }
+
     public function test_webhook_conserva_extension_jpg_enviada_como_valor_simple(): void
     {
         $controller = new WhatsAppWebhookController();

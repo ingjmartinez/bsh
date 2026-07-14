@@ -56,7 +56,19 @@ class WhatsAppChatbotService
 
     private const ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'heic', 'heif'];
 
-    private const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif'];
+    private const ALLOWED_IMAGE_MIME_TYPES = [
+        'image/jpeg',
+        'image/jpg',
+        'image/pjpeg',
+        'image/png',
+        'image/x-png',
+        'image/heic',
+        'image/heif',
+        'image/heic-sequence',
+        'image/heif-sequence',
+    ];
+
+    private const OPAQUE_PROVIDER_EXTENSIONS = ['bin', 'enc', 'dat', 'tmp'];
 
     private const TABLA_AGENCIAS_REAL = 'agencias';
 
@@ -864,20 +876,43 @@ class WhatsAppChatbotService
             ?? $this->extractExtensionFromPath($incoming['attachment_url'] ?? null);
         $mime = $this->normalizeMimeType($incoming['attachment_mime'] ?? null);
         $type = $this->normalizeAttachmentType($incoming['attachment_type'] ?? null);
+        $isImageType = in_array($type, ['image', 'photo'], true);
 
-        if ($type !== null && ! in_array($type, ['image', 'photo'], true)) {
+        if ($type !== null && ! $isImageType) {
+            $this->logRejectedAttachmentMetadata($extension, $mime, $type);
+
             return false;
         }
 
-        if ($extension !== null && ! in_array($extension, self::ALLOWED_IMAGE_EXTENSIONS, true)) {
-            return false;
+        if (
+            ($extension !== null && in_array($extension, self::ALLOWED_IMAGE_EXTENSIONS, true))
+            || ($mime !== null && in_array($mime, self::ALLOWED_IMAGE_MIME_TYPES, true))
+        ) {
+            return true;
         }
 
-        if ($mime !== null && ! in_array($mime, self::ALLOWED_IMAGE_MIME_TYPES, true)) {
-            return false;
+        if ($isImageType && $mime === null) {
+            $allowed = $extension === null || in_array($extension, self::OPAQUE_PROVIDER_EXTENSIONS, true);
+
+            if (! $allowed) {
+                $this->logRejectedAttachmentMetadata($extension, $mime, $type);
+            }
+
+            return $allowed;
         }
 
-        return $extension !== null || $mime !== null || in_array($type, ['image', 'photo'], true);
+        $this->logRejectedAttachmentMetadata($extension, $mime, $type);
+
+        return false;
+    }
+
+    private function logRejectedAttachmentMetadata(?string $extension, ?string $mime, ?string $type): void
+    {
+        Log::warning('WhatsApp chatbot adjunto rechazado por formato', [
+            'extension' => $extension,
+            'mime' => $mime,
+            'type' => $type,
+        ]);
     }
 
     private function normalizeFileExtension(mixed $extension): ?string
