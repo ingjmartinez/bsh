@@ -668,6 +668,7 @@ class WhatsAppChatbotServiceTest extends TestCase
             'attachment_extension' => 'pdf',
             'attachment_mime' => 'application/pdf',
             'attachment_type' => 'document',
+            'attachment_source' => 'provider_lookup',
         ]);
 
         $this->assertSame(
@@ -744,6 +745,25 @@ class WhatsAppChatbotServiceTest extends TestCase
 
         $this->assertStringContainsString('Solicitud registrada correctamente.', $reply['reply']);
         $this->assertSame(1, TicketSolicitud::count());
+    }
+
+    public function test_acepta_adjunto_opaco_resuelto_por_wamundo_sin_metadatos(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550131', 'hola');
+        $service->handleIncoming('8095550131', '1');
+        $service->handleIncoming('8095550131', '4');
+        $service->handleIncoming('8095550131', '07068888');
+
+        $reply = $service->handleIncoming('8095550131', '', null, [
+            'attachment_url' => 'https://wamundo.com/api/media/temporal/archivo',
+            'attachment_mime' => 'application/octet-stream',
+            'attachment_source' => 'provider_lookup',
+        ]);
+
+        $this->assertStringContainsString('Solicitud registrada correctamente.', $reply['reply']);
+        $this->assertSame(TicketSolicitud::CATEGORIA_ANULAR, TicketSolicitud::first()->categoria);
     }
 
     public function test_acepta_foto_de_iphone_con_extension_opaca_y_mime_jpeg(): void

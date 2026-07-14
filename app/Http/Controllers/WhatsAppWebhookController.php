@@ -43,6 +43,7 @@ class WhatsAppWebhookController extends Controller
             $message = (string) ($data['message'] ?? $data['text'] ?? $data['body'] ?? '');
             $messageId = $this->extractMessageId((array) $data, $payload);
             $attachmentUrl = $this->extractAttachmentUrl((array) $data, $payload);
+            $attachmentSource = $attachmentUrl !== null ? 'provider_media' : null;
             $attachmentTimestamp = $this->extractAttachmentTimestamp((array) $data, $payload);
             $attachmentMetadata = $this->extractAttachmentMetadata((array) $data, $payload, $attachmentUrl);
             $inboundAccount = $this->extractInboundAccount($payload, (array) $data);
@@ -52,6 +53,7 @@ class WhatsAppWebhookController extends Controller
 
             if ($attachmentUrl === null && $messageId !== null) {
                 $attachmentUrl = $whatsApp->fetchReceivedAttachmentByMessageId($messageId);
+                $attachmentSource = $attachmentUrl !== null ? 'provider_lookup' : null;
                 $attachmentMetadata = $this->extractAttachmentMetadata((array) $data, $payload, $attachmentUrl);
             }
 
@@ -70,6 +72,7 @@ class WhatsAppWebhookController extends Controller
                 'message' => $message,
                 'message_id' => $messageId,
                 'attachment_url' => $attachmentUrl,
+                'attachment_source' => $attachmentSource,
                 'attachment_timestamp' => $attachmentTimestamp,
                 'attachment_extension' => $attachmentMetadata['extension'],
                 'attachment_filename' => $attachmentMetadata['filename'],
@@ -130,6 +133,7 @@ class WhatsAppWebhookController extends Controller
             $chatbotResult = $chatbot->handleIncoming($phone, $message, $sessionAccount, [
                 'message_id' => $messageId,
                 'attachment_url' => $attachmentUrl,
+                'attachment_source' => $attachmentSource,
                 'attachment_timestamp' => $attachmentTimestamp,
                 'attachment_extension' => $attachmentMetadata['extension'],
                 'attachment_filename' => $attachmentMetadata['filename'],

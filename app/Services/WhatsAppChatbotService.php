@@ -876,6 +876,7 @@ class WhatsAppChatbotService
             ?? $this->extractExtensionFromPath($incoming['attachment_url'] ?? null);
         $mime = $this->normalizeMimeType($incoming['attachment_mime'] ?? null);
         $type = $this->normalizeAttachmentType($incoming['attachment_type'] ?? null);
+        $source = strtolower(trim((string) ($incoming['attachment_source'] ?? '')));
         $isImageType = in_array($type, ['image', 'photo'], true);
 
         if ($type !== null && ! $isImageType) {
@@ -899,6 +900,20 @@ class WhatsAppChatbotService
             }
 
             return $allowed;
+        }
+
+        if (
+            in_array($source, ['provider_media', 'provider_lookup'], true)
+            && $mime === null
+            && $type === null
+            && ($extension === null || in_array($extension, self::OPAQUE_PROVIDER_EXTENSIONS, true))
+        ) {
+            Log::debug('WhatsApp chatbot acepta adjunto opaco del proveedor', [
+                'extension' => $extension,
+                'source' => $source,
+            ]);
+
+            return true;
         }
 
         $this->logRejectedAttachmentMetadata($extension, $mime, $type);
