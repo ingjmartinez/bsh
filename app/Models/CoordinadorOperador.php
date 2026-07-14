@@ -23,6 +23,7 @@ class CoordinadorOperador extends Model
         'email',
         'activo',
         'puesto',
+        'user_id',
     ];
 
     protected $casts = [
@@ -125,5 +126,10 @@ class CoordinadorOperador extends Model
             'coordinador_operador_id',
             'agencia_id'
         )->withTimestamps();
+    }
+
+    public function usuario()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

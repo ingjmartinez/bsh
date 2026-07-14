@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\IncumplimientoHorarioReportMail;
 use App\Models\Agencia;
 use App\Models\CoordinadorOperador;
+use App\Models\CoordinadorOperadorAgenciaHistorial;
 use App\Models\OperadorRuta;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
@@ -196,9 +197,29 @@ class AgenciaController extends Controller
 
     private function sincronizarAsignacionCoordinador(int $agenciaId, string $nombreCompleto): void
     {
-        $idsPuesto = CoordinadorOperador::query()
+        $personas = CoordinadorOperador::query()
             ->puesto('coordinador')
-            ->pluck('id');
+            ->get();
+        $idsPuesto = $personas->pluck('id');
+        $idsAnteriores = DB::table('coordinador_operador_agencia')
+            ->where('agencia_id', $agenciaId)
+            ->whereIn('coordinador_operador_id', $idsPuesto)
+            ->pluck('coordinador_operador_id')
+            ->map(fn($id) => (int) $id);
+
+        $nombreCompleto = trim($nombreCompleto);
+        $nuevoResponsable = $nombreCompleto === ''
+            ? null
+            : $personas->first(fn(CoordinadorOperador $persona) => mb_strtolower(trim($persona->nombre . ' ' . $persona->apellido)) === mb_strtolower($nombreCompleto));
+
+        if ($nombreCompleto !== '' && !$nuevoResponsable) {
+            return;
+        }
+
+        $nuevoId = $nuevoResponsable ? (int) $nuevoResponsable->id : null;
+        if ($idsAnteriores->count() === 1 && $idsAnteriores->first() === $nuevoId) {
+            return;
+        }
 
         if ($idsPuesto->isNotEmpty()) {
             DB::table('coordinador_operador_agencia')
@@ -207,30 +228,34 @@ class AgenciaController extends Controller
                 ->delete();
         }
 
-        $nombreCompleto = trim($nombreCompleto);
-        if ($nombreCompleto === '') {
-            return;
+        if ($nuevoResponsable) {
+            DB::table('coordinador_operador_agencia')->insertOrIgnore([
+                'coordinador_operador_id' => $nuevoResponsable->id,
+                'agencia_id' => $agenciaId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
         }
 
-        $nombreCoordinadorSql = CoordinadorOperador::hasResolvedColumn('apellido')
-            ? "TRIM(CONCAT(COALESCE(nombre, ''), ' ', COALESCE(apellido, '')))"
-            : "TRIM(COALESCE(nombre, ''))";
+        if (Schema::hasTable('coordinador_operador_agencia_historial')) {
+            $nombresAnteriores = $personas
+                ->whereIn('id', $idsAnteriores)
+                ->map(fn(CoordinadorOperador $persona) => trim($persona->nombre . ' ' . $persona->apellido))
+                ->filter()
+                ->implode(', ');
+            $terminal = DB::table('agencias')->where('id', $agenciaId)->value('terminal');
 
-        $coordinadorOperadorId = CoordinadorOperador::query()
-            ->puesto('coordinador')
-            ->whereRaw("{$nombreCoordinadorSql} = ?", [$nombreCompleto])
-            ->value('id');
-
-        if (!$coordinadorOperadorId) {
-            return;
+            CoordinadorOperadorAgenciaHistorial::create([
+                'agencia_id' => $agenciaId,
+                'responsable_anterior_id' => $idsAnteriores->count() === 1 ? $idsAnteriores->first() : null,
+                'responsable_anterior_nombre' => $nombresAnteriores ?: null,
+                'responsable_nuevo_id' => $nuevoId,
+                'responsable_nuevo_nombre' => $nuevoResponsable ? trim($nuevoResponsable->nombre . ' ' . $nuevoResponsable->apellido) : null,
+                'user_id' => auth()->id(),
+                'motivo' => 'Actualización realizada desde el catálogo de agencias.',
+                'metadata' => ['terminal' => $terminal, 'origen' => 'catalogo_agencias'],
+            ]);
         }
-
-        DB::table('coordinador_operador_agencia')->insertOrIgnore([
-            'coordinador_operador_id' => $coordinadorOperadorId,
-            'agencia_id' => $agenciaId,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
     }
 
     private function sincronizarAsignacionOperadorRuta(int $agenciaId, string $nombreCompleto): void

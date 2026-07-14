@@ -44,6 +44,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SuperAdminSesionController;
 use App\Http\Controllers\ServicioGeneralRequerimientoController;
 use App\Http\Controllers\ServicioGeneralRutaInspeccionController;
+use App\Http\Controllers\ServicioGeneralMiRutaController;
 use App\Http\Controllers\TareaController;
 use App\Http\Controllers\TecnologiaSolicitudController;
 use App\Http\Controllers\TicketSolicitudController;
@@ -526,6 +527,9 @@ Route::prefix('servicios-generales')->name('servicios-generales.')
         Route::get('/', [ModuleHubController::class, 'serviciosGenerales'])->name('index');
         Route::get('/ruta-inspeccion', [ServicioGeneralRutaInspeccionController::class, 'index'])
             ->name('ruta-inspeccion.index');
+        Route::get('/mi-ruta', [ServicioGeneralMiRutaController::class, 'index'])->name('mi-ruta.index');
+        Route::post('/mi-ruta/{rutaInspeccion}/iniciar', [ServicioGeneralMiRutaController::class, 'iniciar'])->name('mi-ruta.iniciar');
+        Route::post('/mi-ruta/{rutaInspeccion}/resultado', [ServicioGeneralMiRutaController::class, 'registrarResultado'])->name('mi-ruta.resultado');
         Route::get('/requerimientos', [ServicioGeneralRequerimientoController::class, 'index'])->name('requerimientos.index');
         Route::get('/requerimientos/list', [ServicioGeneralRequerimientoController::class, 'list'])->name('requerimientos.list');
         Route::get('/requerimientos/activity', [ServicioGeneralRequerimientoController::class, 'activity'])->name('requerimientos.activity');

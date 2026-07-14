@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Agencia;
 use App\Models\CoordinadorOperador;
+use App\Models\CoordinadorOperadorAgenciaHistorial;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 
 class CoordinadorOperadorController extends Controller
 {
@@ -46,6 +49,10 @@ class CoordinadorOperadorController extends Controller
     private function coordinadorNombreSql(string $alias = 'co'): string
     {
         if (CoordinadorOperador::hasResolvedColumn('apellido')) {
+            if (DB::connection()->getDriverName() === 'sqlite') {
+                return "TRIM(COALESCE({$alias}.nombre, '') || ' ' || COALESCE({$alias}.apellido, ''))";
+            }
+
             return "TRIM(CONCAT(COALESCE({$alias}.nombre, ''), ' ', COALESCE({$alias}.apellido, '')))";
         }
 
@@ -90,6 +97,9 @@ class CoordinadorOperadorController extends Controller
         if (CoordinadorOperador::hasResolvedColumn('activo')) {
             $payload['activo'] = true;
         }
+        if (CoordinadorOperador::hasResolvedColumn('user_id')) {
+            $payload['user_id'] = $validated['user_id'] ?? null;
+        }
 
         return $payload;
     }
@@ -107,8 +117,15 @@ class CoordinadorOperadorController extends Controller
 
         $agencias = collect();
         $asignacionesAgencia = collect();
+        $historialAsignaciones = Schema::hasTable('coordinador_operador_agencia_historial')
+            ? CoordinadorOperadorAgenciaHistorial::query()
+                ->with(['agencia', 'actor:id,name'])
+                ->latest('created_at')
+                ->limit(200)
+                ->get()
+            : collect();
 
-        return view('coordinador_operador.index', compact('registros', 'agencias', 'asignacionesAgencia'));
+        return view('coordinador_operador.index', compact('registros', 'agencias', 'asignacionesAgencia', 'historialAsignaciones'));
     }
 
     public function asignacionData()
@@ -159,6 +176,7 @@ class CoordinadorOperadorController extends Controller
     {
         return view('coordinador_operador.create', [
             'cargosDisponibles' => self::CARGOS_DISPONIBLES,
+            'usuariosDisponibles' => User::orderBy('name')->get(['id','name','email']),
         ]);
     }
 
@@ -172,6 +190,7 @@ class CoordinadorOperadorController extends Controller
             'cedula' => ['nullable', 'regex:/^\d{11}$/', 'unique:' . $this->coordinadorOperadorTable() . ',cedula'],
             'telefono' => ['required', 'regex:/^\d{11}$/'],
             'puesto' => ['nullable', 'in:coordinador,operador'],
+            'user_id' => ['nullable', 'integer', 'exists:users,id', 'unique:' . $this->coordinadorOperadorTable() . ',user_id'],
         ], [
             'cedula.regex' => 'La cédula debe contener exactamente 11 dígitos numéricos.',
             'cargo.required' => 'Debe seleccionar un cargo.',
@@ -194,6 +213,7 @@ class CoordinadorOperadorController extends Controller
         return view('coordinador_operador.edit', [
             'registro' => $coordinador_operador,
             'cargosDisponibles' => self::CARGOS_DISPONIBLES,
+            'usuariosDisponibles' => User::orderBy('name')->get(['id','name','email']),
         ]);
     }
 
@@ -207,6 +227,7 @@ class CoordinadorOperadorController extends Controller
             'cedula' => ['nullable', 'regex:/^\d{11}$/', 'unique:' . $this->coordinadorOperadorTable() . ',cedula,' . $coordinador_operador->id],
             'telefono' => ['required', 'regex:/^\d{11}$/'],
             'puesto' => ['nullable', 'in:coordinador,operador'],
+            'user_id' => ['nullable', 'integer', 'exists:users,id', 'unique:' . $this->coordinadorOperadorTable() . ',user_id,' . $coordinador_operador->id],
         ], [
             'cedula.regex' => 'La cédula debe contener exactamente 11 dígitos numéricos.',
             'telefono.required' => 'Campo de 11 Digitos obligatorios',
@@ -238,9 +259,11 @@ class CoordinadorOperadorController extends Controller
             'agencias' => ['nullable', 'array'],
             'agencias.*' => ['integer', 'exists:agencias,id'],
             'confirmar_reasignacion' => ['nullable', 'boolean'],
+            'motivo_reasignacion' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $agenciasSeleccionadas = collect($validated['agencias'] ?? [])->map(fn($id) => (int) $id)->values();
+        $agenciasSeleccionadas = collect($validated['agencias'] ?? [])->map(fn($id) => (int) $id)->unique()->values();
+        $agenciasAnteriores = $coordinador_operador->agencias()->pluck('agencias.id')->map(fn($id) => (int) $id)->values();
 
         $conflictos = DB::table('coordinador_operador_agencia as coa')
             ->join($tablaCoordinador . ' as co', 'co.id', '=', 'coa.coordinador_operador_id')
@@ -255,20 +278,107 @@ class CoordinadorOperadorController extends Controller
             ->get();
 
         $confirmarReasignacion = (bool) ($validated['confirmar_reasignacion'] ?? false);
+        $agenciasRemovidas = $agenciasAnteriores->diff($agenciasSeleccionadas)->values();
+        $requiereConfirmacion = $conflictos->isNotEmpty() || $agenciasRemovidas->isNotEmpty();
+        $motivo = trim((string) ($validated['motivo_reasignacion'] ?? ''));
+
+        if ($requiereConfirmacion && !$confirmarReasignacion) {
+            return redirect()->route('coordinador-operador.index')
+                ->with('error', 'Confirma el movimiento de las agencias antes de guardar.');
+        }
+
+        if ($motivo === '') {
+            $motivo = $conflictos->isNotEmpty()
+                ? 'Traslado de agencia confirmado desde Coordinador/Operador.'
+                : ($agenciasRemovidas->isNotEmpty()
+                    ? 'Retiro de agencia confirmado desde Coordinador/Operador.'
+                    : 'Asignación inicial de agencia.');
+        }
 
         if ($conflictos->isNotEmpty() && !$confirmarReasignacion) {
             return redirect()->route('coordinador-operador.index')
                 ->with('error', 'Algunas agencias ya están asignadas a otro coordinador. Confirma la reasignación para moverlas.');
         }
 
-        if ($conflictos->isNotEmpty() && $confirmarReasignacion) {
-            DB::table('coordinador_operador_agencia')
-                ->whereIn('agencia_id', $conflictos->pluck('agencia_id')->unique()->values())
-                ->where('coordinador_operador_id', '!=', $coordinador_operador->id)
-                ->delete();
-        }
+        $idsAfectados = $agenciasAnteriores->merge($agenciasSeleccionadas)->unique()->values();
+        $responsablesAntes = DB::table('coordinador_operador_agencia as coa')
+            ->join($tablaCoordinador . ' as co', 'co.id', '=', 'coa.coordinador_operador_id')
+            ->whereIn('coa.agencia_id', $idsAfectados)
+            ->select('coa.agencia_id', 'co.id as responsable_id', DB::raw($this->coordinadorNombreSql('co') . ' as responsable_nombre'))
+            ->get()
+            ->groupBy('agencia_id');
 
-        $coordinador_operador->agencias()->sync($agenciasSeleccionadas->all());
+        $agenciasInfo = Agencia::query()
+            ->whereIn('id', $idsAfectados)
+            ->get(['id', 'terminal'])
+            ->keyBy('id');
+
+        DB::transaction(function () use (
+            $confirmarReasignacion,
+            $agenciasSeleccionadas,
+            $agenciasRemovidas,
+            $coordinador_operador,
+            $responsablesAntes,
+            $agenciasInfo,
+            $motivo
+        ) {
+            DB::table('agencias')->whereIn('id', $agenciasSeleccionadas)->lockForUpdate()->get(['id']);
+
+            $hayOtroResponsable = DB::table('coordinador_operador_agencia')
+                ->whereIn('agencia_id', $agenciasSeleccionadas)
+                ->where('coordinador_operador_id', '!=', $coordinador_operador->id)
+                ->exists();
+
+            if ($hayOtroResponsable && !$confirmarReasignacion) {
+                throw ValidationException::withMessages([
+                    'agencias' => 'Una agencia seleccionada ya pertenece a otro responsable. Confirma el traslado para moverla.',
+                ]);
+            }
+
+            if ($hayOtroResponsable && $confirmarReasignacion) {
+                DB::table('coordinador_operador_agencia')
+                    ->whereIn('agencia_id', $agenciasSeleccionadas)
+                    ->where('coordinador_operador_id', '!=', $coordinador_operador->id)
+                    ->delete();
+            }
+
+            $coordinador_operador->agencias()->sync($agenciasSeleccionadas->all());
+
+            $agenciasSeleccionadas->each(function (int $agenciaId) use ($coordinador_operador, $responsablesAntes, $agenciasInfo, $motivo) {
+                $anteriores = $responsablesAntes->get($agenciaId, collect());
+                $yaEraResponsableUnico = $anteriores->count() === 1
+                    && (int) $anteriores->first()->responsable_id === (int) $coordinador_operador->id;
+
+                if ($yaEraResponsableUnico) {
+                    return;
+                }
+
+                CoordinadorOperadorAgenciaHistorial::create([
+                    'agencia_id' => $agenciaId,
+                    'responsable_anterior_id' => $anteriores->count() === 1 ? $anteriores->first()->responsable_id : null,
+                    'responsable_anterior_nombre' => $anteriores->pluck('responsable_nombre')->filter()->implode(', ') ?: null,
+                    'responsable_nuevo_id' => $coordinador_operador->id,
+                    'responsable_nuevo_nombre' => trim($coordinador_operador->nombre . ' ' . $coordinador_operador->apellido),
+                    'user_id' => auth()->id(),
+                    'motivo' => $motivo !== '' ? $motivo : 'Asignación inicial de agencia.',
+                    'metadata' => ['terminal' => $agenciasInfo->get($agenciaId)->terminal ?? null],
+                ]);
+            });
+
+            $agenciasRemovidas->each(function (int $agenciaId) use ($coordinador_operador, $agenciasInfo, $motivo) {
+                CoordinadorOperadorAgenciaHistorial::create([
+                    'agencia_id' => $agenciaId,
+                    'responsable_anterior_id' => $coordinador_operador->id,
+                    'responsable_anterior_nombre' => trim($coordinador_operador->nombre . ' ' . $coordinador_operador->apellido),
+                    'responsable_nuevo_id' => null,
+                    'responsable_nuevo_nombre' => null,
+                    'user_id' => auth()->id(),
+                    'motivo' => $motivo,
+                    'metadata' => ['terminal' => $agenciasInfo->get($agenciaId)->terminal ?? null],
+                ]);
+            });
+        });
+
         $this->clearIndexCache();
 
         return redirect()->route('coordinador-operador.index')

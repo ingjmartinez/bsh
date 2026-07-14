@@ -24,9 +24,14 @@
                         <div class="card">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h5 class="card-title mb-0">Listado</h5>
-                                <a href="{{ route('coordinador-operador.create') }}" class="btn btn-primary btn-sm">
-                                    <i class="ri-add-line align-bottom me-1"></i>Nuevo
-                                </a>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#historialAsignacionesModal">
+                                        <i class="ri-history-line align-bottom me-1"></i>Historial de asignaciones
+                                    </button>
+                                    <a href="{{ route('coordinador-operador.create') }}" class="btn btn-primary btn-sm">
+                                        <i class="ri-add-line align-bottom me-1"></i>Nuevo
+                                    </a>
+                                </div>
                             </div>
                             <div class="card-body">
                                 @if(session('success'))
@@ -160,6 +165,11 @@
                                 </div>
                             </div>
                         </div>
+
+                        <input type="hidden" id="motivoReasignacion" name="motivo_reasignacion" value="">
+                        <div class="alert alert-info mt-3 mb-0 py-2">
+                            <i class="ri-information-line me-1"></i>Si una terminal pertenece a otro responsable, el sistema solicitará confirmación antes de moverla.
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -184,6 +194,44 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="historialAsignacionesModal" tabindex="-1" aria-labelledby="historialAsignacionesModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title" id="historialAsignacionesModalLabel">Trazabilidad de responsables</h5>
+                        <small class="text-muted">Últimos 200 movimientos de agencias</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light sticky-top">
+                                <tr><th class="ps-3">Fecha</th><th>Agencia</th><th>Responsable anterior</th><th>Responsable nuevo</th><th>Realizado por</th><th class="pe-3">Motivo</th></tr>
+                            </thead>
+                            <tbody>
+                                @forelse($historialAsignaciones as $movimiento)
+                                    <tr>
+                                        <td class="ps-3 text-nowrap">{{ optional($movimiento->created_at)->format('d/m/Y h:i A') }}</td>
+                                        <td><strong>{{ $movimiento->agencia->terminal ?? data_get($movimiento->metadata, 'terminal', '-') }}</strong><br><small class="text-muted">{{ $movimiento->agencia->nombre_agencia ?? $movimiento->agencia->agencia ?? '' }}</small></td>
+                                        <td>{{ $movimiento->responsable_anterior_nombre ?: 'Sin responsable' }}</td>
+                                        <td>{{ $movimiento->responsable_nuevo_nombre ?: 'Sin responsable' }}</td>
+                                        <td>{{ $movimiento->actor->name ?? 'Sistema' }}</td>
+                                        <td class="pe-3">{{ $movimiento->motivo }}</td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="6" class="text-center text-muted py-4">Todavía no hay movimientos registrados.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button></div>
             </div>
         </div>
     </div>
@@ -215,6 +263,7 @@
         const resumenTerminalesMasivos = document.getElementById('resumenTerminalesMasivos');
         const detalleTerminalesNoCoinciden = document.getElementById('detalleTerminalesNoCoinciden');
         const confirmarReasignacion = document.getElementById('confirmarReasignacion');
+        const motivoReasignacion = document.getElementById('motivoReasignacion');
 
         function normalizarTerminal(valor) {
             return String(valor || '').trim().toLowerCase();
@@ -497,6 +546,9 @@
                 if (confirmarReasignacion) {
                     confirmarReasignacion.value = '0';
                 }
+                if (motivoReasignacion) {
+                    motivoReasignacion.value = '';
+                }
 
                 if (buscarTerminalAgencia) {
                     buscarTerminalAgencia.value = '';
@@ -529,8 +581,13 @@
 
                 const coordinadorIdActual = Number(form.dataset.coordinadorId || 0);
                 const conflictos = obtenerConflictosSeleccionados(coordinadorIdActual);
+                const asignadasIniciales = JSON.parse(form.dataset.asignadasIniciales || '[]').map(Number);
+                const seleccionadas = Array.from(checkboxes)
+                    .filter(function (checkbox) { return checkbox.checked; })
+                    .map(function (checkbox) { return Number(checkbox.value); });
+                const removidas = asignadasIniciales.filter(function (id) { return !seleccionadas.includes(id); });
 
-                if (!conflictos.length) {
+                if (!conflictos.length && !removidas.length) {
                     if (confirmarReasignacion) {
                         confirmarReasignacion.value = '0';
                     }
@@ -557,21 +614,37 @@
                     ? `<p class="text-muted small mt-2 mb-0">... y ${conflictos.length - 8} mas.</p>`
                     : '';
 
+                const terminalesRemovidas = removidas.map(function (id) {
+                    const item = Array.from(itemsAgencia).find(function (agencia) {
+                        return Number(agencia.dataset.agenciaId || 0) === id;
+                    });
+                    return item?.dataset?.terminal || `Agencia ${id}`;
+                });
+
+                const destino = nombreAsignacion?.textContent || 'el nuevo responsable';
+                let htmlDetalle = '';
+                if (conflictos.length === 1 && !removidas.length) {
+                    const conflicto = conflictos[0];
+                    const dueno = conflicto.asignadosOtros.map(function (owner) { return owner.nombre || 'otro responsable'; }).join(', ');
+                    htmlDetalle = `<p class="mb-0">¿Está seguro de mover la terminal <strong>${escaparHtml(conflicto.terminal)}</strong>? Actualmente pertenece a <strong>${escaparHtml(dueno)}</strong> y pasará a <strong>${escaparHtml(destino)}</strong>.</p>`;
+                } else {
+                    if (conflictos.length) {
+                        htmlDetalle += `<p class="mb-2">Estas terminales pasarán a <strong>${escaparHtml(destino)}</strong>:</p><ul class="text-start ps-3">${detalle}</ul>${excedente}`;
+                    }
+                    if (terminalesRemovidas.length) {
+                        htmlDetalle += `<p class="mb-2">Estas terminales serán retiradas de <strong>${escaparHtml(destino)}</strong>:</p><ul class="text-start ps-3 mb-0">${terminalesRemovidas.slice(0, 8).map(function (terminal) { return `<li>${escaparHtml(terminal)}</li>`; }).join('')}</ul>`;
+                    }
+                }
+
                 event.preventDefault();
 
                 if (window.Swal && typeof window.Swal.fire === 'function') {
-                    const htmlDetalle = `
-                        <p class="mb-2">Estas agencias ya estan asignadas a otro coordinador:</p>
-                        <ul class="text-start ps-3 mb-0">${detalle}</ul>
-                        ${excedente}
-                    `;
-
                     window.Swal.fire({
                         icon: 'warning',
-                        title: 'Reasignar agencias',
+                        title: 'Confirmar movimiento',
                         html: htmlDetalle,
                         showCancelButton: true,
-                        confirmButtonText: 'Si, mover agencias',
+                        confirmButtonText: 'Sí, aceptar',
                         cancelButtonText: 'Cancelar',
                         confirmButtonColor: '#0ab39c',
                         cancelButtonColor: '#f06548',
@@ -587,6 +660,11 @@
                         if (confirmarReasignacion) {
                             confirmarReasignacion.value = '1';
                         }
+                        if (motivoReasignacion) {
+                            motivoReasignacion.value = conflictos.length
+                                ? 'Traslado confirmado mediante pregunta de seguridad.'
+                                : 'Retiro confirmado mediante pregunta de seguridad.';
+                        }
 
                         form.dataset.confirmadoReasignacion = '1';
                         form.submit();
@@ -594,10 +672,11 @@
                     return;
                 }
 
-                // Si SweetAlert no esta disponible, no mostramos confirmacion nativa
-                // para evitar el mensaje negro del navegador.
-                if (confirmarReasignacion) {
-                    confirmarReasignacion.value = '0';
+                if (window.confirm('¿Está seguro de realizar este movimiento de agencias?')) {
+                    confirmarReasignacion.value = '1';
+                    motivoReasignacion.value = 'Movimiento confirmado mediante pregunta de seguridad.';
+                    form.dataset.confirmadoReasignacion = '1';
+                    form.submit();
                 }
             });
         }

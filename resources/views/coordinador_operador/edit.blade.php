@@ -76,6 +76,15 @@
                                         </div>
 
                                         <input type="hidden" name="puesto" value="coordinador">
+                                        <div class="col-12">
+                                            <label class="form-label">Usuario que utilizará el panel móvil</label>
+                                            <select name="user_id" class="form-select @error('user_id') is-invalid @enderror">
+                                                <option value="">Sin vincular todavía</option>
+                                                @foreach($usuariosDisponibles as $usuario)<option value="{{ $usuario->id }}" @selected(old('user_id',$registro->user_id)==$usuario->id)>{{ $usuario->name }} — {{ $usuario->email }}</option>@endforeach
+                                            </select>
+                                            <div class="form-text">Este usuario verá únicamente su ruta diaria.</div>
+                                            @error('user_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                        </div>
                                     </div>
 
                                     <div class="d-flex justify-content-end gap-2 mt-4">
