@@ -377,7 +377,7 @@ class WhatsAppWebhookController extends Controller
                 ?? $attachment['content_type']
                 ?? null
             );
-            $type = $this->normalizeMetadataValue(
+            $type = $this->normalizeAttachmentType(
                 $attachment['type']
                 ?? $attachment['media_type']
                 ?? null
@@ -409,7 +409,7 @@ class WhatsAppWebhookController extends Controller
             ?? $payload['content_type']
             ?? null
         );
-        $type ??= $this->normalizeMetadataValue(
+        $type ??= $this->normalizeAttachmentType(
             $data['type']
             ?? $data['message_type']
             ?? $data['media_type']
@@ -440,6 +440,31 @@ class WhatsAppWebhookController extends Controller
         $value = trim((string) $value);
 
         return $value !== '' && !in_array(strtolower($value), ['false', 'null'], true) ? $value : null;
+    }
+
+    private function normalizeAttachmentType(mixed $value): ?string
+    {
+        $value = $this->normalizeMetadataValue($value);
+
+        if ($value === null) {
+            return null;
+        }
+
+        $normalized = strtolower(trim($value));
+        $compact = preg_replace('/[^a-z]/', '', $normalized);
+
+        if (str_starts_with($normalized, 'image/')) {
+            return 'image';
+        }
+
+        return match ($compact) {
+            'image', 'photo', 'imagemessage' => 'image',
+            'document', 'file', 'documentmessage' => 'document',
+            'video', 'videomessage' => 'video',
+            'audio', 'voice', 'ptt', 'audiomessage' => 'audio',
+            'sticker', 'stickermessage' => 'sticker',
+            default => null,
+        };
     }
 
     private function extractExtension(?string $value): ?string

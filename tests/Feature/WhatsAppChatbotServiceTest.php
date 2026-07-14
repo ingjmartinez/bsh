@@ -804,6 +804,26 @@ class WhatsAppChatbotServiceTest extends TestCase
         $this->assertSame('image', $metadata['type']);
     }
 
+    public function test_webhook_no_confunde_tipo_de_evento_wamundo_con_tipo_de_archivo(): void
+    {
+        $controller = new WhatsAppWebhookController();
+        $method = new \ReflectionMethod($controller, 'extractAttachmentMetadata');
+
+        $metadata = $method->invoke($controller, [
+            'id' => '789',
+            'wid' => 'cuenta@s.whatsapp.net',
+            'phone' => '+18295550131',
+            'message' => '',
+            'attachment' => 'https://wamundo.com/uploads/received/comprobante.jpg',
+            'timestamp' => 1784059200,
+        ], [
+            'type' => 'whatsapp',
+        ], 'https://wamundo.com/uploads/received/comprobante.jpg');
+
+        $this->assertSame('jpg', $metadata['extension']);
+        $this->assertNull($metadata['type']);
+    }
+
     public function test_no_permite_crear_otro_ticket_pago_o_nulo_si_el_telefono_tiene_uno_abierto(): void
     {
         TicketSolicitud::create([

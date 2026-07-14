@@ -72,7 +72,7 @@ class WhatsAppService
         $verifySsl = filter_var(config('services.whatsapp.verify_ssl', true), FILTER_VALIDATE_BOOLEAN);
 
         if (!$endpoint || !$secret || !$account) {
-            Log::warning('WhatsApp Zender configuracion incompleta', [
+            Log::warning('WhatsApp proveedor configuracion incompleta', [
                 'has_endpoint' => (bool) $endpoint,
                 'has_secret' => (bool) $secret,
                 'has_account' => (bool) $account,
@@ -95,7 +95,7 @@ class WhatsAppService
             'priority' => 1,
         ];
 
-        Log::debug('WhatsApp Zender request enviado', [
+        Log::debug('WhatsApp proveedor request enviado', [
             'endpoint' => $endpoint,
             'account' => $account,
             'recipient' => $recipient,
@@ -117,7 +117,7 @@ class WhatsAppService
                 $providerResponse = $response->body();
             }
 
-            Log::debug('WhatsApp Zender respuesta proveedor', [
+            Log::debug('WhatsApp proveedor respuesta recibida', [
                 'status' => $response->status(),
                 'successful' => $response->successful(),
                 'provider_response' => $providerResponse,
@@ -132,7 +132,7 @@ class WhatsAppService
                 'provider_response' => $providerResponse,
             ];
         } catch (\Throwable $e) {
-            Log::error('WhatsApp Zender excepcion', [
+            Log::error('WhatsApp proveedor excepcion', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
