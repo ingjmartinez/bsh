@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\ChatbotSession;
+use App\Services\ChatChannelService;
 use App\Services\WhatsAppChatbotService;
-use App\Services\WhatsAppService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -12,9 +12,9 @@ class ExpireInactiveChatbotSessions extends Command
 {
     protected $signature = 'chatbot:sessions:expire';
 
-    protected $description = 'Cierra las sesiones inactivas del chatbot de WhatsApp.';
+    protected $description = 'Cierra las sesiones inactivas del chatbot en todos los canales.';
 
-    public function handle(WhatsAppService $whatsApp): int
+    public function handle(ChatChannelService $channels): int
     {
         $cutoff = now()->subMinute();
         $oldestPendingClose = now()->subMinutes(10);
@@ -25,18 +25,22 @@ class ExpireInactiveChatbotSessions extends Command
             ->where('last_interaction_at', '<', $cutoff)
             ->where('last_interaction_at', '>=', $oldestPendingClose)
             ->orderBy('id')
-            ->chunkById(100, function ($sessions) use ($whatsApp, &$expiredCount): void {
+            ->chunkById(100, function ($sessions) use ($channels, &$expiredCount): void {
                 foreach ($sessions as $session) {
-                    $result = $whatsApp->sendText(
-                        $session->phone,
+                    $channel = (string) ($session->channel ?: 'whatsapp');
+                    $recipient = (string) ($session->channel_recipient ?: $session->phone);
+                    $result = $channels->sendText(
+                        $channel,
+                        $recipient,
                         WhatsAppChatbotService::sessionClosedMessage(),
                         $session->account
                     );
 
-                    Log::debug('WhatsApp chatbot sesion cerrada por inactividad', [
+                    Log::debug('Chatbot sesion cerrada por inactividad', [
                         'session_id' => $session->id,
                         'phone' => $session->phone,
                         'account' => $session->account,
+                        'channel' => $channel,
                         'sent' => (bool) ($result['success'] ?? false),
                         'status' => $result['status'] ?? null,
                     ]);

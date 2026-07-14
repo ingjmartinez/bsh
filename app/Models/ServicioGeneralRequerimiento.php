@@ -12,6 +12,8 @@ class ServicioGeneralRequerimiento extends Model
     protected $fillable = [
         'user_id',
         'whatsapp_phone',
+        'source_channel',
+        'source_recipient',
         'asignado_id',
         'tipo',
         'titulo',
@@ -58,7 +60,7 @@ class ServicioGeneralRequerimiento extends Model
 
     public function getTicketCodigoAttribute(): string
     {
-        return 'REQ-' . str_pad((string) $this->id, 6, '0', STR_PAD_LEFT);
+        return 'REQ-'.str_pad((string) $this->id, 6, '0', STR_PAD_LEFT);
     }
 
     public function getBadgeEstadoAttribute(): string

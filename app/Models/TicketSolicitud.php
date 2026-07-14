@@ -11,21 +11,33 @@ class TicketSolicitud extends Model
     protected $table = 'ticket_solicitudes';
 
     public const CATEGORIA_PAGAR = 'pagar_ticket';
+
     public const CATEGORIA_ANULAR = 'anular_ticket';
+
     public const CATEGORIA_AVERIA = 'reportar_averia';
 
     public const ESTADO_PENDIENTE = 'pendiente';
+
     public const ESTADO_EN_PROCESO = 'en_proceso';
+
     public const ESTADO_PAGADO = 'pagado';
+
     public const ESTADO_TOKEN_ENVIADO = 'token_enviado';
+
     public const ESTADO_TOKEN_NO_FUNCIONO = 'token_no_funciono';
+
     public const ESTADO_TICKET_PAGADO = 'ticket_pagado';
+
     public const ESTADO_NULO = 'nulo';
+
     public const ESTADO_AVERIA_CERRADA = 'averia_cerrada';
+
     public const ESTADO_RECHAZADO = 'rechazado';
 
     protected $fillable = [
         'phone',
+        'source_channel',
+        'source_recipient',
         'categoria',
         'ticket_numero',
         'estado',
@@ -65,24 +77,24 @@ class TicketSolicitud extends Model
             ->all();
 
         return $query
-            ->when($filtros['categoria'] ?? null, fn(Builder $q, string $categoria) => $q->where('categoria', $categoria))
-            ->when($estados !== [], fn(Builder $q) => $q->whereIn('estado', $estados))
-            ->when($filtros['desde'] ?? null, fn(Builder $q, string $desde) => $q->whereDate('created_at', '>=', $desde))
-            ->when($filtros['hasta'] ?? null, fn(Builder $q, string $hasta) => $q->whereDate('created_at', '<=', $hasta))
+            ->when($filtros['categoria'] ?? null, fn (Builder $q, string $categoria) => $q->where('categoria', $categoria))
+            ->when($estados !== [], fn (Builder $q) => $q->whereIn('estado', $estados))
+            ->when($filtros['desde'] ?? null, fn (Builder $q, string $desde) => $q->whereDate('created_at', '>=', $desde))
+            ->when($filtros['hasta'] ?? null, fn (Builder $q, string $hasta) => $q->whereDate('created_at', '<=', $hasta))
             ->when($filtros['buscar'] ?? null, function (Builder $q, string $buscar) {
                 $buscar = trim($buscar);
 
                 $q->where(function (Builder $subQuery) use ($buscar) {
-                    $subQuery->where('ticket_numero', 'like', '%' . $buscar . '%')
-                        ->orWhere('phone', 'like', '%' . $buscar . '%')
-                        ->orWhere('mensaje_original', 'like', '%' . $buscar . '%');
+                    $subQuery->where('ticket_numero', 'like', '%'.$buscar.'%')
+                        ->orWhere('phone', 'like', '%'.$buscar.'%')
+                        ->orWhere('mensaje_original', 'like', '%'.$buscar.'%');
                 });
             });
     }
 
     public function getCodigoAttribute(): string
     {
-        return 'TCK-' . str_pad((string) $this->id, 6, '0', STR_PAD_LEFT);
+        return 'TCK-'.str_pad((string) $this->id, 6, '0', STR_PAD_LEFT);
     }
 
     public function getCategoriaLabelAttribute(): string

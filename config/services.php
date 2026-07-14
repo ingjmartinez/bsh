@@ -62,4 +62,13 @@ return [
         ),
     ],
 
+    'telegram' => [
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET'),
+        'bot_username' => env('TELEGRAM_BOT_USERNAME'),
+        'api_url' => env('TELEGRAM_API_URL', 'https://api.telegram.org'),
+        'timeout' => env('TELEGRAM_TIMEOUT', 30),
+        'verify_ssl' => env('TELEGRAM_VERIFY_SSL', true),
+    ],
+
 ];

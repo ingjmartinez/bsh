@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ChatbotSession;
 use App\Models\TicketSolicitud;
 use App\Models\User;
-use App\Services\WhatsAppService;
+use App\Services\ChatChannelService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -40,7 +40,7 @@ class TicketSolicitudController extends Controller
         'RECHAZADO. IMPRIMA UNA RELACION DE TICKET Y MARQUE LA JUGADA QUE DESEA ANULAR',
     ];
 
-    public function __construct(private readonly WhatsAppService $whatsAppService)
+    public function __construct(private readonly ChatChannelService $chatChannelService)
     {
         $this->middleware('role_or_permission:superadmin|admin|tickets.view')->only(['index', 'activity', 'dashboard']);
         $this->middleware('role_or_permission:superadmin|admin|tickets.manage')->only(['store', 'updateEstado', 'tomar', 'liberar']);
@@ -50,7 +50,7 @@ class TicketSolicitudController extends Controller
     {
         $filtros = $request->only(['categoria', 'estado', 'desde', 'hasta', 'buscar']);
         $filtros = $this->withDefaultTicketDateFilters($filtros);
-        $setupPending = !Schema::hasTable('ticket_solicitudes');
+        $setupPending = ! Schema::hasTable('ticket_solicitudes');
 
         if ($setupPending) {
             return view('tickets.index', [
@@ -91,7 +91,7 @@ class TicketSolicitudController extends Controller
     {
         $filtros = $request->only(['estado', 'desde', 'hasta', 'buscar']);
         $filtros = $this->withDefaultDashboardDateFilters($filtros);
-        $setupPending = !Schema::hasTable('ticket_solicitudes');
+        $setupPending = ! Schema::hasTable('ticket_solicitudes');
 
         if ($setupPending) {
             return view('dashboard.tickets.index', [
@@ -119,7 +119,7 @@ class TicketSolicitudController extends Controller
 
     public function activity(Request $request): JsonResponse
     {
-        if (!Schema::hasTable('ticket_solicitudes')) {
+        if (! Schema::hasTable('ticket_solicitudes')) {
             return response()->json([
                 'setup_pending' => true,
                 'signature' => 'setup-pending',
@@ -138,7 +138,7 @@ class TicketSolicitudController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        if (!Schema::hasTable('ticket_solicitudes')) {
+        if (! Schema::hasTable('ticket_solicitudes')) {
             return back()->withErrors(['tickets' => 'La tabla del modulo aun no existe. Ejecuta las migraciones.']);
         }
 
@@ -167,7 +167,7 @@ class TicketSolicitudController extends Controller
 
     public function updateEstado(Request $request, TicketSolicitud $ticket): RedirectResponse
     {
-        if (!Schema::hasTable('ticket_solicitudes')) {
+        if (! Schema::hasTable('ticket_solicitudes')) {
             return back()->withErrors(['tickets' => 'La tabla del modulo aun no existe. Ejecuta las migraciones.']);
         }
 
@@ -212,7 +212,7 @@ class TicketSolicitudController extends Controller
             $validated['estado'] === TicketSolicitud::ESTADO_TOKEN_ENVIADO
             && $ticket->estado !== TicketSolicitud::ESTADO_TOKEN_ENVIADO
         ) {
-            return back()->withErrors(['tickets' => 'El estado Token enviado solo se asigna despues de enviar el token por WhatsApp.']);
+            return back()->withErrors(['tickets' => 'El estado Token enviado solo se asigna despues de enviar el token al cliente.']);
         }
 
         if (
@@ -232,11 +232,11 @@ class TicketSolicitudController extends Controller
 
         if ($this->requiresTokenSend($request, $ticket)) {
             $token = trim((string) ($validated['notas'] ?? ''));
-            $sendResult = $this->sendTokenByWhatsApp($ticket, $token);
+            $sendResult = $this->sendTokenToRequester($ticket, $token);
 
-            if (!($sendResult['success'] ?? false)) {
+            if (! ($sendResult['success'] ?? false)) {
                 return back()->withErrors([
-                    'tickets' => 'No se pudo enviar el token por WhatsApp. El ticket no fue actualizado.',
+                    'tickets' => 'No se pudo enviar el token al cliente. El ticket no fue actualizado.',
                 ]);
             }
 
@@ -264,8 +264,8 @@ class TicketSolicitudController extends Controller
         }
 
         $ticket->save();
-        if (!$tokenEnviado) {
-            $this->notifyResolutionByWhatsApp($ticket, $estadoAnterior);
+        if (! $tokenEnviado) {
+            $this->notifyResolutionToRequester($ticket, $estadoAnterior);
         }
 
         if ($estadoDestino === TicketSolicitud::ESTADO_RECHAZADO) {
@@ -277,7 +277,7 @@ class TicketSolicitudController extends Controller
 
     public function tomar(TicketSolicitud $ticket): RedirectResponse
     {
-        if (!Schema::hasTable('ticket_solicitudes')) {
+        if (! Schema::hasTable('ticket_solicitudes')) {
             return back()->withErrors(['tickets' => 'La tabla del modulo aun no existe. Ejecuta las migraciones.']);
         }
 
@@ -311,13 +311,13 @@ class TicketSolicitudController extends Controller
 
     public function liberar(TicketSolicitud $ticket): RedirectResponse
     {
-        if (!Schema::hasTable('ticket_solicitudes')) {
+        if (! Schema::hasTable('ticket_solicitudes')) {
             return back()->withErrors(['tickets' => 'La tabla del modulo aun no existe. Ejecuta las migraciones.']);
         }
 
         $user = auth()->user();
 
-        if (!$user || ((int) $ticket->tomado_por_id !== (int) $user->id && !$this->esAdmin($user))) {
+        if (! $user || ((int) $ticket->tomado_por_id !== (int) $user->id && ! $this->esAdmin($user))) {
             return back()->withErrors(['tickets' => 'Solo quien tomo el ticket o un administrador puede liberarlo.']);
         }
 
@@ -329,9 +329,10 @@ class TicketSolicitudController extends Controller
         return back()->with('success', 'Ticket liberado correctamente.');
     }
 
-    private function sendTokenByWhatsApp(TicketSolicitud $ticket, string $token): array
+    private function sendTokenToRequester(TicketSolicitud $ticket, string $token): array
     {
-        $recipient = $this->formatRecipient((string) $ticket->phone);
+        $channel = (string) ($ticket->source_channel ?: 'whatsapp');
+        $recipient = $this->notificationRecipient($ticket);
 
         if ($recipient === null) {
             return [
@@ -341,16 +342,16 @@ class TicketSolicitudController extends Controller
         }
 
         $message = "Hola, hemos recibido tu solicitud {$ticket->codigo}.\n\n"
-            . "Token: {$token}\n"
-            . "Codigo terminal: {$ticket->ticket_numero}\n\n"
-            . "Utiliza este token para continuar con la gestion de tu ticket.\n\n"
-            . "1- si me funciono ticket pagado\n"
-            . "2- no me funciono solicitar token";
+            ."Token: {$token}\n"
+            ."Codigo terminal: {$ticket->ticket_numero}\n\n"
+            ."Utiliza este token para continuar con la gestion de tu ticket.\n\n"
+            ."1- si me funciono ticket pagado\n"
+            .'2- no me funciono solicitar token';
 
         try {
-            return $this->whatsAppService->sendText($recipient, $message);
+            return $this->chatChannelService->sendText($channel, $recipient, $message);
         } catch (\Throwable $e) {
-            Log::error('Error enviando token de ticket por WhatsApp', [
+            Log::error('Error enviando token de ticket al cliente', [
                 'ticket_id' => $ticket->id,
                 'phone' => $ticket->phone,
                 'message' => $e->getMessage(),
@@ -363,13 +364,13 @@ class TicketSolicitudController extends Controller
         }
     }
 
-    private function notifyResolutionByWhatsApp(TicketSolicitud $ticket, string $estadoAnterior): void
+    private function notifyResolutionToRequester(TicketSolicitud $ticket, string $estadoAnterior): void
     {
         if ($estadoAnterior === (string) $ticket->estado) {
             return;
         }
 
-        if (!in_array($ticket->estado, [
+        if (! in_array($ticket->estado, [
             TicketSolicitud::ESTADO_PENDIENTE,
             TicketSolicitud::ESTADO_PAGADO,
             TicketSolicitud::ESTADO_TOKEN_ENVIADO,
@@ -390,7 +391,8 @@ class TicketSolicitudController extends Controller
             return;
         }
 
-        $recipient = $this->formatRecipient((string) $ticket->phone);
+        $channel = (string) ($ticket->source_channel ?: 'whatsapp');
+        $recipient = $this->notificationRecipient($ticket);
 
         if ($recipient === null) {
             return;
@@ -403,28 +405,28 @@ class TicketSolicitudController extends Controller
             && $ticket->estado === TicketSolicitud::ESTADO_PAGADO
         ) {
             $message = "Hola, tu orden {$ticket->codigo} fue cerrada.\n\n"
-                . "Codigo terminal: {$ticket->ticket_numero}\n\n"
-                . "Estado: Finalizado\n\n"
-                . "Gracias por comunicarte con nosotros.";
+                ."Codigo terminal: {$ticket->ticket_numero}\n\n"
+                ."Estado: Finalizado\n\n"
+                .'Gracias por comunicarte con nosotros.';
         } elseif ($ticket->estado === TicketSolicitud::ESTADO_RECHAZADO) {
             $message = "Hola, tu solicitud {$ticket->codigo} fue rechazada.\n\n"
-                . "Categoria: {$ticket->categoria_label}\n"
-                . "Codigo terminal: {$ticket->ticket_numero}\n\n"
-                . "Motivo: " . trim((string) $ticket->notas) . "\n\n"
-                . "La sesion fue cerrada para que puedas crear otra solicitud.";
+                ."Categoria: {$ticket->categoria_label}\n"
+                ."Codigo terminal: {$ticket->ticket_numero}\n\n"
+                .'Motivo: '.trim((string) $ticket->notas)."\n\n"
+                .'La sesion fue cerrada para que puedas crear otra solicitud.';
         } else {
             $message = "Hola, tu solicitud {$ticket->codigo} fue actualizada.\n\n"
-                . "Categoria: {$ticket->categoria_label}\n"
-                . "Codigo terminal: {$ticket->ticket_numero}\n"
-                . "Estado actual: {$ticket->estado_label}\n\n"
-                . ($terminalDetail !== null ? $terminalDetail . "\n\n" : '')
-                . "Gracias por comunicarte con nosotros.";
+                ."Categoria: {$ticket->categoria_label}\n"
+                ."Codigo terminal: {$ticket->ticket_numero}\n"
+                ."Estado actual: {$ticket->estado_label}\n\n"
+                .($terminalDetail !== null ? $terminalDetail."\n\n" : '')
+                .'Gracias por comunicarte con nosotros.';
         }
 
         try {
-            $result = $this->whatsAppService->sendText($recipient, $message);
+            $result = $this->chatChannelService->sendText($channel, $recipient, $message);
 
-            if (!($result['success'] ?? false)) {
+            if (! ($result['success'] ?? false)) {
                 Log::warning('No se pudo enviar notificacion de resolucion de ticket', [
                     'ticket_id' => $ticket->id,
                     'phone' => $ticket->phone,
@@ -451,7 +453,18 @@ class TicketSolicitudController extends Controller
             return null;
         }
 
-        return str_starts_with($phone, '+') ? $phone : '+' . $digits;
+        return str_starts_with($phone, '+') ? $phone : '+'.$digits;
+    }
+
+    private function notificationRecipient(TicketSolicitud $ticket): ?string
+    {
+        if (($ticket->source_channel ?: 'whatsapp') === 'telegram') {
+            $recipient = trim((string) $ticket->source_recipient);
+
+            return $recipient !== '' ? $recipient : null;
+        }
+
+        return $this->formatRecipient((string) $ticket->phone);
     }
 
     private function terminalDetailLine(TicketSolicitud $ticket): ?string
@@ -459,7 +472,7 @@ class TicketSolicitudController extends Controller
         $requiresDetail = $ticket->estado === TicketSolicitud::ESTADO_TICKET_PAGADO
             || ($ticket->categoria === TicketSolicitud::CATEGORIA_ANULAR && $ticket->estado === TicketSolicitud::ESTADO_NULO);
 
-        if (!$requiresDetail) {
+        if (! $requiresDetail) {
             return null;
         }
 
@@ -539,6 +552,10 @@ class TicketSolicitudController extends Controller
 
         ChatbotSession::query()
             ->where('phone', $phone)
+            ->when(
+                Schema::hasColumn('chatbot_sessions', 'channel'),
+                fn (Builder $query) => $query->where('channel', $ticket->source_channel ?: 'whatsapp')
+            )
             ->update([
                 'step' => 'inicio',
                 'context' => json_encode([]),
@@ -722,7 +739,7 @@ class TicketSolicitudController extends Controller
         $lastActivity = (string) ($snapshot->last_activity_at ?? '');
         $maxId = (int) ($snapshot->max_id ?? 0);
 
-        return sha1($total . '|' . $lastActivity . '|' . $maxId);
+        return sha1($total.'|'.$lastActivity.'|'.$maxId);
     }
 
     private function isEstadoCerrado(TicketSolicitud $ticket): bool

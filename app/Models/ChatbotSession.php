@@ -9,6 +9,8 @@ class ChatbotSession extends Model
     protected $fillable = [
         'account',
         'phone',
+        'channel',
+        'channel_recipient',
         'step',
         'context',
         'last_message',

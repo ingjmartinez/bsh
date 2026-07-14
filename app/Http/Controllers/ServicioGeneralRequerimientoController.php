@@ -8,12 +8,12 @@ use App\Notifications\ServicioGeneralRequerimientoActualizadaNotification;
 use App\Notifications\ServicioGeneralRequerimientoAsignadaNotification;
 use App\Notifications\ServicioGeneralRequerimientoCierreSolicitadoNotification;
 use App\Notifications\ServicioGeneralRequerimientoFinalizadaNotification;
+use App\Services\ChatChannelService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
-use App\Services\WhatsAppService;
 
 class ServicioGeneralRequerimientoController extends Controller
 {
@@ -38,9 +38,7 @@ class ServicioGeneralRequerimientoController extends Controller
         'inversor',
     ];
 
-    public function __construct(private readonly WhatsAppService $whatsAppService)
-    {
-    }
+    public function __construct(private readonly ChatChannelService $chatChannelService) {}
 
     public function index()
     {
@@ -48,14 +46,14 @@ class ServicioGeneralRequerimientoController extends Controller
             'asignables' => $this->staffUsers(),
             'stats' => $this->statsFor(auth()->user()),
             'puedeVerTodo' => $this->puedeVerTodo(auth()->user()),
-            'setupPending' => !$this->tablaExiste(),
+            'setupPending' => ! $this->tablaExiste(),
             'puedeFinalizarGlobal' => $this->esAdmin(auth()->user()),
         ]);
     }
 
     public function list(Request $request): JsonResponse
     {
-        if (!$this->tablaExiste()) {
+        if (! $this->tablaExiste()) {
             return response()->json([
                 'data' => [],
                 'stats' => $this->emptyStats(),
@@ -70,7 +68,7 @@ class ServicioGeneralRequerimientoController extends Controller
         $requerimientos = $query
             ->orderByDesc('created_at')
             ->get()
-            ->map(fn(ServicioGeneralRequerimiento $r) => $this->serialize($r));
+            ->map(fn (ServicioGeneralRequerimiento $r) => $this->serialize($r));
 
         return response()->json([
             'data' => $requerimientos,
@@ -81,7 +79,7 @@ class ServicioGeneralRequerimientoController extends Controller
 
     public function activity(Request $request): JsonResponse
     {
-        if (!$this->tablaExiste()) {
+        if (! $this->tablaExiste()) {
             return response()->json([
                 'setup_pending' => true,
                 'signature' => 'setup-pending',
@@ -97,7 +95,7 @@ class ServicioGeneralRequerimientoController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        if (!$this->tablaExiste()) {
+        if (! $this->tablaExiste()) {
             return response()->json([
                 'success' => false,
                 'message' => 'La tabla de requerimientos aun no existe. Ejecuta la migracion pendiente.',
@@ -105,7 +103,7 @@ class ServicioGeneralRequerimientoController extends Controller
         }
 
         $validated = $request->validate([
-            'tipo' => 'required|in:' . implode(',', self::TIPOS_VALIDOS),
+            'tipo' => 'required|in:'.implode(',', self::TIPOS_VALIDOS),
             'titulo' => 'required|in:Averia,Solicitud',
             'descripcion' => 'required|string|max:5000',
             'prioridad' => 'required|in:baja,media,alta,critica',
@@ -152,7 +150,7 @@ class ServicioGeneralRequerimientoController extends Controller
 
     public function solicitarCierre(ServicioGeneralRequerimiento $requerimiento): JsonResponse
     {
-        if (!$this->tablaExiste()) {
+        if (! $this->tablaExiste()) {
             return response()->json([
                 'success' => false,
                 'message' => 'La tabla de requerimientos aun no existe. Ejecuta la migracion pendiente.',
@@ -181,7 +179,7 @@ class ServicioGeneralRequerimientoController extends Controller
         $requerimiento->save();
         $requerimiento->load(['creador:id,name,email', 'asignado:id,name,email', 'cierreSolicitadoPor:id,name']);
 
-        $this->notifyRequesterByWhatsApp($requerimiento, 'Se solicito el cierre de tu requerimiento.');
+        $this->notifyRequester($requerimiento, 'Se solicito el cierre de tu requerimiento.');
 
         if ($requerimiento->creador && (int) $requerimiento->creador->id !== (int) auth()->id()) {
             $requerimiento->creador->notify(
@@ -198,7 +196,7 @@ class ServicioGeneralRequerimientoController extends Controller
 
     public function finalizar(ServicioGeneralRequerimiento $requerimiento): JsonResponse
     {
-        if (!$this->tablaExiste()) {
+        if (! $this->tablaExiste()) {
             return response()->json([
                 'success' => false,
                 'message' => 'La tabla de requerimientos aun no existe. Ejecuta la migracion pendiente.',
@@ -207,7 +205,7 @@ class ServicioGeneralRequerimientoController extends Controller
 
         abort_unless($this->puedeFinalizar(auth()->user(), $requerimiento), 403);
 
-        if ($requerimiento->estado !== 'solicitud_cierre' && !$this->esAdmin(auth()->user())) {
+        if ($requerimiento->estado !== 'solicitud_cierre' && ! $this->esAdmin(auth()->user())) {
             return response()->json([
                 'success' => false,
                 'message' => 'El ticket debe estar en solicitud de cierre antes de finalizarse.',
@@ -225,14 +223,14 @@ class ServicioGeneralRequerimientoController extends Controller
         $requerimiento->save();
         $requerimiento->load(['creador:id,name,email', 'asignado:id,name,email', 'cierreSolicitadoPor:id,name']);
 
-        $this->notifyRequesterByWhatsApp($requerimiento, 'Tu requerimiento fue finalizado.');
+        $this->notifyRequester($requerimiento, 'Tu requerimiento fue finalizado.');
 
         $destinatarios = collect([
             $requerimiento->creador,
             $requerimiento->asignado,
         ])->filter()
             ->unique('id')
-            ->reject(fn(User $user) => (int) $user->id === (int) auth()->id());
+            ->reject(fn (User $user) => (int) $user->id === (int) auth()->id());
 
         $destinatarios->each(function (User $user) use ($requerimiento) {
             $user->notify(new ServicioGeneralRequerimientoFinalizadaNotification($requerimiento, auth()->user()));
@@ -247,7 +245,7 @@ class ServicioGeneralRequerimientoController extends Controller
 
     public function update(Request $request, ServicioGeneralRequerimiento $requerimiento): JsonResponse
     {
-        if (!$this->tablaExiste()) {
+        if (! $this->tablaExiste()) {
             return response()->json([
                 'success' => false,
                 'message' => 'La tabla de requerimientos aun no existe. Ejecuta la migracion pendiente.',
@@ -257,7 +255,7 @@ class ServicioGeneralRequerimientoController extends Controller
         abort_unless($this->puedeEditar(auth()->user(), $requerimiento), 403);
 
         $validated = $request->validate([
-            'tipo' => 'required|in:' . implode(',', self::TIPOS_VALIDOS),
+            'tipo' => 'required|in:'.implode(',', self::TIPOS_VALIDOS),
             'titulo' => 'required|in:Averia,Solicitud',
             'descripcion' => 'required|string|max:5000',
             'prioridad' => 'required|in:baja,media,alta,critica',
@@ -272,14 +270,14 @@ class ServicioGeneralRequerimientoController extends Controller
             $validated['progreso'] = 100;
         }
 
-        if (!$this->puedeGestionarProgreso(auth()->user(), $requerimiento) && (int) $validated['progreso'] !== (int) $requerimiento->progreso) {
+        if (! $this->puedeGestionarProgreso(auth()->user(), $requerimiento) && (int) $validated['progreso'] !== (int) $requerimiento->progreso) {
             return response()->json([
                 'success' => false,
                 'message' => 'Solo el usuario asignado o un administrador puede actualizar el progreso.',
             ], 403);
         }
 
-        if ($validated['estado'] === 'solicitud_cierre' && !$this->puedeSolicitarCierre(auth()->user(), $requerimiento)) {
+        if ($validated['estado'] === 'solicitud_cierre' && ! $this->puedeSolicitarCierre(auth()->user(), $requerimiento)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Solo el responsable puede solicitar el cierre del ticket.',
@@ -322,7 +320,7 @@ class ServicioGeneralRequerimientoController extends Controller
             $requerimiento->asignado,
         ])->filter()
             ->unique('id')
-            ->reject(fn(User $user) => (int) $user->id === (int) auth()->id());
+            ->reject(fn (User $user) => (int) $user->id === (int) auth()->id());
 
         if ($destinatarios->isNotEmpty() && ($estadoCambio || $asignadoCambio || $detalleCambio)) {
             $cambios = [
@@ -338,7 +336,7 @@ class ServicioGeneralRequerimientoController extends Controller
         }
 
         if ($estadoCambio || $asignadoCambio || $detalleCambio || $progresoCambio) {
-            $this->notifyRequesterByWhatsApp($requerimiento, 'Tu requerimiento fue actualizado.');
+            $this->notifyRequester($requerimiento, 'Tu requerimiento fue actualizado.');
         }
 
         if ($requerimiento->estado === 'solicitud_cierre' && $requerimiento->creador && (int) $requerimiento->creador->id !== (int) auth()->id()) {
@@ -449,10 +447,10 @@ class ServicioGeneralRequerimientoController extends Controller
                     $subQuery->orWhere('id', (int) $search);
                 }
 
-                $subQuery->orWhere('titulo', 'like', '%' . $search . '%')
-                    ->orWhere('descripcion', 'like', '%' . $search . '%')
-                    ->orWhereHas('creador', fn($userQuery) => $userQuery->where('name', 'like', '%' . $search . '%'))
-                    ->orWhereHas('asignado', fn($userQuery) => $userQuery->where('name', 'like', '%' . $search . '%'));
+                $subQuery->orWhere('titulo', 'like', '%'.$search.'%')
+                    ->orWhere('descripcion', 'like', '%'.$search.'%')
+                    ->orWhereHas('creador', fn ($userQuery) => $userQuery->where('name', 'like', '%'.$search.'%'))
+                    ->orWhereHas('asignado', fn ($userQuery) => $userQuery->where('name', 'like', '%'.$search.'%'));
             });
         }
 
@@ -469,12 +467,12 @@ class ServicioGeneralRequerimientoController extends Controller
         $lastActivity = (string) ($snapshot->last_activity_at ?? '');
         $maxId = (int) ($snapshot->max_id ?? 0);
 
-        return sha1($total . '|' . $lastActivity . '|' . $maxId);
+        return sha1($total.'|'.$lastActivity.'|'.$maxId);
     }
 
     private function statsFor(User $user): array
     {
-        if (!$this->tablaExiste()) {
+        if (! $this->tablaExiste()) {
             return $this->emptyStats();
         }
 
@@ -510,7 +508,7 @@ class ServicioGeneralRequerimientoController extends Controller
                 $roleQuery->where(function ($nestedQuery) {
                     foreach (self::STAFF_ROLE_KEYWORDS as $index => $keyword) {
                         $method = $index === 0 ? 'where' : 'orWhere';
-                        $nestedQuery->{$method}('name', 'like', '%' . $keyword . '%');
+                        $nestedQuery->{$method}('name', 'like', '%'.$keyword.'%');
                     }
                 });
             })
@@ -585,27 +583,30 @@ class ServicioGeneralRequerimientoController extends Controller
         });
     }
 
-    private function notifyRequesterByWhatsApp(ServicioGeneralRequerimiento $requerimiento, string $intro): void
+    private function notifyRequester(ServicioGeneralRequerimiento $requerimiento, string $intro): void
     {
-        $recipient = $this->formatWhatsappRecipient((string) $requerimiento->whatsapp_phone);
+        $channel = (string) ($requerimiento->source_channel ?: 'whatsapp');
+        $recipient = $channel === 'telegram'
+            ? trim((string) $requerimiento->source_recipient)
+            : $this->formatWhatsappRecipient((string) $requerimiento->whatsapp_phone);
 
-        if ($recipient === null) {
+        if ($recipient === null || trim($recipient) === '') {
             return;
         }
 
         $message = "{$intro}\n\n"
-            . "Codigo: {$requerimiento->ticket_codigo}\n"
-            . "Tipo: {$requerimiento->tipo_label}\n"
-            . "Estado: " . $this->estadoLabel((string) $requerimiento->estado) . "\n"
-            . "Progreso: {$requerimiento->progreso}%\n"
-            . "Asignado: " . ($requerimiento->asignado->name ?? 'Sin asignar');
+            ."Codigo: {$requerimiento->ticket_codigo}\n"
+            ."Tipo: {$requerimiento->tipo_label}\n"
+            .'Estado: '.$this->estadoLabel((string) $requerimiento->estado)."\n"
+            ."Progreso: {$requerimiento->progreso}%\n"
+            .'Asignado: '.($requerimiento->asignado->name ?? 'Sin asignar');
 
         if (trim((string) $requerimiento->detalle_solucion) !== '') {
-            $message .= "\nDetalle: " . trim((string) $requerimiento->detalle_solucion);
+            $message .= "\nDetalle: ".trim((string) $requerimiento->detalle_solucion);
         }
 
         try {
-            $this->whatsAppService->sendText($recipient, $message);
+            $this->chatChannelService->sendText($channel, $recipient, $message);
         } catch (\Throwable $e) {
             report($e);
         }
@@ -619,7 +620,7 @@ class ServicioGeneralRequerimientoController extends Controller
             return null;
         }
 
-        return str_starts_with($phone, '+') ? $phone : '+' . $digits;
+        return str_starts_with($phone, '+') ? $phone : '+'.$digits;
     }
 
     private function estadoLabel(string $estado): string

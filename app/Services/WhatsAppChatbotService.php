@@ -17,28 +17,49 @@ use Illuminate\Support\Str;
 class WhatsAppChatbotService
 {
     private const STEP_INICIO = 'inicio';
+
     private const STEP_SISTEMA = 'seleccion_sistema';
+
     private const STEP_MENU = 'consulta_hora_menu';
+
     private const STEP_TICKET_NUMERO = 'ticket_numero';
+
     private const STEP_TICKET_IMAGEN = 'ticket_imagen';
+
     private const STEP_TICKET_BLOQUEADO = 'ticket_bloqueado';
+
     private const STEP_SG_TIPO = 'servicios_generales_tipo';
+
     private const STEP_SG_TERMINAL = 'servicios_generales_terminal';
+
     private const STEP_SG_IMAGEN = 'servicios_generales_imagen';
+
     private const STEP_CONFIRMAR_CIERRE_SESION = 'confirmar_cierre_sesion';
 
     private const SISTEMA_MESSAGE = "Hola. Selecciona el sistema escribiendo solo el numero:\n\n1- Real\n2- Delta\n3- Lotedom";
+
     private const MENU_MESSAGE = "Hola. Soy el asistente virtual de BSH, comprometido contigo siempre.\n\nPara continuar, escribe solo el numero de la opcion que necesitas:\n\n1-Consultar horario de servicio\n2-Consultar servicios disponibles\n3-Pagar ticket\n4-Anular ticket\n5-Recursos Humanos\n6-Reportar averia\n\nEstoy listo para ayudarte.";
+
     private const CONFIRM_CLOSE_SESSION_MESSAGE = "Ya tienes una sesion abierta.\n\nQuieres cerrar la sesion actual o retomar donde te quedaste?\n\n1- Cerrar sesion\n2- Retomar";
+
     private const INVALID_YESTERDAY_PHOTO_MESSAGE = 'Foto no valida. Debes enviar una foto tomada hoy.';
+
     private const SESSION_CLOSED_MESSAGE = "Gracias por comunicarte con nosotros. Cerramos esta conversacion por inactividad.\n\nEsperamos que te pongas en contacto nuevamente cuando necesites asistencia.";
+
     private const INVALID_ATTACHMENT_TYPE_MESSAGE = 'Tipo de archivo no permitido. Envia una imagen valida con extension: .jpg, .jpeg, .png, .heic o .heif.';
+
     private const SERVICE_HOURS_MESSAGE = "Nuestro horario de servicio es de 7:00 AM de la manana a 10:00 PM de la noche.\n\nPor favor vuelve a intentar dentro de ese horario.";
+
     private const SERVICE_START_HOUR = 7;
+
     private const SERVICE_END_HOUR = 22;
+
     private const ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'heic', 'heif'];
+
     private const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif'];
+
     private const TABLA_AGENCIAS_REAL = 'agencias';
+
     private const TABLA_AGENCIAS_LOTEDOM_DELTA = 'agencias_lotedom';
 
     public static function sessionClosedMessage(): string
@@ -70,13 +91,21 @@ class WhatsAppChatbotService
             ]
         );
 
+        if (Schema::hasColumn('chatbot_sessions', 'channel')) {
+            $channel = trim((string) ($incoming['channel'] ?? 'whatsapp')) ?: 'whatsapp';
+            $channelRecipient = trim((string) ($incoming['channel_recipient'] ?? $normalizedPhone));
+            $session->channel = $channel;
+            $session->channel_recipient = $channelRecipient !== '' ? $channelRecipient : null;
+            $session->save();
+        }
+
         $currentStep = $session->step ?: self::STEP_INICIO;
 
         if (
-            !in_array($session->step, [self::STEP_CONFIRMAR_CIERRE_SESION, self::STEP_SISTEMA, self::STEP_TICKET_BLOQUEADO], true)
+            ! in_array($session->step, [self::STEP_CONFIRMAR_CIERRE_SESION, self::STEP_SISTEMA, self::STEP_TICKET_BLOQUEADO], true)
             && in_array($message, ['1', '2'], true)
         ) {
-            $ticket = $this->latestTokenTicketForPhone($session->phone);
+            $ticket = $this->latestTokenTicketForSession($session);
 
             if ($ticket !== null) {
                 $reply = $this->handleTokenFeedback($session, $ticket, $message);
@@ -194,7 +223,7 @@ class WhatsAppChatbotService
         }
 
         if (in_array($message, ['1', '2'], true)) {
-            $ticket = $this->latestTokenTicketForPhone($session->phone);
+            $ticket = $this->latestTokenTicketForSession($session);
 
             if ($ticket !== null) {
                 return $this->handleTokenFeedback($session, $ticket, $message);
@@ -235,13 +264,13 @@ class WhatsAppChatbotService
             }
 
             if ($message === '3') {
-                if (!$this->isWithinServiceHours()) {
+                if (! $this->isWithinServiceHours()) {
                     $this->resetSession($session);
 
                     return self::SERVICE_HOURS_MESSAGE;
                 }
 
-                if ($openTicket = $this->openPaymentOrCancellationTicketForPhone($session->phone)) {
+                if ($openTicket = $this->openPaymentOrCancellationTicketForSession($session)) {
                     return $this->activarBloqueoPorTicketAbierto($session, $openTicket);
                 }
 
@@ -255,13 +284,13 @@ class WhatsAppChatbotService
             }
 
             if ($message === '4') {
-                if (!$this->isWithinServiceHours()) {
+                if (! $this->isWithinServiceHours()) {
                     $this->resetSession($session);
 
                     return self::SERVICE_HOURS_MESSAGE;
                 }
 
-                if ($openTicket = $this->openPaymentOrCancellationTicketForPhone($session->phone)) {
+                if ($openTicket = $this->openPaymentOrCancellationTicketForSession($session)) {
                     return $this->activarBloqueoPorTicketAbierto($session, $openTicket);
                 }
 
@@ -281,7 +310,7 @@ class WhatsAppChatbotService
             }
 
             if ($message === '6') {
-                if (!$this->isWithinServiceHours()) {
+                if (! $this->isWithinServiceHours()) {
                     $this->resetSession($session);
 
                     return self::SERVICE_HOURS_MESSAGE;
@@ -309,7 +338,7 @@ class WhatsAppChatbotService
             '3' => ['sistema' => 'lotedom', 'label' => 'Lotedom'],
         ];
 
-        if (!isset($sistemas[$message])) {
+        if (! isset($sistemas[$message])) {
             return self::SISTEMA_MESSAGE;
         }
 
@@ -329,13 +358,13 @@ class WhatsAppChatbotService
 
         $context = is_array($session->context) ? $session->context : [];
 
-        if (!$this->isWithinServiceHours()) {
+        if (! $this->isWithinServiceHours()) {
             $this->resetSession($session);
 
             return self::SERVICE_HOURS_MESSAGE;
         }
 
-        if (!$this->terminalExisteParaSistema((string) ($context['sistema'] ?? ''), $terminalCodigo)) {
+        if (! $this->terminalExisteParaSistema((string) ($context['sistema'] ?? ''), $terminalCodigo)) {
             return 'Ese id no existe, por favor escribir el id de tu agencia.';
         }
 
@@ -356,11 +385,11 @@ class WhatsAppChatbotService
             '4' => ['tipo' => 'inversor', 'label' => 'Cambiar el inversor'],
         ];
 
-        if (!isset($tipos[$message])) {
+        if (! isset($tipos[$message])) {
             return "Selecciona el tipo de averia escribiendo solo el numero:\n\n1-No tengo internet\n2-No tengo luz\n3-Se me friso el sistema\n4-Cambiar el inversor";
         }
 
-        if (!$this->isWithinServiceHours()) {
+        if (! $this->isWithinServiceHours()) {
             $this->resetSession($session);
 
             return self::SERVICE_HOURS_MESSAGE;
@@ -382,13 +411,13 @@ class WhatsAppChatbotService
 
         $context = is_array($session->context) ? $session->context : [];
 
-        if (!$this->isWithinServiceHours()) {
+        if (! $this->isWithinServiceHours()) {
             $this->resetSession($session);
 
             return self::SERVICE_HOURS_MESSAGE;
         }
 
-        if (!$this->terminalExisteParaSistema((string) ($context['sistema'] ?? ''), $terminalCodigo)) {
+        if (! $this->terminalExisteParaSistema((string) ($context['sistema'] ?? ''), $terminalCodigo)) {
             return 'Ese id no existe, por favor escribir el id de tu agencia.';
         }
 
@@ -415,7 +444,7 @@ class WhatsAppChatbotService
             return 'Perdi el contexto de la solicitud. Por favor inicia de nuevo y elige la opcion 6.';
         }
 
-        if (!$this->isWithinServiceHours()) {
+        if (! $this->isWithinServiceHours()) {
             $this->resetSession($session);
 
             return self::SERVICE_HOURS_MESSAGE;
@@ -425,7 +454,7 @@ class WhatsAppChatbotService
             return 'Necesito que envies una imagen para continuar con el registro de la averia.';
         }
 
-        if (!$this->isAllowedImageAttachment($incoming)) {
+        if (! $this->isAllowedImageAttachment($incoming)) {
             return self::INVALID_ATTACHMENT_TYPE_MESSAGE;
         }
 
@@ -434,18 +463,26 @@ class WhatsAppChatbotService
         }
 
         try {
-            $requerimiento = ServicioGeneralRequerimiento::create([
+            $requerimientoData = [
                 'user_id' => $this->chatbotUserId(),
                 'whatsapp_phone' => $session->phone,
                 'tipo' => $tipo,
                 'titulo' => 'Averia',
-                'descripcion' => "Solicitud recibida por WhatsApp.\n\nTipo: {$tipoLabel}\nTerminal: {$terminalCodigo}",
+                'descripcion' => 'Solicitud recibida por '.ucfirst((string) ($session->channel ?? 'whatsapp'))
+                    .".\n\nTipo: {$tipoLabel}\nTerminal: {$terminalCodigo}",
                 'prioridad' => 'media',
                 'estado' => 'pendiente',
                 'progreso' => 0,
                 'attachment_url' => $attachmentUrl,
                 'attachment_message_id' => $attachmentMessageId,
-            ]);
+            ];
+
+            if (Schema::hasColumn('servicios_generales_requerimientos', 'source_channel')) {
+                $requerimientoData['source_channel'] = $session->channel ?? 'whatsapp';
+                $requerimientoData['source_recipient'] = $session->channel_recipient ?? $session->phone;
+            }
+
+            $requerimiento = ServicioGeneralRequerimiento::create($requerimientoData);
         } catch (\Throwable $e) {
             Log::error('WhatsApp chatbot error registrando requerimiento servicios generales', [
                 'phone' => $session->phone,
@@ -493,7 +530,7 @@ class WhatsAppChatbotService
             return 'Perdi el contexto de la solicitud. Por favor inicia de nuevo y elige la opcion 3 o 4.';
         }
 
-        if (!$this->isWithinServiceHours()) {
+        if (! $this->isWithinServiceHours()) {
             $this->resetSession($session);
 
             return self::SERVICE_HOURS_MESSAGE;
@@ -503,7 +540,7 @@ class WhatsAppChatbotService
             return 'Necesito que envies una imagen para continuar con el registro del ticket.';
         }
 
-        if (!$this->isAllowedImageAttachment($incoming)) {
+        if (! $this->isAllowedImageAttachment($incoming)) {
             return self::INVALID_ATTACHMENT_TYPE_MESSAGE;
         }
 
@@ -511,20 +548,27 @@ class WhatsAppChatbotService
             return self::INVALID_YESTERDAY_PHOTO_MESSAGE;
         }
 
-        if ($openTicket = $this->openPaymentOrCancellationTicketForPhone($session->phone)) {
+        if ($openTicket = $this->openPaymentOrCancellationTicketForSession($session)) {
             return $this->activarBloqueoPorTicketAbierto($session, $openTicket);
         }
 
         try {
-            $solicitud = TicketSolicitud::create([
+            $ticketData = [
                 'phone' => $session->phone,
                 'categoria' => $categoria,
                 'ticket_numero' => $ticketNumero,
                 'estado' => TicketSolicitud::ESTADO_PENDIENTE,
-                'mensaje_original' => $categoriaLabel . ': ' . $ticketNumero,
+                'mensaje_original' => $categoriaLabel.': '.$ticketNumero,
                 'attachment_url' => $attachmentUrl,
                 'attachment_message_id' => $attachmentMessageId,
-            ]);
+            ];
+
+            if (Schema::hasColumn('ticket_solicitudes', 'source_channel')) {
+                $ticketData['source_channel'] = $session->channel ?? 'whatsapp';
+                $ticketData['source_recipient'] = $session->channel_recipient ?? $session->phone;
+            }
+
+            $solicitud = TicketSolicitud::create($ticketData);
         } catch (\Throwable $e) {
             Log::error('WhatsApp chatbot error registrando ticket', [
                 'phone' => $session->phone,
@@ -544,28 +588,36 @@ class WhatsAppChatbotService
         return "Solicitud registrada correctamente.\n\nCodigo: {$solicitud->codigo}\nCategoria: {$solicitud->categoria_label}\nTerminal: {$solicitud->ticket_numero}\nImagen: Recibida\nEstado: Pendiente";
     }
 
-    private function latestTokenTicketForPhone(string $phone): ?TicketSolicitud
+    private function latestTokenTicketForSession(ChatbotSession $session): ?TicketSolicitud
     {
-        if (!Schema::hasTable('ticket_solicitudes')) {
+        if (! Schema::hasTable('ticket_solicitudes')) {
             return null;
         }
 
         return TicketSolicitud::query()
-            ->where('phone', $phone)
+            ->where('phone', $session->phone)
+            ->when(
+                Schema::hasColumn('ticket_solicitudes', 'source_channel'),
+                fn ($query) => $query->where('source_channel', $session->channel ?? 'whatsapp')
+            )
             ->where('categoria', TicketSolicitud::CATEGORIA_PAGAR)
             ->where('estado', TicketSolicitud::ESTADO_TOKEN_ENVIADO)
             ->latest()
             ->first();
     }
 
-    private function openPaymentOrCancellationTicketForPhone(string $phone): ?TicketSolicitud
+    private function openPaymentOrCancellationTicketForSession(ChatbotSession $session): ?TicketSolicitud
     {
-        if (!Schema::hasTable('ticket_solicitudes')) {
+        if (! Schema::hasTable('ticket_solicitudes')) {
             return null;
         }
 
         return TicketSolicitud::query()
-            ->where('phone', $phone)
+            ->where('phone', $session->phone)
+            ->when(
+                Schema::hasColumn('ticket_solicitudes', 'source_channel'),
+                fn ($query) => $query->where('source_channel', $session->channel ?? 'whatsapp')
+            )
             ->whereIn('categoria', [
                 TicketSolicitud::CATEGORIA_PAGAR,
                 TicketSolicitud::CATEGORIA_ANULAR,
@@ -582,12 +634,12 @@ class WhatsAppChatbotService
     private function openTicketBlockMessage(TicketSolicitud $ticket): string
     {
         return "Ya tienes una solicitud abierta.\n\n"
-            . "Codigo: {$ticket->codigo}\n"
-            . "Categoria: {$ticket->categoria_label}\n"
-            . "Terminal: {$ticket->ticket_numero}\n"
-            . "Estado: {$ticket->estado_label}\n\n"
-            . "1- Ver Solicitud Pendiente\n"
-            . "2- Rechazar solicitud";
+            ."Codigo: {$ticket->codigo}\n"
+            ."Categoria: {$ticket->categoria_label}\n"
+            ."Terminal: {$ticket->ticket_numero}\n"
+            ."Estado: {$ticket->estado_label}\n\n"
+            ."1- Ver Solicitud Pendiente\n"
+            .'2- Rechazar solicitud';
     }
 
     private function activarBloqueoPorTicketAbierto(ChatbotSession $session, TicketSolicitud $ticket): string
@@ -682,10 +734,10 @@ class WhatsAppChatbotService
 
     private function appendTicketNote(string $currentNotes, string $newNote): string
     {
-        $line = now()->format('d/m/Y h:i A') . ' - ' . $newNote;
+        $line = now()->format('d/m/Y h:i A').' - '.$newNote;
         $currentNotes = trim($currentNotes);
 
-        return $currentNotes !== '' ? $currentNotes . "\n" . $line : $line;
+        return $currentNotes !== '' ? $currentNotes."\n".$line : $line;
     }
 
     private function notifySupportForTokenFeedback(TicketSolicitud $ticket, string $detail): void
@@ -703,9 +755,9 @@ class WhatsAppChatbotService
         }
 
         $message = "Ticket {$ticket->codigo}\n\n"
-            . "{$detail}\n"
-            . "Terminal: {$ticket->ticket_numero}\n"
-            . "Telefono: {$ticket->phone}";
+            ."{$detail}\n"
+            ."Terminal: {$ticket->ticket_numero}\n"
+            ."Telefono: {$ticket->phone}";
 
         foreach ($recipients as $recipient) {
             $recipient = trim((string) $recipient);
@@ -742,7 +794,7 @@ class WhatsAppChatbotService
             $session->step = $previousStep;
             $session->context = $previousContext;
 
-            return "Retomamos tu solicitud donde la dejaste.\n\n" . $this->promptForStep($session);
+            return "Retomamos tu solicitud donde la dejaste.\n\n".$this->promptForStep($session);
         }
 
         return self::CONFIRM_CLOSE_SESSION_MESSAGE;
@@ -773,7 +825,7 @@ class WhatsAppChatbotService
 
     private function hasOpenConversation(ChatbotSession $session): bool
     {
-        return !in_array($session->step ?: self::STEP_INICIO, [
+        return ! in_array($session->step ?: self::STEP_INICIO, [
             self::STEP_INICIO,
             self::STEP_CONFIRMAR_CIERRE_SESION,
         ], true);
@@ -781,7 +833,7 @@ class WhatsAppChatbotService
 
     private function normalizeAttachmentUrl(mixed $attachment): ?string
     {
-        if (!is_string($attachment)) {
+        if (! is_string($attachment)) {
             return null;
         }
 
@@ -813,15 +865,15 @@ class WhatsAppChatbotService
         $mime = $this->normalizeMimeType($incoming['attachment_mime'] ?? null);
         $type = $this->normalizeAttachmentType($incoming['attachment_type'] ?? null);
 
-        if ($type !== null && !in_array($type, ['image', 'photo'], true)) {
+        if ($type !== null && ! in_array($type, ['image', 'photo'], true)) {
             return false;
         }
 
-        if ($extension !== null && !in_array($extension, self::ALLOWED_IMAGE_EXTENSIONS, true)) {
+        if ($extension !== null && ! in_array($extension, self::ALLOWED_IMAGE_EXTENSIONS, true)) {
             return false;
         }
 
-        if ($mime !== null && !in_array($mime, self::ALLOWED_IMAGE_MIME_TYPES, true)) {
+        if ($mime !== null && ! in_array($mime, self::ALLOWED_IMAGE_MIME_TYPES, true)) {
             return false;
         }
 
@@ -836,7 +888,7 @@ class WhatsAppChatbotService
 
         $extension = strtolower(ltrim(trim((string) $extension), '.'));
 
-        return $extension !== '' && !in_array($extension, ['false', 'null'], true) ? $extension : null;
+        return $extension !== '' && ! in_array($extension, ['false', 'null'], true) ? $extension : null;
     }
 
     private function extractExtensionFromPath(mixed $path): ?string
@@ -864,7 +916,7 @@ class WhatsAppChatbotService
 
         $mime = strtolower(trim(explode(';', (string) $mime)[0]));
 
-        return $mime !== '' && !in_array($mime, ['false', 'null'], true) ? $mime : null;
+        return $mime !== '' && ! in_array($mime, ['false', 'null'], true) ? $mime : null;
     }
 
     private function normalizeAttachmentType(mixed $type): ?string
@@ -967,7 +1019,7 @@ class WhatsAppChatbotService
     {
         $tabla = self::TABLA_AGENCIAS_LOTEDOM_DELTA;
 
-        if (!Schema::hasTable($tabla) || !Schema::hasColumn($tabla, 'terminal')) {
+        if (! Schema::hasTable($tabla) || ! Schema::hasColumn($tabla, 'terminal')) {
             return false;
         }
 
@@ -980,7 +1032,7 @@ class WhatsAppChatbotService
         $hasSistema = Schema::hasColumn($tabla, 'sistema');
         $hasEmpresa = Schema::hasColumn($tabla, 'empresa');
 
-        if (!$hasSistema && !$hasEmpresa) {
+        if (! $hasSistema && ! $hasEmpresa) {
             return false;
         }
 
@@ -1025,7 +1077,7 @@ class WhatsAppChatbotService
 
     private function terminalExisteEnTabla(string $tabla, string $terminalCodigo): bool
     {
-        if (!Schema::hasTable($tabla) || !Schema::hasColumn($tabla, 'terminal')) {
+        if (! Schema::hasTable($tabla) || ! Schema::hasColumn($tabla, 'terminal')) {
             return false;
         }
 
@@ -1080,7 +1132,7 @@ class WhatsAppChatbotService
 
     private function isExpired(ChatbotSession $session): bool
     {
-        if (!$session->last_interaction_at) {
+        if (! $session->last_interaction_at) {
             return false;
         }
 
