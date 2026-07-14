@@ -916,6 +916,10 @@ class WhatsAppChatbotService
 
         $mime = strtolower(trim(explode(';', (string) $mime)[0]));
 
+        if (in_array($mime, ['application/octet-stream', 'binary/octet-stream'], true)) {
+            return null;
+        }
+
         return $mime !== '' && ! in_array($mime, ['false', 'null'], true) ? $mime : null;
     }
 

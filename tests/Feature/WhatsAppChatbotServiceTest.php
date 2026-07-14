@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\WhatsAppWebhookController;
 use App\Models\ChatbotSession;
 use App\Models\TicketSolicitud;
 use App\Services\WhatsAppChatbotService;
@@ -723,6 +724,45 @@ class WhatsAppChatbotServiceTest extends TestCase
         $this->assertSame('inicio', $reply['session']->step);
         $this->assertSame(1, TicketSolicitud::count());
         $this->assertSame('https://example.com/comprobante.heic', TicketSolicitud::first()->attachment_url);
+    }
+
+    public function test_acepta_jpg_con_url_sin_extension_y_mime_generico_del_proveedor(): void
+    {
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('8095550128', 'hola');
+        $service->handleIncoming('8095550128', '1');
+        $service->handleIncoming('8095550128', '3');
+        $service->handleIncoming('8095550128', '07068888');
+
+        $reply = $service->handleIncoming('8095550128', '', null, [
+            'attachment_url' => 'https://example.com/download/archivo-temporal',
+            'attachment_extension' => 'jpg',
+            'attachment_mime' => 'application/octet-stream',
+            'attachment_type' => 'image',
+        ]);
+
+        $this->assertStringContainsString('Solicitud registrada correctamente.', $reply['reply']);
+        $this->assertSame(1, TicketSolicitud::count());
+    }
+
+    public function test_webhook_conserva_extension_jpg_enviada_como_valor_simple(): void
+    {
+        $controller = new WhatsAppWebhookController();
+        $method = new \ReflectionMethod($controller, 'extractAttachmentMetadata');
+
+        $metadata = $method->invoke($controller, [
+            'attachment' => [
+                'url' => 'https://example.com/download/archivo-temporal',
+                'extension' => '.jpg',
+                'mime_type' => 'application/octet-stream',
+                'type' => 'image',
+            ],
+        ], [], 'https://example.com/download/archivo-temporal');
+
+        $this->assertSame('jpg', $metadata['extension']);
+        $this->assertSame('application/octet-stream', $metadata['mime']);
+        $this->assertSame('image', $metadata['type']);
     }
 
     public function test_no_permite_crear_otro_ticket_pago_o_nulo_si_el_telefono_tiene_uno_abierto(): void

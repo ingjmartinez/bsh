@@ -448,6 +448,16 @@ class WhatsAppWebhookController extends Controller
             return null;
         }
 
+        $value = trim($value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        if (preg_match('/^\.?([a-z0-9]{2,5})$/i', $value, $matches) === 1) {
+            return strtolower($matches[1]);
+        }
+
         $path = parse_url($value, PHP_URL_PATH) ?: $value;
         $extension = strtolower(ltrim(pathinfo($path, PATHINFO_EXTENSION), '.'));
 
