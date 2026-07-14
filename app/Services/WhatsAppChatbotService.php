@@ -70,6 +70,11 @@ class WhatsAppChatbotService
 
     private const OPAQUE_PROVIDER_EXTENSIONS = ['bin', 'enc', 'dat', 'tmp'];
 
+    private const NON_IMAGE_ATTACHMENT_EXTENSIONS = [
+        'pdf', 'webp', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt',
+        'zip', 'rar', '7z', 'mp3', 'ogg', 'wav', 'mp4', 'mov', 'avi',
+    ];
+
     private const TABLA_AGENCIAS_REAL = 'agencias';
 
     private const TABLA_AGENCIAS_LOTEDOM_DELTA = 'agencias_lotedom';
@@ -895,21 +900,24 @@ class WhatsAppChatbotService
         if ($isImageType && $mime === null) {
             $allowed = $extension === null || in_array($extension, self::OPAQUE_PROVIDER_EXTENSIONS, true);
 
-            if (! $allowed) {
-                $this->logRejectedAttachmentMetadata($extension, $mime, $type);
+            if ($allowed) {
+                return true;
             }
 
-            return $allowed;
+            if (! in_array($source, ['provider_media', 'provider_lookup'], true)) {
+                $this->logRejectedAttachmentMetadata($extension, $mime, $type);
+
+                return false;
+            }
         }
 
         if (
             in_array($source, ['provider_media', 'provider_lookup'], true)
-            && $mime === null
-            && $type === null
-            && ($extension === null || in_array($extension, self::OPAQUE_PROVIDER_EXTENSIONS, true))
+            && ! $this->hasExplicitNonImageMetadata($extension, $mime)
         ) {
-            Log::debug('WhatsApp chatbot acepta adjunto opaco del proveedor', [
+            Log::debug('WhatsApp chatbot acepta imagen con metadatos incompletos del proveedor', [
                 'extension' => $extension,
+                'mime' => $mime,
                 'source' => $source,
             ]);
 
@@ -919,6 +927,19 @@ class WhatsAppChatbotService
         $this->logRejectedAttachmentMetadata($extension, $mime, $type);
 
         return false;
+    }
+
+    private function hasExplicitNonImageMetadata(?string $extension, ?string $mime): bool
+    {
+        if ($extension !== null && in_array($extension, self::NON_IMAGE_ATTACHMENT_EXTENSIONS, true)) {
+            return true;
+        }
+
+        if ($mime === null) {
+            return false;
+        }
+
+        return $mime === 'image/webp' || ! str_starts_with($mime, 'image/');
     }
 
     private function logRejectedAttachmentMetadata(?string $extension, ?string $mime, ?string $type): void
