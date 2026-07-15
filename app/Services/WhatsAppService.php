@@ -117,18 +117,29 @@ class WhatsAppService
                 $providerResponse = $response->body();
             }
 
+            $providerStatus = is_array($providerResponse) && isset($providerResponse['status'])
+                && is_numeric($providerResponse['status'])
+                ? (int) $providerResponse['status']
+                : null;
+            $providerSuccessful = $providerStatus === null
+                || ($providerStatus >= 200 && $providerStatus < 300);
+            $success = $response->successful() && $providerSuccessful;
+
             Log::debug('WhatsApp proveedor respuesta recibida', [
                 'status' => $response->status(),
-                'successful' => $response->successful(),
+                'successful' => $success,
+                'provider_status' => $providerStatus,
                 'provider_response' => $providerResponse,
             ]);
 
             return [
-                'success' => $response->successful(),
+                'success' => $success,
                 'status' => $response->status(),
-                'message' => $response->successful()
+                'message' => $success
                     ? 'Mensaje enviado.'
-                    : 'No se pudo enviar el mensaje.',
+                    : (is_array($providerResponse) && ! empty($providerResponse['message'])
+                        ? (string) $providerResponse['message']
+                        : 'No se pudo enviar el mensaje.'),
                 'provider_response' => $providerResponse,
             ];
         } catch (\Throwable $e) {
