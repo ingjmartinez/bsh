@@ -333,6 +333,7 @@ class TicketSolicitudController extends Controller
     {
         $channel = (string) ($ticket->source_channel ?: 'whatsapp');
         $recipient = $this->notificationRecipient($ticket);
+        $account = $this->notificationAccount($ticket);
 
         if ($recipient === null) {
             return [
@@ -349,7 +350,7 @@ class TicketSolicitudController extends Controller
             .'2- no me funciono solicitar token';
 
         try {
-            return $this->chatChannelService->sendText($channel, $recipient, $message);
+            return $this->chatChannelService->sendText($channel, $recipient, $message, $account);
         } catch (\Throwable $e) {
             Log::error('Error enviando token de ticket al cliente', [
                 'ticket_id' => $ticket->id,
@@ -393,6 +394,7 @@ class TicketSolicitudController extends Controller
 
         $channel = (string) ($ticket->source_channel ?: 'whatsapp');
         $recipient = $this->notificationRecipient($ticket);
+        $account = $this->notificationAccount($ticket);
 
         if ($recipient === null) {
             return;
@@ -424,7 +426,7 @@ class TicketSolicitudController extends Controller
         }
 
         try {
-            $result = $this->chatChannelService->sendText($channel, $recipient, $message);
+            $result = $this->chatChannelService->sendText($channel, $recipient, $message, $account);
 
             if (! ($result['success'] ?? false)) {
                 Log::warning('No se pudo enviar notificacion de resolucion de ticket', [
@@ -465,6 +467,32 @@ class TicketSolicitudController extends Controller
         }
 
         return $this->formatRecipient((string) $ticket->phone);
+    }
+
+    private function notificationAccount(TicketSolicitud $ticket): ?string
+    {
+        if (($ticket->source_channel ?: 'whatsapp') !== 'whatsapp' || ! Schema::hasTable('chatbot_sessions')) {
+            return null;
+        }
+
+        $phone = preg_replace('/\D+/', '', (string) $ticket->phone) ?? '';
+
+        if ($phone === '') {
+            return null;
+        }
+
+        $query = ChatbotSession::query()->where('phone', $phone);
+
+        if (Schema::hasColumn('chatbot_sessions', 'channel')) {
+            $query->where('channel', 'whatsapp');
+        }
+
+        $account = trim((string) $query
+            ->orderByDesc('last_interaction_at')
+            ->orderByDesc('id')
+            ->value('account'));
+
+        return $account !== '' ? $account : null;
     }
 
     private function terminalDetailLine(TicketSolicitud $ticket): ?string
