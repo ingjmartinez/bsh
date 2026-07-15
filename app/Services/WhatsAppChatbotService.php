@@ -281,7 +281,7 @@ class WhatsAppChatbotService
             }
 
             if ($message === '3') {
-                if (! $this->isWithinServiceHours()) {
+                if (! $this->isWithinServiceHours($session)) {
                     $this->resetSession($session);
 
                     return self::SERVICE_HOURS_MESSAGE;
@@ -301,7 +301,7 @@ class WhatsAppChatbotService
             }
 
             if ($message === '4') {
-                if (! $this->isWithinServiceHours()) {
+                if (! $this->isWithinServiceHours($session)) {
                     $this->resetSession($session);
 
                     return self::SERVICE_HOURS_MESSAGE;
@@ -327,7 +327,7 @@ class WhatsAppChatbotService
             }
 
             if ($message === '6') {
-                if (! $this->isWithinServiceHours()) {
+                if (! $this->isWithinServiceHours($session)) {
                     $this->resetSession($session);
 
                     return self::SERVICE_HOURS_MESSAGE;
@@ -375,7 +375,7 @@ class WhatsAppChatbotService
 
         $context = is_array($session->context) ? $session->context : [];
 
-        if (! $this->isWithinServiceHours()) {
+        if (! $this->isWithinServiceHours($session)) {
             $this->resetSession($session);
 
             return self::SERVICE_HOURS_MESSAGE;
@@ -406,7 +406,7 @@ class WhatsAppChatbotService
             return "Selecciona el tipo de averia escribiendo solo el numero:\n\n1-No tengo internet\n2-No tengo luz\n3-Se me friso el sistema\n4-Cambiar el inversor";
         }
 
-        if (! $this->isWithinServiceHours()) {
+        if (! $this->isWithinServiceHours($session)) {
             $this->resetSession($session);
 
             return self::SERVICE_HOURS_MESSAGE;
@@ -428,7 +428,7 @@ class WhatsAppChatbotService
 
         $context = is_array($session->context) ? $session->context : [];
 
-        if (! $this->isWithinServiceHours()) {
+        if (! $this->isWithinServiceHours($session)) {
             $this->resetSession($session);
 
             return self::SERVICE_HOURS_MESSAGE;
@@ -461,7 +461,7 @@ class WhatsAppChatbotService
             return 'Perdi el contexto de la solicitud. Por favor inicia de nuevo y elige la opcion 6.';
         }
 
-        if (! $this->isWithinServiceHours()) {
+        if (! $this->isWithinServiceHours($session)) {
             $this->resetSession($session);
 
             return self::SERVICE_HOURS_MESSAGE;
@@ -547,7 +547,7 @@ class WhatsAppChatbotService
             return 'Perdi el contexto de la solicitud. Por favor inicia de nuevo y elige la opcion 3 o 4.';
         }
 
-        if (! $this->isWithinServiceHours()) {
+        if (! $this->isWithinServiceHours($session)) {
             $this->resetSession($session);
 
             return self::SERVICE_HOURS_MESSAGE;
@@ -1057,13 +1057,31 @@ class WhatsAppChatbotService
         $session->context = [];
     }
 
-    private function isWithinServiceHours(): bool
+    private function isWithinServiceHours(?ChatbotSession $session = null): bool
     {
+        if ($session !== null && $this->isTestPhone($session->phone)) {
+            return true;
+        }
+
         $now = now();
         $start = $now->copy()->setTime(self::SERVICE_START_HOUR, 0);
         $end = $now->copy()->setTime(self::SERVICE_END_HOUR, 0);
 
         return $now->greaterThanOrEqualTo($start) && $now->lessThan($end);
+    }
+
+    private function isTestPhone(string $phone): bool
+    {
+        $normalizedPhone = $this->normalizePhone($phone);
+        $testPhones = config('services.whatsapp.chatbot_test_phones', []);
+
+        foreach ((array) $testPhones as $testPhone) {
+            if ($normalizedPhone !== '' && $normalizedPhone === $this->normalizePhone((string) $testPhone)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function terminalRealExiste(string $terminalCodigo): bool

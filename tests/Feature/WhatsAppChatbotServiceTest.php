@@ -247,6 +247,21 @@ class WhatsAppChatbotServiceTest extends TestCase
         $this->assertSame(0, TicketSolicitud::count());
     }
 
+    public function test_numero_de_prueba_puede_iniciar_pago_fuera_del_horario(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-06-12 22:01:00'));
+        config()->set('services.whatsapp.chatbot_test_phones', ['+1 (809) 555-0199']);
+
+        $service = new WhatsAppChatbotService();
+
+        $service->handleIncoming('18095550199', 'hola');
+        $service->handleIncoming('18095550199', '1');
+        $reply = $service->handleIncoming('18095550199', '3');
+
+        $this->assertStringContainsString('Indica el codigo del terminal', $reply['reply']);
+        $this->assertSame('ticket_numero', $reply['session']->step);
+    }
+
     public function test_no_permite_reportar_averia_fuera_del_horario_de_servicio(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-06-12 06:59:00'));

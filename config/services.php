@@ -53,6 +53,10 @@ return [
             'trim',
             explode(',', (string) env('WA_SUPPORT_RECIPIENTS', ''))
         )),
+        'chatbot_test_phones' => array_filter(array_map(
+            'trim',
+            explode(',', (string) env('WA_CHATBOT_TEST_PHONES', ''))
+        )),
         'webhook_token' => env('WA_WEBHOOK_TOKEN'),
         'timeout' => env('WA_API_TIMEOUT', 30),
         'verify_ssl' => env('WA_API_VERIFY_SSL', true),
