@@ -455,7 +455,10 @@ class TicketSolicitudController extends Controller
             return null;
         }
 
-        return str_starts_with($phone, '+') ? $phone : '+'.$digits;
+        // WaMundo entrega y responde a los webhooks con el identificador numerico
+        // (sin prefijo +). Conservar ese formato evita que los avisos del panel
+        // difieran de las respuestas inmediatas del chatbot.
+        return $digits;
     }
 
     private function notificationRecipient(TicketSolicitud $ticket): ?string
