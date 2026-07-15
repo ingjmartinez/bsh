@@ -10,7 +10,7 @@ use ReflectionMethod;
 
 class TicketSolicitudControllerTest extends TestCase
 {
-    public function test_usa_destinatario_numerico_para_notificaciones_de_wamundo(): void
+    public function test_usa_destinatario_con_prefijo_para_notificaciones_de_wamundo(): void
     {
         $controller = new TicketSolicitudController($this->createMock(ChatChannelService::class));
         $ticket = new TicketSolicitud([
@@ -21,6 +21,6 @@ class TicketSolicitudControllerTest extends TestCase
 
         $recipient = $method->invoke($controller, $ticket);
 
-        $this->assertSame('18095169172', $recipient);
+        $this->assertSame('+18095169172', $recipient);
     }
 }
