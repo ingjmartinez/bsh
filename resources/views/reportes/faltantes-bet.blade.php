@@ -23,6 +23,15 @@
             #tableFaltantes tbody tr.empleado-inactivo > td {
                 background-color: #fff8db;
             }
+
+            #tableFaltantes .terminal-secundaria {
+                display: block;
+                margin-top: 0.15rem;
+                color: #64748b;
+                font-size: 0.72rem;
+                line-height: 1.15;
+                white-space: normal;
+            }
         </style>
 
         <div class="page-content">
@@ -393,13 +402,17 @@
                 const detallesFaltantes = registro.detalles_faltantes || '';
                 const totalMonto = parseFloat(registro.total_monto || 0);
                 const estadoEmpleado = registro.estado_empleado || '';
+                const empresasTerminal = Number(registro.empresas_terminal || 0);
+                const detalleTerminal = empresasTerminal > 1
+                    ? `<small class="terminal-secundaria">Terminal empresa ${escapeHtml(registro.terminal_companyid ?? registro.companyid ?? '')} · agencia compartida en ${empresasTerminal} empresas</small>`
+                    : '';
 
                 row.classList.toggle('empleado-inactivo', estadoEmpleado === 'Inactivo');
 
                 row.innerHTML = `
                     <td class="text-center">${escapeHtml(registro.companyid ?? '')}</td>
                     <td class="text-center">${escapeHtml(registro.empleadoid ?? '')}</td>
-                    <td class="text-center">${escapeHtml(registro.idcentrocosto ?? '')}</td>
+                    <td class="text-center">${escapeHtml(registro.idcentrocosto ?? '')}${detalleTerminal}</td>
                     <td>${escapeHtml(registro.identificacion)}</td>
                     <td>${escapeHtml(nombreEmpleado)}</td>
                     <td class="text-center">${escapeHtml(estadoEmpleado || '-')}</td>

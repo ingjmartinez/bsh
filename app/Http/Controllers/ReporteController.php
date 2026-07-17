@@ -392,9 +392,11 @@ class ReporteController extends Controller
             ->selectRaw("
                 TRIM(cc.id_viejo) AS agencia_id,
                 CAST(SUBSTRING_INDEX(GROUP_CONCAT(cc.id_centro_costo ORDER BY {$ordenPreferencia} SEPARATOR ','), ',', 1) AS UNSIGNED) AS id_centro_costo,
+                SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(cc.company_id, '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1) AS company_id,
                 SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(cc.id_grupo, '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1) AS id_grupo,
                 SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(cc.id_sub_grupo, '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1) AS id_sub_grupo,
-                SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(cc.id_division, '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1) AS id_division
+                SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(cc.id_division, '') ORDER BY {$ordenPreferencia} SEPARATOR '||'), '||', 1) AS id_division,
+                COUNT(DISTINCT NULLIF(TRIM(cc.company_id), '')) AS empresas_terminal
             ")
             ->whereNotNull('cc.id_viejo')
             ->where('cc.id_viejo', '!=', '')
@@ -437,8 +439,8 @@ class ReporteController extends Controller
             $subQuery
                 ->where('faltantes.identificacion', 'like', $like)
                 ->orWhere('faltantes.agencia_id', 'like', $like)
-                ->orWhere('ccosto.id_grupo', 'like', $like)
-                ->orWhere('ccosto.id_division', 'like', $like)
+                ->orWhereRaw("COALESCE(NULLIF(cc_empleado.id_grupo, ''), ccosto.id_grupo) LIKE ?", [$like])
+                ->orWhereRaw("COALESCE(NULLIF(cc_empleado.id_division, ''), ccosto.id_division) LIKE ?", [$like])
                 ->orWhereRaw("COALESCE(emp_cc.empleadoid, emp_ced.empleadoid) LIKE ?", [$like])
                 ->orWhereRaw("COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto) LIKE ?", [$like])
                 ->orWhereRaw("COALESCE(emp_cc.companyid, emp_ced.companyid) LIKE ?", [$like])
@@ -541,6 +543,11 @@ class ReporteController extends Controller
         $idCcEmpleadoExpr = "COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto)";
         $nombreExpr = "CONCAT(COALESCE(emp_cc.nombres, emp_ced.nombres, ''), ' ', COALESCE(emp_cc.apellidos, emp_ced.apellidos, ''))";
         $estadoEmpleadoExpr = "CASE WHEN {$empleadoExpr} IS NULL THEN NULL WHEN COALESCE(emp_cc.estatus, emp_ced.estatus) = 1 AND COALESCE(emp_cc.fecha_egreso, emp_ced.fecha_egreso) IS NULL THEN 'Activo' ELSE 'Inactivo' END";
+        $centroCostoExpr = "COALESCE(cc_empleado.id_centro_costo, ccosto.id_centro_costo)";
+        $grupoExpr = "COALESCE(NULLIF(cc_empleado.id_grupo, ''), ccosto.id_grupo)";
+        $subGrupoExpr = "COALESCE(NULLIF(cc_empleado.id_sub_grupo, ''), ccosto.id_sub_grupo)";
+        $divisionExpr = "COALESCE(NULLIF(cc_empleado.id_division, ''), ccosto.id_division)";
+        $empresaTerminalExpr = "COALESCE(cc_empleado.company_id, ccosto.company_id)";
 
         $query = $this->faltantesBaseQuery($config['tipo'])
             ->leftJoinSub($this->centrosCostoPorTerminalQuery(), 'ccosto', function ($join) {
@@ -553,13 +560,19 @@ class ReporteController extends Controller
             ->leftJoinSub($this->empleadosPreferidosPorCedulaQuery(), 'emp_ced', function ($join) {
                 $join->on('faltantes.identificacion', '=', 'emp_ced.cedula_normalizada');
             })
+            ->leftJoin('centros_de_costo as cc_empleado', function ($join) {
+                $join->whereRaw('cc_empleado.id_centro_costo = COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto)')
+                    ->whereRaw('CAST(cc_empleado.company_id AS CHAR) = CAST(COALESCE(emp_cc.companyid, emp_ced.companyid) AS CHAR)');
+            })
             ->select(
                 'faltantes.agencia_id',
                 'faltantes.identificacion',
-                'ccosto.id_centro_costo',
-                'ccosto.id_grupo',
-                'ccosto.id_sub_grupo',
-                'ccosto.id_division',
+                DB::raw("{$centroCostoExpr} as id_centro_costo"),
+                DB::raw("{$grupoExpr} as id_grupo"),
+                DB::raw("{$subGrupoExpr} as id_sub_grupo"),
+                DB::raw("{$divisionExpr} as id_division"),
+                DB::raw("{$empresaTerminalExpr} as terminal_companyid"),
+                'ccosto.empresas_terminal',
                 DB::raw("{$empresaExpr} as companyid"),
                 DB::raw("{$empleadoExpr} as empleadoid"),
                 DB::raw("{$idCcEmpleadoExpr} as idcentrocosto"),
@@ -578,10 +591,12 @@ class ReporteController extends Controller
             ->groupBy(
                 'faltantes.agencia_id',
                 'faltantes.identificacion',
-                'ccosto.id_centro_costo',
-                'ccosto.id_grupo',
-                'ccosto.id_sub_grupo',
-                'ccosto.id_division',
+                DB::raw($centroCostoExpr),
+                DB::raw($grupoExpr),
+                DB::raw($subGrupoExpr),
+                DB::raw($divisionExpr),
+                DB::raw($empresaTerminalExpr),
+                'ccosto.empresas_terminal',
                 DB::raw($empresaExpr),
                 DB::raw($empleadoExpr),
                 DB::raw($idCcEmpleadoExpr),
@@ -610,6 +625,10 @@ class ReporteController extends Controller
         $idCcEmpleadoExpr = "COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto)";
         $nombreExpr = "CONCAT(COALESCE(emp_cc.nombres, emp_ced.nombres, ''), ' ', COALESCE(emp_cc.apellidos, emp_ced.apellidos, ''))";
         $estadoEmpleadoExpr = "CASE WHEN {$empleadoExpr} IS NULL THEN NULL WHEN COALESCE(emp_cc.estatus, emp_ced.estatus) = 1 AND COALESCE(emp_cc.fecha_egreso, emp_ced.fecha_egreso) IS NULL THEN 'Activo' ELSE 'Inactivo' END";
+        $centroCostoExpr = "COALESCE(cc_empleado.id_centro_costo, ccosto.id_centro_costo)";
+        $grupoExpr = "COALESCE(NULLIF(cc_empleado.id_grupo, ''), ccosto.id_grupo)";
+        $subGrupoExpr = "COALESCE(NULLIF(cc_empleado.id_sub_grupo, ''), ccosto.id_sub_grupo)";
+        $divisionExpr = "COALESCE(NULLIF(cc_empleado.id_division, ''), ccosto.id_division)";
 
         $query = $this->faltantesBaseQuery($config['tipo'])
             ->leftJoinSub($this->centrosCostoPorTerminalQuery(), 'ccosto', function ($join) {
@@ -622,12 +641,16 @@ class ReporteController extends Controller
             ->leftJoinSub($this->empleadosPreferidosPorCedulaQuery(), 'emp_ced', function ($join) {
                 $join->on('faltantes.identificacion', '=', 'emp_ced.cedula_normalizada');
             })
+            ->leftJoin('centros_de_costo as cc_empleado', function ($join) {
+                $join->whereRaw('cc_empleado.id_centro_costo = COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto)')
+                    ->whereRaw('CAST(cc_empleado.company_id AS CHAR) = CAST(COALESCE(emp_cc.companyid, emp_ced.companyid) AS CHAR)');
+            })
             ->select(
                 'faltantes.identificacion',
-                'ccosto.id_centro_costo',
-                'ccosto.id_grupo',
-                'ccosto.id_sub_grupo',
-                'ccosto.id_division',
+                DB::raw("{$centroCostoExpr} as id_centro_costo"),
+                DB::raw("{$grupoExpr} as id_grupo"),
+                DB::raw("{$subGrupoExpr} as id_sub_grupo"),
+                DB::raw("{$divisionExpr} as id_division"),
                 DB::raw("{$empresaExpr} as companyid"),
                 DB::raw("{$empleadoExpr} as empleadoid"),
                 DB::raw("{$idCcEmpleadoExpr} as idcentrocosto"),
@@ -642,7 +665,7 @@ class ReporteController extends Controller
         $this->applyFaltantesSort($query, $sortBy, $sortDir);
 
         $registros = $query
-            ->groupBy('faltantes.identificacion', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo', 'ccosto.id_division', DB::raw($empresaExpr), DB::raw($empleadoExpr), DB::raw($idCcEmpleadoExpr), DB::raw($nombreExpr), DB::raw($estadoEmpleadoExpr))
+            ->groupBy('faltantes.identificacion', DB::raw($centroCostoExpr), DB::raw($grupoExpr), DB::raw($subGrupoExpr), DB::raw($divisionExpr), DB::raw($empresaExpr), DB::raw($empleadoExpr), DB::raw($idCcEmpleadoExpr), DB::raw($nombreExpr), DB::raw($estadoEmpleadoExpr))
             ->get();
 
         $fileName = 'faltantes_' . $config['tipo'] . '_' . now()->format('Ymd_His') . '.xlsx';
@@ -666,6 +689,10 @@ class ReporteController extends Controller
         $idCcEmpleadoExpr = "COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto)";
         $nombreExpr = "CONCAT(COALESCE(emp_cc.nombres, emp_ced.nombres, ''), ' ', COALESCE(emp_cc.apellidos, emp_ced.apellidos, ''))";
         $estadoEmpleadoExpr = "CASE WHEN {$empleadoExpr} IS NULL THEN NULL WHEN COALESCE(emp_cc.estatus, emp_ced.estatus) = 1 AND COALESCE(emp_cc.fecha_egreso, emp_ced.fecha_egreso) IS NULL THEN 'Activo' ELSE 'Inactivo' END";
+        $centroCostoExpr = "COALESCE(cc_empleado.id_centro_costo, ccosto.id_centro_costo)";
+        $grupoExpr = "COALESCE(NULLIF(cc_empleado.id_grupo, ''), ccosto.id_grupo)";
+        $subGrupoExpr = "COALESCE(NULLIF(cc_empleado.id_sub_grupo, ''), ccosto.id_sub_grupo)";
+        $divisionExpr = "COALESCE(NULLIF(cc_empleado.id_division, ''), ccosto.id_division)";
 
         $query = $this->faltantesBaseQuery($config['tipo'])
             ->leftJoinSub($this->centrosCostoPorTerminalQuery(), 'ccosto', function ($join) {
@@ -678,12 +705,16 @@ class ReporteController extends Controller
             ->leftJoinSub($this->empleadosPreferidosPorCedulaQuery(), 'emp_ced', function ($join) {
                 $join->on('faltantes.identificacion', '=', 'emp_ced.cedula_normalizada');
             })
+            ->leftJoin('centros_de_costo as cc_empleado', function ($join) {
+                $join->whereRaw('cc_empleado.id_centro_costo = COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto)')
+                    ->whereRaw('CAST(cc_empleado.company_id AS CHAR) = CAST(COALESCE(emp_cc.companyid, emp_ced.companyid) AS CHAR)');
+            })
             ->select(
                 'faltantes.identificacion',
-                'ccosto.id_centro_costo',
-                'ccosto.id_grupo',
-                'ccosto.id_sub_grupo',
-                'ccosto.id_division',
+                DB::raw("{$centroCostoExpr} as id_centro_costo"),
+                DB::raw("{$grupoExpr} as id_grupo"),
+                DB::raw("{$subGrupoExpr} as id_sub_grupo"),
+                DB::raw("{$divisionExpr} as id_division"),
                 DB::raw("{$empresaExpr} as companyid"),
                 DB::raw("{$empleadoExpr} as empleadoid"),
                 DB::raw("{$idCcEmpleadoExpr} as idcentrocosto"),
@@ -698,7 +729,7 @@ class ReporteController extends Controller
         $this->applyFaltantesSort($query, $sortBy, $sortDir);
 
         $registros = $query
-            ->groupBy('faltantes.identificacion', 'ccosto.id_centro_costo', 'ccosto.id_grupo', 'ccosto.id_sub_grupo', 'ccosto.id_division', DB::raw($empresaExpr), DB::raw($empleadoExpr), DB::raw($idCcEmpleadoExpr), DB::raw($nombreExpr), DB::raw($estadoEmpleadoExpr))
+            ->groupBy('faltantes.identificacion', DB::raw($centroCostoExpr), DB::raw($grupoExpr), DB::raw($subGrupoExpr), DB::raw($divisionExpr), DB::raw($empresaExpr), DB::raw($empleadoExpr), DB::raw($idCcEmpleadoExpr), DB::raw($nombreExpr), DB::raw($estadoEmpleadoExpr))
             ->get();
 
         $sistema = $config['nombre'];
