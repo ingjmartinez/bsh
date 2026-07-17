@@ -10,7 +10,7 @@ use ReflectionMethod;
 
 class TicketSolicitudControllerTest extends TestCase
 {
-    public function test_usa_destinatario_con_prefijo_para_notificaciones_de_wamundo(): void
+    public function test_usa_destinatario_con_prefijo_para_notificaciones_de_whatsapp(): void
     {
         $controller = new TicketSolicitudController($this->createMock(ChatChannelService::class));
         $ticket = new TicketSolicitud([

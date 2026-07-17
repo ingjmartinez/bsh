@@ -34,10 +34,12 @@ class TicketSolicitudNotificationAccountTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_usa_la_cuenta_que_recibio_el_chat_para_enviar_el_token(): void
+    public function test_prioriza_la_cuenta_predeterminada_de_zender_para_enviar_el_token(): void
     {
+        config(['services.whatsapp.default_account' => 'cuenta-principal-zender']);
+
         ChatbotSession::query()->create([
-            'account' => 'cuenta-del-chat',
+            'account' => 'cuenta-anterior-del-chat',
             'phone' => '18095169172',
             'channel' => 'whatsapp',
             'last_interaction_at' => now(),
@@ -52,11 +54,36 @@ class TicketSolicitudNotificationAccountTest extends TestCase
 
         $account = $method->invoke($controller, $ticket);
 
+        $this->assertSame('cuenta-principal-zender', $account);
+    }
+
+    public function test_usa_la_cuenta_de_la_sesion_como_respaldo_si_no_hay_cuenta_predeterminada(): void
+    {
+        config(['services.whatsapp.default_account' => null]);
+
+        ChatbotSession::query()->create([
+            'account' => 'cuenta-del-chat',
+            'phone' => '18095169172',
+            'channel' => 'whatsapp',
+            'last_interaction_at' => now(),
+        ]);
+
+        $controller = new TicketSolicitudController($this->createMock(ChatChannelService::class));
+        $ticket = new TicketSolicitud([
+            'phone' => '18095169172',
+            'source_channel' => 'whatsapp',
+        ]);
+        $method = new ReflectionMethod($controller, 'notificationAccount');
+
+        $account = $method->invoke($controller, $ticket);
+
         $this->assertSame('cuenta-del-chat', $account);
     }
 
-    public function test_deja_que_el_proveedor_use_el_respaldo_si_la_sesion_no_tiene_cuenta_real(): void
+    public function test_deja_que_el_proveedor_resuelva_la_cuenta_si_no_hay_una_cuenta_real(): void
     {
+        config(['services.whatsapp.default_account' => null]);
+
         ChatbotSession::query()->create([
             'account' => 'default',
             'phone' => '18095169172',

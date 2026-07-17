@@ -490,8 +490,17 @@ class TicketSolicitudController extends Controller
 
     private function notificationAccount(TicketSolicitud $ticket): ?string
     {
-        if (($ticket->source_channel ?: 'whatsapp') !== 'whatsapp'
-            || ! Schema::hasTable('chatbot_sessions')
+        if (($ticket->source_channel ?: 'whatsapp') !== 'whatsapp') {
+            return null;
+        }
+
+        $defaultAccount = trim((string) config('services.whatsapp.default_account'));
+
+        if ($defaultAccount !== '') {
+            return $defaultAccount;
+        }
+
+        if (! Schema::hasTable('chatbot_sessions')
             || ! Schema::hasColumn('chatbot_sessions', 'account')) {
             return null;
         }
