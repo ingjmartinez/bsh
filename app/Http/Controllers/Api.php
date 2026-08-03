@@ -7,13 +7,17 @@ use App\Models\CuentaContable;
 use App\Models\DetalleCuenta;
 use App\Models\EntradaDiario;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class Api extends Controller
 {
     private const CONTABILIDAD_TOKEN = '78177a3a-3679-4899-bf9f-22d3badeb737';
+
     private const CONTABILIDAD_EMPRESAS = ['126', '100'];
 
     public function getCuentas(Request $request)
@@ -107,7 +111,7 @@ class Api extends Controller
         $empresa = $this->empresaContabilidadFromRequest($request);
         $syncResult = $this->syncCuentasFromExternal($empresa);
 
-        if (!$syncResult['ok']) {
+        if (! $syncResult['ok']) {
             return response()->json([
                 'message' => $syncResult['message'],
                 'status' => $syncResult['status'] ?? null,
@@ -125,7 +129,6 @@ class Api extends Controller
         ]);
     }
 
-
     public function getCentrosCosto(Request $request)
     {
         $empresa = trim((string) $request->query('empresa', ''));
@@ -135,7 +138,7 @@ class Api extends Controller
         if (in_array($empresa, ['126', '100'], true)) {
             $query->where(function ($q) use ($empresa) {
                 $q->where('company_id', $empresa)
-                    ->orWhere('company_id', 'like', $empresa . '-%');
+                    ->orWhere('company_id', 'like', $empresa.'-%');
             });
         }
 
@@ -281,7 +284,7 @@ class Api extends Controller
 
         $syncResult = $this->syncDetalleCuentasFromExternal($cuenta, $inicio, $fin, $empresa);
 
-        if (!$syncResult['ok']) {
+        if (! $syncResult['ok']) {
             return response()->json([
                 'message' => $syncResult['message'],
             ], $syncResult['status']);
@@ -338,13 +341,43 @@ class Api extends Controller
         ]);
     }
 
-    public function getEntradasDiario(Request $request)
+    public function getEntradasDiario(Request $request): JsonResponse
     {
         $validated = $this->validateEntradasDiarioRequest($request);
         if (isset($validated['response'])) {
             return $validated['response'];
         }
 
+        try {
+            $missingColumns = $this->missingEntradasDiarioColumns();
+
+            if ($missingColumns !== []) {
+                Log::error('El almacenamiento de movimiento del mayor no esta disponible.', [
+                    'missing_columns' => $missingColumns,
+                ]);
+
+                return response()->json([
+                    'message' => 'El almacenamiento de movimiento del mayor no esta disponible. Verifica las migraciones del servidor.',
+                ], 503);
+            }
+
+            return $this->entradasDiarioResponse($request, $validated);
+        } catch (QueryException $exception) {
+            Log::error('Fallo la consulta local de movimiento del mayor.', [
+                'exception' => $exception,
+                'empresa' => $validated['empresa'],
+                'fecha_inicio' => $validated['inicio']->toDateString(),
+                'fecha_fin' => $validated['fin']->toDateString(),
+            ]);
+
+            return response()->json([
+                'message' => 'No se pudo consultar el movimiento del mayor. Revisa la base de datos del servidor.',
+            ], 503);
+        }
+    }
+
+    private function entradasDiarioResponse(Request $request, array $validated): JsonResponse
+    {
         $query = EntradaDiario::query()
             ->where('company_id', $validated['empresa'])
             ->whereBetween('fecha', [$validated['inicio']->toDateString(), $validated['fin']->toDateString()]);
@@ -382,7 +415,7 @@ class Api extends Controller
         $buscar = trim((string) $request->query('buscar', ''));
         if ($buscar !== '') {
             $escapedBuscar = str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $buscar);
-            $like = '%' . $escapedBuscar . '%';
+            $like = '%'.$escapedBuscar.'%';
             $numero = str_replace([',', ' '], '', $buscar);
 
             if (is_numeric($numero)) {
@@ -452,6 +485,28 @@ class Api extends Controller
             'limit' => $limit,
             'truncated' => (int) ($summary->registros ?? 0) > $items->count(),
         ]);
+    }
+
+    private function missingEntradasDiarioColumns(): array
+    {
+        $requiredColumns = [
+            'id',
+            'external_key',
+            'no_asiento',
+            'company_id',
+            'fecha',
+            'cuenta',
+            'debito',
+            'credito',
+            'id_centro_costo',
+            'id_viejo',
+        ];
+
+        if (! Schema::hasTable('entradas_diario')) {
+            return $requiredColumns;
+        }
+
+        return array_values(array_diff($requiredColumns, Schema::getColumnListing('entradas_diario')));
     }
 
     public function syncEntradasDiario(Request $request)
@@ -622,7 +677,7 @@ class Api extends Controller
             $tipos = array_filter(array_map('trim', explode(',', $tipos)));
         }
 
-        if (!is_array($tipos)) {
+        if (! is_array($tipos)) {
             return [];
         }
 
@@ -660,7 +715,7 @@ class Api extends Controller
             ->whereNotNull('tipo')
             ->whereRaw("TRIM(tipo) <> ''")
             ->whereRaw(
-                'LOWER(TRIM(COALESCE(tipo, ""))) IN (' . implode(',', array_fill(0, $tiposNormalizados->count(), '?')) . ')',
+                'LOWER(TRIM(COALESCE(tipo, ""))) IN ('.implode(',', array_fill(0, $tiposNormalizados->count(), '?')).')',
                 $tiposNormalizados->all()
             )
             ->pluck('cuenta')
@@ -757,6 +812,7 @@ class Api extends Controller
                 $normalized[$upperKey] = $value;
             }
         }
+
         return $normalized;
     }
 
@@ -859,6 +915,7 @@ class Api extends Controller
             foreach ($items as $item) {
                 if (! is_array($item)) {
                     $skipped++;
+
                     continue;
                 }
 
@@ -867,6 +924,7 @@ class Api extends Controller
 
                 if ($cuenta === '') {
                     $skipped++;
+
                     continue;
                 }
 
@@ -899,8 +957,8 @@ class Api extends Controller
 
     private function fetchCuentasByEmpresa(string $empresa): array
     {
-        $url = 'https://apisj.azurewebsites.net/ApiSJ/CatalagoCta/Listar?strToken=' . urlencode(self::CONTABILIDAD_TOKEN)
-            . '&intIdEmpresa=' . urlencode($empresa);
+        $url = 'https://apisj.azurewebsites.net/ApiSJ/CatalagoCta/Listar?strToken='.urlencode(self::CONTABILIDAD_TOKEN)
+            .'&intIdEmpresa='.urlencode($empresa);
 
         $curl = curl_init();
         curl_setopt_array($curl, [
@@ -937,7 +995,7 @@ class Api extends Controller
         if ($httpCode < 200 || $httpCode >= 300) {
             return [
                 'ok' => false,
-                'message' => 'La API externa respondió con error para la empresa ' . $empresa . '.',
+                'message' => 'La API externa respondió con error para la empresa '.$empresa.'.',
                 'status' => 502,
             ];
         }
@@ -947,7 +1005,7 @@ class Api extends Controller
         if (! is_array($decoded)) {
             return [
                 'ok' => false,
-                'message' => 'Respuesta inválida de API externa para la empresa ' . $empresa . '.',
+                'message' => 'Respuesta inválida de API externa para la empresa '.$empresa.'.',
                 'status' => 502,
             ];
         }
@@ -961,7 +1019,7 @@ class Api extends Controller
     private function syncCentrosCostoFromExternal(string $empresa): array
     {
         $token = '78177a3a-3679-4899-bf9f-22d3badeb737';
-        $url = 'https://apisj.azurewebsites.net/fe/ApiSJ/api/ConsultaCentroCostos?strToken=' . urlencode($token) . '&intIdEmpresa=' . urlencode($empresa);
+        $url = 'https://apisj.azurewebsites.net/fe/ApiSJ/api/ConsultaCentroCostos?strToken='.urlencode($token).'&intIdEmpresa='.urlencode($empresa);
 
         $curl = curl_init();
         curl_setopt_array($curl, [
@@ -1023,6 +1081,7 @@ class Api extends Controller
         foreach ($items as $item) {
             if (! is_array($item)) {
                 $skipped++;
+
                 continue;
             }
 
@@ -1031,6 +1090,7 @@ class Api extends Controller
 
             if (! $idCentroCosto) {
                 $skipped++;
+
                 continue;
             }
 
@@ -1105,12 +1165,13 @@ class Api extends Controller
     {
         $atributos = [];
         for ($i = 1; $i <= 73; $i++) {
-            $key = 'Atr' . $i;
+            $key = 'Atr'.$i;
             $value = $this->externalValue($item, $key);
             if ($value !== null && $value !== '') {
                 $atributos[$key] = $value;
             }
         }
+
         return $atributos;
     }
 
@@ -1141,8 +1202,9 @@ class Api extends Controller
                 $items = $this->fetchDetalleByDate($cuenta, $fechaActual->toDateString(), $empresaActual);
 
                 foreach ($items as $rawItem) {
-                    if (!is_array($rawItem)) {
+                    if (! is_array($rawItem)) {
                         $omitidos++;
+
                         continue;
                     }
 
@@ -1213,10 +1275,10 @@ class Api extends Controller
 
     private function fetchDetalleByDate(string $cuenta, string $fecha, string $empresa): array
     {
-        $url = 'https://apisj.azurewebsites.net/ApiSJ/EntradaDiario/Listar?strToken=' . urlencode(self::CONTABILIDAD_TOKEN)
-            . '&intIdEmpresa=' . urlencode($empresa)
-            . '&dtFecha=' . urlencode($fecha)
-            . '&strCuenta=' . urlencode($cuenta);
+        $url = 'https://apisj.azurewebsites.net/ApiSJ/EntradaDiario/Listar?strToken='.urlencode(self::CONTABILIDAD_TOKEN)
+            .'&intIdEmpresa='.urlencode($empresa)
+            .'&dtFecha='.urlencode($fecha)
+            .'&strCuenta='.urlencode($cuenta);
 
         $curl = curl_init();
 
@@ -1230,7 +1292,7 @@ class Api extends Controller
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'POST',
             CURLOPT_HTTPHEADER => [
-                'Content-Type: application/json'
+                'Content-Type: application/json',
             ],
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_SSL_VERIFYPEER => 0,
@@ -1240,6 +1302,7 @@ class Api extends Controller
 
         if ($response === false) {
             curl_close($curl);
+
             return [];
         }
 
@@ -1247,7 +1310,7 @@ class Api extends Controller
 
         $decoded = json_decode($response, true);
 
-        if (!is_array($decoded)) {
+        if (! is_array($decoded)) {
             return [];
         }
 
@@ -1292,8 +1355,9 @@ class Api extends Controller
             foreach ($fetch['items'] as $rawItem) {
                 $received++;
 
-                if (!is_array($rawItem)) {
+                if (! is_array($rawItem)) {
                     $skipped++;
+
                     continue;
                 }
 
@@ -1301,11 +1365,13 @@ class Api extends Controller
 
                 if ($row === null) {
                     $skipped++;
+
                     continue;
                 }
 
-                if ($cuentasPermitidasSet !== null && !isset($cuentasPermitidasSet[$row['cuenta']])) {
+                if ($cuentasPermitidasSet !== null && ! isset($cuentasPermitidasSet[$row['cuenta']])) {
                     $skipped++;
+
                     continue;
                 }
 
@@ -1417,14 +1483,16 @@ class Api extends Controller
                 $exists = array_key_exists($row['external_key'], $existingHashes);
                 $existingHash = $existingHashes[$row['external_key']] ?? null;
 
-                if (!$exists) {
+                if (! $exists) {
                     $created++;
                     $rowsToUpsert[] = $row;
+
                     continue;
                 }
 
                 if ($existingHash === $row['payload_hash']) {
                     $unchanged++;
+
                     continue;
                 }
 
@@ -1450,9 +1518,9 @@ class Api extends Controller
 
     private function fetchEntradasDiarioByDate(string $empresa, string $fecha): array
     {
-        $url = 'https://apisj.azurewebsites.net/ApiSJ/EntradaDiario/Listar?strToken=' . urlencode(self::CONTABILIDAD_TOKEN)
-            . '&intIdEmpresa=' . urlencode($empresa)
-            . '&dtFecha=' . urlencode($fecha);
+        $url = 'https://apisj.azurewebsites.net/ApiSJ/EntradaDiario/Listar?strToken='.urlencode(self::CONTABILIDAD_TOKEN)
+            .'&intIdEmpresa='.urlencode($empresa)
+            .'&dtFecha='.urlencode($fecha);
 
         $curl = curl_init();
         curl_setopt_array($curl, [
@@ -1512,7 +1580,7 @@ class Api extends Controller
 
         $decoded = json_decode($response, true);
 
-        if (!is_array($decoded)) {
+        if (! is_array($decoded)) {
             Log::warning('Respuesta invalida de API externa de entradas de diario.', [
                 'empresa' => $empresa,
                 'fecha' => $fecha,
@@ -1573,7 +1641,7 @@ class Api extends Controller
         }
 
         foreach (self::CONTABILIDAD_EMPRESAS as $empresa) {
-            if (preg_match('/^' . preg_quote($empresa, '/') . '(?:\\D|$)/', $raw) === 1) {
+            if (preg_match('/^'.preg_quote($empresa, '/').'(?:\\D|$)/', $raw) === 1) {
                 return $empresa;
             }
         }
@@ -1602,7 +1670,7 @@ class Api extends Controller
 
         $clean = str_replace(',', '', trim((string) $value));
 
-        if ($clean === '' || !is_numeric($clean)) {
+        if ($clean === '' || ! is_numeric($clean)) {
             return null;
         }
 
