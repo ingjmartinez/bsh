@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Empleado;
-use Illuminate\Http\Request;
 use App\Models\VwUsuariosUnion;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -54,6 +54,7 @@ class EmpleadoController extends Controller
         }
 
         $empleados = $query->get();
+
         return response()->json($empleados);
     }
 
@@ -61,7 +62,7 @@ class EmpleadoController extends Controller
     {
         $empresa = trim((string) $request->query('empresa', ''));
         $empresaCache = array_key_exists($empresa, self::EMPRESAS_RRHH) ? $empresa : 'all';
-        $cacheKey = 'empleados_dashboard:' . $empresaCache;
+        $cacheKey = 'empleados_dashboard:'.$empresaCache;
 
         $payload = Cache::remember($cacheKey, now()->addSeconds(60), function () use ($empresa) {
             $fechaEgresoColumn = $this->empleadosColumnName('fecha_egreso', 'fechasalida');
@@ -178,7 +179,7 @@ class EmpleadoController extends Controller
         ini_set('memory_limit', '512M');
         $empresa = trim((string) $request->query('empresa', ''));
 
-        if (!array_key_exists($empresa, self::EMPRESAS_RRHH)) {
+        if (! array_key_exists($empresa, self::EMPRESAS_RRHH)) {
             return response()->json(['error' => 'Empresa invalida. Debe ser 126 o 100.'], 422);
         }
 
@@ -192,6 +193,9 @@ class EmpleadoController extends Controller
                 ->get('https://apisj.azurewebsites.net/ApiSJ/RRHH/Empleados/Listar', [
                     'strToken' => '78177a3a-3679-4899-bf9f-22d3badeb737',
                     'intIdEmpresa' => $empresa,
+                    'strFiltros' => json_encode([
+                        ['CompanyId', $empresa],
+                    ]),
                 ]);
         } catch (\Throwable $e) {
             Log::error('Error consultando API de empleados', [
@@ -211,7 +215,7 @@ class EmpleadoController extends Controller
 
         $empleados = $response->json();
 
-        if (!is_array($empleados)) {
+        if (! is_array($empleados)) {
             Log::error('API de empleados no devolvio un arreglo JSON valido', [
                 'empresa' => $empresa,
                 'status' => $response->status(),
@@ -235,6 +239,7 @@ class EmpleadoController extends Controller
                 $e = array_change_key_case((array) $e, CASE_UPPER);
                 if (empty($e['EMPLEADOID'])) {
                     $omitidos++;
+
                     continue;
                 }
 
@@ -257,7 +262,7 @@ class EmpleadoController extends Controller
                 }
             }
 
-            if (!empty($lote)) {
+            if (! empty($lote)) {
                 Empleado::upsert($lote, ['companyid', 'empleadoid'], $columnasActualizables);
             }
         } catch (\Throwable $e) {
@@ -278,7 +283,7 @@ class EmpleadoController extends Controller
             ]);
         }
 
-        Cache::forget('empleados_dashboard:' . $empresa);
+        Cache::forget('empleados_dashboard:'.$empresa);
         Cache::forget('empleados_dashboard:all');
 
         return response()->json([
@@ -293,7 +298,7 @@ class EmpleadoController extends Controller
 
     private function empresaRrhhLabel(string $empresa): string
     {
-        return self::EMPRESAS_RRHH[$empresa] ?? ('Empresa ' . $empresa);
+        return self::EMPRESAS_RRHH[$empresa] ?? ('Empresa '.$empresa);
     }
 
     private function empleadosColumnName(string ...$candidates): string
@@ -334,33 +339,33 @@ class EmpleadoController extends Controller
     private function mapearEmpleadoApi(array $e, string $empresa): array
     {
         return [
-            'companyid'                => $e['COMPANYID'] ?? $empresa,
-            'empleadoid'               => $e['EMPLEADOID'],
-            'idcentrocosto'            => $this->normalizarEntero($e['IDCENTROCOSTO'] ?? null),
-            'nombres'                  => $this->limitarTexto(($e['NOMBRES'] ?? null) ?: 'Sin nombre', 100),
-            'apellidos'                => $this->limitarTexto(($e['APELLIDOS'] ?? null) ?: 'Sin apellido', 100),
-            'cedula'                   => $this->limitarTexto($e['CEDULA'] ?? null, 30),
-            'salariomensual'            => $this->normalizarDecimal($e['SALARIOMENSUAL'] ?? null),
-            'salario'                  => $this->normalizarDecimal($e['SALARIOMENSUAL'] ?? null),
-            'fechanacimiento'           => $this->normalizarFecha($e['FECHANACIMIENTO'] ?? null),
-            'fecha_nacimiento'         => $this->normalizarFecha($e['FECHANACIMIENTO'] ?? null),
-            'fechaingreso'              => $this->normalizarFecha($e['FECHAINGRESO'] ?? null),
-            'fecha_ingreso'            => $this->normalizarFecha($e['FECHAINGRESO'] ?? null),
-            'fechasalida'               => $this->normalizarFecha($e['FECHASALIDA'] ?? null),
-            'fecha_egreso'             => $this->normalizarFecha($e['FECHASALIDA'] ?? null),
-            'estatus'                  => empty($e['FECHASALIDA']) ? 1 : 0,
-            'tel1'                      => $this->limitarTexto($e['TEL1'] ?? null, 30),
-            'tel2'                      => $this->limitarTexto($e['TEL2'] ?? null, 30),
-            'telefono'                 => $this->limitarTexto($e['TEL1'] ?? ($e['TEL2'] ?? null), 30),
-            'email'                    => $this->limitarTexto($e['EMAIL'] ?? null, 150),
-            'ctabanco'                  => $this->limitarTexto($e['CTABANCO'] ?? ($e['CUENTA'] ?? null), 50),
-            'numero_cuenta'            => $this->limitarTexto($e['CTABANCO'] ?? ($e['CUENTA'] ?? null), 50),
-            'tipocuenta'                => $this->limitarTexto($e['TIPOCUENTA'] ?? null, 30),
-            'tipo_cuenta'              => $this->limitarTexto($e['TIPOCUENTA'] ?? null, 30),
-            'fuente_sync'              => 'apisj_rrhh',
-            'ultima_sync_at'           => now(),
-            'created_at'               => now(),
-            'updated_at'               => now(),
+            'companyid' => $e['COMPANYID'] ?? $empresa,
+            'empleadoid' => $e['EMPLEADOID'],
+            'idcentrocosto' => $this->normalizarEntero($e['IDCENTROCOSTO'] ?? null),
+            'nombres' => $this->limitarTexto(($e['NOMBRES'] ?? null) ?: 'Sin nombre', 100),
+            'apellidos' => $this->limitarTexto(($e['APELLIDOS'] ?? null) ?: 'Sin apellido', 100),
+            'cedula' => $this->limitarTexto($e['CEDULA'] ?? null, 30),
+            'salariomensual' => $this->normalizarDecimal($e['SALARIOMENSUAL'] ?? null),
+            'salario' => $this->normalizarDecimal($e['SALARIOMENSUAL'] ?? null),
+            'fechanacimiento' => $this->normalizarFecha($e['FECHANACIMIENTO'] ?? null),
+            'fecha_nacimiento' => $this->normalizarFecha($e['FECHANACIMIENTO'] ?? null),
+            'fechaingreso' => $this->normalizarFecha($e['FECHAINGRESO'] ?? null),
+            'fecha_ingreso' => $this->normalizarFecha($e['FECHAINGRESO'] ?? null),
+            'fechasalida' => $this->normalizarFecha($e['FECHASALIDA'] ?? null),
+            'fecha_egreso' => $this->normalizarFecha($e['FECHASALIDA'] ?? null),
+            'estatus' => empty($e['FECHASALIDA']) ? 1 : 0,
+            'tel1' => $this->limitarTexto($e['TEL1'] ?? null, 30),
+            'tel2' => $this->limitarTexto($e['TEL2'] ?? null, 30),
+            'telefono' => $this->limitarTexto($e['TEL1'] ?? ($e['TEL2'] ?? null), 30),
+            'email' => $this->limitarTexto($e['EMAIL'] ?? null, 150),
+            'ctabanco' => $this->limitarTexto($e['CTABANCO'] ?? ($e['CUENTA'] ?? null), 50),
+            'numero_cuenta' => $this->limitarTexto($e['CTABANCO'] ?? ($e['CUENTA'] ?? null), 50),
+            'tipocuenta' => $this->limitarTexto($e['TIPOCUENTA'] ?? null, 30),
+            'tipo_cuenta' => $this->limitarTexto($e['TIPOCUENTA'] ?? null, 30),
+            'fuente_sync' => 'apisj_rrhh',
+            'ultima_sync_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ];
     }
 
@@ -416,7 +421,7 @@ class EmpleadoController extends Controller
                 'id_empleado' => $request->id_empleado,
                 'nombre' => $request->nombre,
                 'cedula' => $request->cedula,
-                'estado' => $request->estado
+                'estado' => $request->estado,
             ]
         );
 
@@ -432,12 +437,14 @@ class EmpleadoController extends Controller
             ->pluck('agencia_id')
             ->toArray();
         $empleado->agencias = implode(',', $agencias);
+
         return response()->json($empleado);
     }
 
     public function destroy($id)
     {
         Empleado::where('id', $id)->update(['estado' => 0]);
+
         return response()->json(['success' => true]);
     }
 
@@ -449,6 +456,7 @@ class EmpleadoController extends Controller
     public function listNoRegularizados()
     {
         $empleados = DB::table('empleados_no_regularizados')->get();
+
         return response()->json($empleados);
     }
 
@@ -462,8 +470,8 @@ class EmpleadoController extends Controller
 
     public function incentivos()
     {
-        $agencias = DB::select("SELECT DISTINCT CAST(terminal AS UNSIGNED) AS agencia_id FROM agencias WHERE aplica_incentivo = 1");
-        $agencias = array_map(fn($item) => $item->agencia_id, $agencias);
+        $agencias = DB::select('SELECT DISTINCT CAST(terminal AS UNSIGNED) AS agencia_id FROM agencias WHERE aplica_incentivo = 1');
+        $agencias = array_map(fn ($item) => $item->agencia_id, $agencias);
         $agencias = json_encode($agencias);
 
         return view('incentivos.empleados', compact('agencias'));
@@ -489,6 +497,7 @@ class EmpleadoController extends Controller
                 ELSE CONCAT('Empresa ', companyid)
             END AS company"),
         )->whereNull('fecha_egreso')->get();
+
         return response()->json($empleados);
     }
 
@@ -509,7 +518,7 @@ class EmpleadoController extends Controller
         Empleado::where('id', $id)->update([
             'aplica_incentivo' => $aplica,
             'porcentaje_incentivo' => $porcentaje,
-            'tipo_empleado_incentivo' => $tipo
+            'tipo_empleado_incentivo' => $tipo,
         ]);
 
         $empleado = Empleado::where('id', $id)->first();
@@ -522,8 +531,8 @@ class EmpleadoController extends Controller
         if ($tipo == 3) {
             DB::table('porcentaje_administrativo')->insert([
                 'empleado_id' => $empleado->empleadoid,
-                'company_id'   => $empleado->companyid,
-                'porcentaje'  => $porcentaje,
+                'company_id' => $empleado->companyid,
+                'porcentaje' => $porcentaje,
             ]);
         }
 
@@ -537,8 +546,8 @@ class EmpleadoController extends Controller
             foreach ($agencias as $agencia_id) {
                 DB::table('coordinador')->insert([
                     'empleado_id' => $empleado->empleadoid,
-                    'company_id'   => $empleado->companyid,
-                    'agencia_id'  => $agencia_id,
+                    'company_id' => $empleado->companyid,
+                    'agencia_id' => $agencia_id,
                 ]);
             }
         }
