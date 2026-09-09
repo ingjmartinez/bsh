@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ListarEmpleadosRequest;
 use App\Models\Empleado;
 use App\Models\VwUsuariosUnion;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -23,7 +26,7 @@ class EmpleadoController extends Controller
         return view('empleado.index');
     }
 
-    public function list(Request $request)
+    public function list(ListarEmpleadosRequest $request): JsonResponse
     {
         $empresa = trim((string) $request->query('empresa', ''));
         $fechaIngresoColumn = $this->empleadosColumnSql('fecha_ingreso', 'fechaingreso');
@@ -33,11 +36,7 @@ class EmpleadoController extends Controller
         $centroCostoColumn = $this->empleadosColumnSql('idcentrocosto');
 
         $query = Empleado::select(
-            DB::raw("CASE
-                WHEN companyid = '126' THEN 'Business Support Hub'
-                WHEN companyid = '100' THEN 'Consorcio SH-QPL'
-                ELSE CONCAT('Empresa ', companyid)
-            END AS company"),
+            'companyid',
             'empleadoid',
             DB::raw("{$centroCostoColumn} AS idcentrocosto"),
             'nombres',
@@ -53,9 +52,60 @@ class EmpleadoController extends Controller
             $query->where('companyid', $empresa);
         }
 
-        $empleados = $query->get();
+        if (! $request->has('draw')) {
+            $empleados = $query->orderBy('companyid')->orderBy('empleadoid')->get();
 
-        return response()->json($empleados);
+            return response()->json($this->agregarNombreEmpresa($empleados));
+        }
+
+        $recordsTotal = (clone $query)->count();
+        $search = trim((string) $request->input('search.value', ''));
+
+        if ($search !== '') {
+            $searchValue = '%'.$search.'%';
+            $query->where(function ($searchQuery) use ($searchValue, $centroCostoColumn, $ciudadColumn): void {
+                $searchQuery
+                    ->where('companyid', 'like', $searchValue)
+                    ->orWhere('empleadoid', 'like', $searchValue)
+                    ->orWhereRaw("CAST({$centroCostoColumn} AS CHAR) LIKE ?", [$searchValue])
+                    ->orWhere('nombres', 'like', $searchValue)
+                    ->orWhere('apellidos', 'like', $searchValue)
+                    ->orWhere('cedula', 'like', $searchValue)
+                    ->orWhereRaw("CAST({$ciudadColumn} AS CHAR) LIKE ?", [$searchValue]);
+            });
+        }
+
+        $recordsFiltered = (clone $query)->count();
+        $orderColumns = [
+            'companyid',
+            'empleadoid',
+            $centroCostoColumn,
+            'nombres',
+            'apellidos',
+            'cedula',
+            $ciudadColumn,
+            $salarioColumn,
+            $fechaIngresoColumn,
+            $fechaEgresoColumn,
+        ];
+        $orderColumn = $orderColumns[(int) $request->input('order.0.column', 0)] ?? 'companyid';
+        $orderDirection = $request->input('order.0.dir', 'asc') === 'desc' ? 'desc' : 'asc';
+        $start = (int) $request->input('start', 0);
+        $length = (int) $request->input('length', 10);
+
+        $empleados = $query
+            ->orderByRaw("{$orderColumn} {$orderDirection}")
+            ->orderBy('empleadoid')
+            ->skip($start)
+            ->take($length)
+            ->get();
+
+        return response()->json([
+            'draw' => (int) $request->input('draw', 0),
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $this->agregarNombreEmpresa($empleados),
+        ]);
     }
 
     public function dashboard(Request $request)
@@ -64,7 +114,11 @@ class EmpleadoController extends Controller
         $empresaCache = array_key_exists($empresa, self::EMPRESAS_RRHH) ? $empresa : 'all';
         $cacheKey = 'empleados_dashboard:'.$empresaCache;
 
-        $payload = Cache::remember($cacheKey, now()->addSeconds(60), function () use ($empresa) {
+        if ($request->boolean('refresh')) {
+            Cache::forget($cacheKey);
+        }
+
+        $payload = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($empresa) {
             $fechaEgresoColumn = $this->empleadosColumnName('fecha_egreso', 'fechasalida');
             $salarioColumn = $this->empleadosColumnName('salario', 'salariomensual');
             $ciudadExpression = $this->empleadosCiudadExpression();
@@ -299,6 +353,18 @@ class EmpleadoController extends Controller
     private function empresaRrhhLabel(string $empresa): string
     {
         return self::EMPRESAS_RRHH[$empresa] ?? ('Empresa '.$empresa);
+    }
+
+    /**
+     * @param  Collection<int, Empleado>  $empleados
+     * @return Collection<int, Empleado>
+     */
+    private function agregarNombreEmpresa(Collection $empleados): Collection
+    {
+        return $empleados->each(function (Empleado $empleado): void {
+            $empleado->setAttribute('company', $this->empresaRrhhLabel((string) $empleado->companyid));
+            $empleado->makeHidden('companyid');
+        });
     }
 
     private function empleadosColumnName(string ...$candidates): string

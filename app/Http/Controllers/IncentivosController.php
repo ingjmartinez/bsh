@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CoordinadorOperador;
 use App\Models\IncentivoAdministrativo;
 use Carbon\Carbon;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -17,7 +18,7 @@ class IncentivosController extends Controller
             ->get();
 
         return view('incentivos.index', [
-            'productosExcluidos' => $productosExcluidos
+            'productosExcluidos' => $productosExcluidos,
         ]);
     }
 
@@ -28,11 +29,11 @@ class IncentivosController extends Controller
             ->get();
 
         return view('incentivos.procesar', [
-            'productosExcluidos' => $productosExcluidos
+            'productosExcluidos' => $productosExcluidos,
         ]);
     }
 
-    function list(Request $request)
+    public function list(Request $request)
     {
         ini_set('max_execution_time', 300); // 5 minutes
         ini_set('memory_limit', '512M');
@@ -40,10 +41,11 @@ class IncentivosController extends Controller
         $excluidos = $request->input('excluidos', '');
         $year = $request->input('year', '');
         $incentivos = DB::select('CALL CalculoIncentivo(?, ?, ?)', [$mes,  $year, $excluidos]);
+
         return response()->json($incentivos);
     }
 
-    function save(Request $request)
+    public function save(Request $request)
     {
         ini_set('max_execution_time', 300); // 5 minutes
         ini_set('memory_limit', '512M');
@@ -55,10 +57,10 @@ class IncentivosController extends Controller
         // Insertar o traer id de incentivo_temporal_c
         $incentivoId = DB::table('incentivo_temporal_c')
             ->where('anio', $anio)->where('mes', $mes)->value('incentivo_id');
-        if (!$incentivoId) {
+        if (! $incentivoId) {
             $incentivoId = DB::table('incentivo_temporal_c')->insertGetId([
                 'anio' => $anio,
-                'mes' => $mes
+                'mes' => $mes,
             ]);
         }
 
@@ -92,7 +94,7 @@ class IncentivosController extends Controller
         return response()->json(['message' => 'Incentivos guardados exitosamente.']);
     }
 
-    function listPlanAgencia(Request $request)
+    public function listPlanAgencia(Request $request)
     {
         ini_set('max_execution_time', 300); // 5 minutes
         ini_set('memory_limit', '512M');
@@ -181,14 +183,14 @@ class IncentivosController extends Controller
         );
 
         // FORMAT(it.venta_base, 2) AS venta_base,
-        // CASE WHEN it.venta_mes >= it.meta_plan 
+        // CASE WHEN it.venta_mes >= it.meta_plan
         //             THEN 'SI CUMPLE'
         //             ELSE 'NO CUMPLE'
         //         END AS condicion
         return response()->json($planAgencia);
     }
 
-    function savePlanAgencia(Request $request)
+    public function savePlanAgencia(Request $request)
     {
         ini_set('max_execution_time', 300); // 5 minutes
         ini_set('memory_limit', '512M');
@@ -200,10 +202,10 @@ class IncentivosController extends Controller
         // Insertar o traer id de incentivo_temporal_c
         $incentivoId = DB::table('incentivo_temporal_c')
             ->where('anio', $anio)->where('mes', $mes)->value('incentivo_id');
-        if (!$incentivoId) {
+        if (! $incentivoId) {
             $incentivoId = DB::table('incentivo_temporal_c')->insertGetId([
                 'anio' => $anio,
-                'mes' => $mes
+                'mes' => $mes,
             ]);
         }
 
@@ -239,7 +241,7 @@ class IncentivosController extends Controller
         return response()->json(['message' => 'Plan Agencia guardado exitosamente.']);
     }
 
-    function listEfectividad(Request $request)
+    public function listEfectividad(Request $request)
     {
         ini_set('max_execution_time', 600); // 5 minutes
         ini_set('memory_limit', '1G');
@@ -301,10 +303,11 @@ class IncentivosController extends Controller
                 AND it.venta_mes > 0
             ORDER BY it.agencia_id;"
         );
+
         return response()->json($data);
     }
 
-    function saveEfectividad(Request $request)
+    public function saveEfectividad(Request $request)
     {
         ini_set('max_execution_time', 300); // 5 minutes
         ini_set('memory_limit', '512M');
@@ -316,10 +319,10 @@ class IncentivosController extends Controller
         // Insertar o traer id de incentivo_temporal_c
         $incentivoId = DB::table('incentivo_temporal_c')
             ->where('anio', $anio)->where('mes', $mes)->value('incentivo_id');
-        if (!$incentivoId) {
+        if (! $incentivoId) {
             $incentivoId = DB::table('incentivo_temporal_c')->insertGetId([
                 'anio' => $anio,
-                'mes' => $mes
+                'mes' => $mes,
             ]);
         }
 
@@ -354,7 +357,7 @@ class IncentivosController extends Controller
         return response()->json(['message' => 'Efectividad guardada exitosamente.']);
     }
 
-    function listPagoAgente(Request $request)
+    public function listPagoAgente(Request $request)
     {
         ini_set('max_execution_time', 600); // 5 minutes
         ini_set('memory_limit', '1G');
@@ -404,10 +407,11 @@ class IncentivosController extends Controller
                 AND pad.monto_agente > 0
                 AND it.venta_mes > 0;"
         );
+
         return response()->json($data);
     }
 
-    function savePagoAgente(Request $request)
+    public function savePagoAgente(Request $request)
     {
         ini_set('max_execution_time', 300); // 5 minutes
         ini_set('memory_limit', '512M');
@@ -419,10 +423,10 @@ class IncentivosController extends Controller
         // Insertar o traer id de incentivo_temporal_c
         $incentivoId = DB::table('incentivo_temporal_c')
             ->where('anio', $anio)->where('mes', $mes)->value('incentivo_id');
-        if (!$incentivoId) {
+        if (! $incentivoId) {
             $incentivoId = DB::table('incentivo_temporal_c')->insertGetId([
                 'anio' => $anio,
-                'mes' => $mes
+                'mes' => $mes,
             ]);
         }
 
@@ -456,7 +460,7 @@ class IncentivosController extends Controller
         return response()->json(['message' => 'Pago Incentivos guardado exitosamente.']);
     }
 
-    function listPagoCoordinador(Request $request)
+    public function listPagoCoordinador(Request $request)
     {
         ini_set('max_execution_time', 600); // 5 minutes
         ini_set('memory_limit', '1G');
@@ -505,10 +509,11 @@ class IncentivosController extends Controller
             GROUP BY companyid, company, empleadoid, cedula, nombres, apellidos;",
             [$incentivoId, $sistema]
         );
+
         return response()->json($data);
     }
 
-    function savePagoCoordinador(Request $request)
+    public function savePagoCoordinador(Request $request)
     {
         ini_set('max_execution_time', 300); // 5 minutes
         ini_set('memory_limit', '512M');
@@ -520,10 +525,10 @@ class IncentivosController extends Controller
         // Insertar o traer id de incentivo_temporal_c
         $incentivoId = DB::table('incentivo_temporal_c')
             ->where('anio', $anio)->where('mes', $mes)->value('incentivo_id');
-        if (!$incentivoId) {
+        if (! $incentivoId) {
             $incentivoId = DB::table('incentivo_temporal_c')->insertGetId([
                 'anio' => $anio,
-                'mes' => $mes
+                'mes' => $mes,
             ]);
         }
 
@@ -551,7 +556,7 @@ class IncentivosController extends Controller
         return response()->json(['message' => 'Pago Incentivos guardado exitosamente.']);
     }
 
-    function listPagoCoordinadorDetalle(Request $request)
+    public function listPagoCoordinadorDetalle(Request $request)
     {
         ini_set('max_execution_time', 600); // 5 minutes
         ini_set('memory_limit', '1G');
@@ -569,7 +574,7 @@ class IncentivosController extends Controller
             return response()->json(['message' => 'No hay datos registrados en el mes.']);
         }
 
-        $sql = "SELECT 
+        $sql = 'SELECT 
                     agencia_id, 
                     tipo_producto, 
                     pad.sistema, 
@@ -589,27 +594,28 @@ class IncentivosController extends Controller
                         INNER JOIN empleados e ON c.empleado_id = e.empleadoid
                         WHERE e.cedula = ?
                     )
-                    AND excedente > 0";
+                    AND excedente > 0';
 
         $bindings = [$incentivoId, $cedula];
 
-        if (!empty($sistema)) {
-            $sql .= " AND pad.sistema = ?";
+        if (! empty($sistema)) {
+            $sql .= ' AND pad.sistema = ?';
             $bindings[] = $sistema;
         }
 
         if ($tipo_producto !== '') {
-            $sql .= " AND tipo_producto = ?";
+            $sql .= ' AND tipo_producto = ?';
             $bindings[] = $tipo_producto;
         }
 
-        $sql .= " ORDER BY agencia_id, tipo_producto, sistema";
+        $sql .= ' ORDER BY agencia_id, tipo_producto, sistema';
 
         $data = DB::select($sql, $bindings);
+
         return response()->json($data);
     }
 
-    function listPagoAdmin(Request $request)
+    public function listPagoAdmin(Request $request)
     {
         ini_set('max_execution_time', 600); // 5 minutes
         ini_set('memory_limit', '1G');
@@ -684,10 +690,11 @@ class IncentivosController extends Controller
                 emp.nombres, emp.apellidos, e.porcentaje
             ORDER BY Total_a_cobrar DESC;"
         );
+
         return response()->json($data);
     }
 
-    function savePagoAdmin(Request $request)
+    public function savePagoAdmin(Request $request)
     {
         ini_set('max_execution_time', 300); // 5 minutes
         ini_set('memory_limit', '512M');
@@ -700,10 +707,10 @@ class IncentivosController extends Controller
         $incentivoId = DB::table('incentivo_temporal_c')
             ->where('anio', $anio)->where('mes', $mes)->value('incentivo_id');
 
-        if (!$incentivoId) {
+        if (! $incentivoId) {
             $incentivoId = DB::table('incentivo_temporal_c')->insertGetId([
                 'anio' => $anio,
-                'mes' => $mes
+                'mes' => $mes,
             ]);
         }
 
@@ -734,7 +741,7 @@ class IncentivosController extends Controller
         return response()->json(['message' => 'Pago Incentivos guardado exitosamente.']);
     }
 
-    function listPagoAdminDetalle(Request $request)
+    public function listPagoAdminDetalle(Request $request)
     {
         ini_set('max_execution_time', 600); // 5 minutes
         ini_set('memory_limit', '1G');
@@ -975,7 +982,7 @@ class IncentivosController extends Controller
 
         $data = $rawData->map(function ($row) use ($minimoAgencia) {
             $pctTexto = $row['pct_num'] > 0
-                ? rtrim(rtrim(number_format($row['pct_num'], 2, '.', ''), '0'), '.') . '%'
+                ? rtrim(rtrim(number_format($row['pct_num'], 2, '.', ''), '0'), '.').'%'
                 : '0%';
 
             return [
@@ -1035,6 +1042,7 @@ class IncentivosController extends Controller
             'filtro_cumplimiento' => 'nullable|in:todos,cumplidos,no_cumplidos',
             'tramo_activo' => 'nullable|in:tramo1,tramo2',
             'rangos_pago' => 'nullable|string',
+            'alcance_productos' => 'nullable|in:completo,no_tradicionales',
         ]);
 
         $fechaIniSeleccionada = Carbon::parse($request->input('fecha_ini'))->toDateString();
@@ -1048,6 +1056,7 @@ class IncentivosController extends Controller
         $minDiasVenta = (int) $request->input('min_dias_venta', 10);
         $filtroCumplimiento = $request->input('filtro_cumplimiento', 'todos');
         $tramoActivo = $request->input('tramo_activo', 'tramo1');
+        $alcanceProductos = $request->input('alcance_productos', 'completo');
 
         $rangosPagoDefault = [
             ['desde' => 100001, 'hasta' => 250000, 'pago' => 1000],
@@ -1085,7 +1094,7 @@ class IncentivosController extends Controller
             if (is_array($decoded) && count($decoded) > 0) {
                 $sanitized = collect($decoded)
                     ->map(function ($row) {
-                        if (!is_array($row)) {
+                        if (! is_array($row)) {
                             return null;
                         }
 
@@ -1108,20 +1117,22 @@ class IncentivosController extends Controller
                     ->values()
                     ->all();
 
-                if (!empty($sanitized)) {
+                if (! empty($sanitized)) {
                     $rangosPago = $sanitized;
                 }
             }
         }
 
-        $buildBaseQuery = function (string $desde, string $hasta) use ($sistema) {
+        $buildBaseQuery = function (string $desde, string $hasta) use ($sistema, $alcanceProductos) {
             $betQuery = DB::table('vt_usuarios_bet')
                 ->selectRaw("cedula, monto, fecha, 'Lotobet' as sistema")
                 ->whereBetween('fecha', [$desde, $hasta]);
+            $this->applyProductScope($betQuery, 'producto_id', $alcanceProductos);
 
             $netQuery = DB::table('vt_usuarios_net')
                 ->selectRaw("cedula, monto, fecha, 'Lotedom' as sistema")
                 ->whereBetween('fecha', [$desde, $hasta]);
+            $this->applyProductScope($netQuery, 'producto_id', $alcanceProductos);
 
             if ($sistema === 'Lotobet') {
                 return $betQuery;
@@ -1156,8 +1167,8 @@ class IncentivosController extends Controller
         $empresaByCedula = [];
 
         if ($cedulas->isNotEmpty()) {
-            $buildAgencyTerminalQuery = function (string $tabla) use ($fechaIniSeleccionada, $fechaFinSeleccionada) {
-                return DB::table($tabla)
+            $buildAgencyTerminalQuery = function (string $tabla) use ($fechaIniSeleccionada, $fechaFinSeleccionada, $alcanceProductos) {
+                $query = DB::table($tabla)
                     ->selectRaw('cedula, TRIM(CAST(agencia_id AS CHAR)) AS terminal, COUNT(*) AS total')
                     ->whereBetween('fecha', [$fechaIniSeleccionada, $fechaFinSeleccionada])
                     ->whereNotNull('cedula')
@@ -1165,6 +1176,8 @@ class IncentivosController extends Controller
                     ->whereNotNull('agencia_id')
                     ->whereRaw("TRIM(CAST(agencia_id AS CHAR)) <> ''")
                     ->groupBy('cedula', DB::raw('TRIM(CAST(agencia_id AS CHAR))'));
+
+                return $this->applyProductScope($query, 'producto_id', $alcanceProductos);
             };
 
             if ($sistema === 'Lotobet') {
@@ -1213,7 +1226,7 @@ class IncentivosController extends Controller
                 $terminal = trim((string) $row->terminal);
                 $empresa = $empresaByTerminal[$terminal] ?? 'Sin empresa';
 
-                if (!isset($empresaCounterByCedula[$cedulaKey])) {
+                if (! isset($empresaCounterByCedula[$cedulaKey])) {
                     $empresaCounterByCedula[$cedulaKey] = [];
                 }
 
@@ -1250,7 +1263,7 @@ class IncentivosController extends Controller
                     }
                 }
 
-                if ($pagoEscala === 0.0 && !empty($rangosPago)) {
+                if ($pagoEscala === 0.0 && ! empty($rangosPago)) {
                     $ultimoRango = end($rangosPago);
                     if ($ventasMesActual >= (float) $ultimoRango['desde']) {
                         if ($tramoActivo === 'tramo2' && (float) $ultimoRango['desde'] >= 1000001) {
@@ -1306,6 +1319,10 @@ class IncentivosController extends Controller
                 'eval_fin' => $evalFin,
                 'min_dias_venta' => $minDiasVenta,
                 'filtro_cumplimiento' => $filtroCumplimiento,
+                'alcance_productos' => $alcanceProductos,
+                'alcance_productos_label' => $alcanceProductos === 'no_tradicionales'
+                    ? 'Solo productos no tradicionales'
+                    : 'Reporte completo',
                 'tramo_activo' => $tramoActivo,
                 'rangos_pago' => $rangosPago,
                 'total_vendido' => $totalVendido,
@@ -1332,7 +1349,7 @@ class IncentivosController extends Controller
             ->map(function ($coordinador) {
                 return [
                     'id' => $coordinador->id,
-                    'nombre' => trim(($coordinador->nombre ?? '') . ' ' . ($coordinador->apellido ?? '')),
+                    'nombre' => trim(($coordinador->nombre ?? '').' '.($coordinador->apellido ?? '')),
                     'agencias' => (int) $coordinador->agencias_count,
                     'agencias_validas' => 0,
                     'monto_usuarios' => 0,
@@ -1353,7 +1370,7 @@ class IncentivosController extends Controller
         $response = $this->reporteNuevoIncentivoV2($request);
         $payload = $response->getData(true);
 
-        if (!isset($payload['data']) || !is_array($payload['data'])) {
+        if (! isset($payload['data']) || ! is_array($payload['data'])) {
             return $response;
         }
 
@@ -1407,14 +1424,15 @@ class IncentivosController extends Controller
             $fechaIniSeleccionada = Carbon::parse($request->input('fecha_ini'))->toDateString();
             $fechaFinSeleccionada = Carbon::parse($request->input('fecha_fin'))->toDateString();
             $sistema = $request->input('sistema', 'Todos');
+            $alcanceProductos = $request->input('alcance_productos', 'completo');
 
             $qualifiedCedulaSet = $qualifiedCedulas
                 ->mapWithKeys(function ($cedula) {
                     return [(string) $cedula => true];
                 });
 
-            $buildAgencyQuery = function (string $tabla) use ($fechaIniSeleccionada, $fechaFinSeleccionada) {
-                return DB::table($tabla)
+            $buildAgencyQuery = function (string $tabla) use ($fechaIniSeleccionada, $fechaFinSeleccionada, $alcanceProductos) {
+                $query = DB::table($tabla)
                     ->selectRaw('cedula, TRIM(CAST(agencia_id AS CHAR)) AS terminal, COUNT(*) AS total')
                     ->whereBetween('fecha', [$fechaIniSeleccionada, $fechaFinSeleccionada])
                     ->whereNotNull('cedula')
@@ -1422,6 +1440,8 @@ class IncentivosController extends Controller
                     ->whereNotNull('agencia_id')
                     ->whereRaw("TRIM(CAST(agencia_id AS CHAR)) <> ''")
                     ->groupBy('cedula', DB::raw('TRIM(CAST(agencia_id AS CHAR))'));
+
+                return $this->applyProductScope($query, 'producto_id', $alcanceProductos);
             };
 
             if ($sistema === 'Lotobet') {
@@ -1528,7 +1548,7 @@ class IncentivosController extends Controller
             ->map(function ($coordinador) {
                 return [
                     'id' => $coordinador->id,
-                    'nombre' => trim(($coordinador->nombre ?? '') . ' ' . ($coordinador->apellido ?? '')),
+                    'nombre' => trim(($coordinador->nombre ?? '').' '.($coordinador->apellido ?? '')),
                     'agencias' => (int) $coordinador->agencias_count,
                     'agencias_validas' => 0,
                     'monto_usuarios' => 0,
@@ -1567,6 +1587,20 @@ class IncentivosController extends Controller
         return response()->json($payload, $response->status());
     }
 
+    protected function applyProductScope(Builder $query, string $productColumn, string $scope): Builder
+    {
+        if ($scope !== 'no_tradicionales') {
+            return $query;
+        }
+
+        return $query->whereIn(DB::raw("CAST({$productColumn} AS SIGNED)"), function (Builder $catalogQuery): void {
+            $catalogQuery
+                ->select('producto_id')
+                ->from('catalogo_juegos')
+                ->where('tipo', 'No Tradicional');
+        });
+    }
+
     public function reportePagoIncentivos(Request $request)
     {
         ini_set('max_execution_time', 600); // 10 minutes
@@ -1574,7 +1608,7 @@ class IncentivosController extends Controller
 
         $empresaId = '%';
         $empresa = $request->input('empresa');
-        if (!empty($empresa)) {
+        if (! empty($empresa)) {
             $empresaId = $empresa;
         }
 
@@ -1595,7 +1629,7 @@ class IncentivosController extends Controller
 
         $tipoId = '%';
         $tipo = $request->input('tipo');
-        if (!empty($tipo)) {
+        if (! empty($tipo)) {
             $tipoId = $tipo;
         }
 
@@ -1718,4 +1752,3 @@ class IncentivosController extends Controller
         return response()->json($data);
     }
 }
-

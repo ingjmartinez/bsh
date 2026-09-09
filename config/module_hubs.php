@@ -466,6 +466,15 @@ return [
                 'activo' => true,
             ],
             [
+                'nombre' => 'Reporte de Bonos',
+                'descripcion' => 'Calcula el bono de 0.5% sobre ventas no tradicionales y ventas externas.',
+                'url' => '/incentivos/reporte-bonos',
+                'icono' => 'ri-percent-line',
+                'categoria' => 'Reportes',
+                'tags' => ['bonos', 'reporte', '0.5%', 'ventas no tradicionales'],
+                'activo' => true,
+            ],
+            [
                 'nombre' => 'Reporte Nuevo Incentivo',
                 'descripcion' => 'Vista de reporte para el nuevo esquema de incentivos.',
                 'url' => '/incentivos/reporte-nuevo-incentivo-view',
@@ -499,6 +508,15 @@ return [
                 'icono' => 'ri-file-copy-line',
                 'categoria' => 'Reportes',
                 'tags' => ['reporte', 'nuevo incentivo', 'v4', 'administrativo', 'operadores'],
+                'activo' => true,
+            ],
+            [
+                'nombre' => 'Cálculo de Incentivos',
+                'descripcion' => 'Calcula incentivos con tipos de pago diarios por terminal y cierre mensual.',
+                'url' => '/incentivos/calculo-de-incentivos',
+                'icono' => 'ri-calendar-check-line',
+                'categoria' => 'Reportes',
+                'tags' => ['cálculo de incentivos', 'incentivos administrativos', 'calendario', 'tipo de pago', 'terminal'],
                 'activo' => true,
             ],
             [
@@ -626,4 +644,3 @@ return [
         ],
     ],
 ];
-

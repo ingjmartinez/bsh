@@ -57,18 +57,15 @@
 
         body,
         .main-content,
-        .page-content,
-        #scrollbar,
-        #scrollbar .simplebar-content-wrapper,
-        [data-simplebar] .simplebar-content-wrapper {
+        .page-content {
             -webkit-overflow-scrolling: touch;
             scroll-behavior: smooth;
         }
 
-        #scrollbar,
         #scrollbar .simplebar-content-wrapper {
+            -webkit-overflow-scrolling: touch;
             overscroll-behavior: contain;
-            will-change: scroll-position;
+            scroll-behavior: auto;
         }
 
         html[data-layout="vertical"] .app-menu.navbar-menu,
@@ -91,8 +88,7 @@
             min-height: 0;
             height: calc(var(--crm-sidebar-height) - var(--crm-sidebar-brand-height)) !important;
             max-height: calc(var(--crm-sidebar-height) - var(--crm-sidebar-brand-height));
-            overflow-y: auto;
-            overflow-x: hidden;
+            overflow: hidden;
             scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
             scrollbar-width: thin;
         }
@@ -110,29 +106,19 @@
             padding-bottom: 1.25rem;
         }
 
-        html[data-layout="vertical"] #navbar-nav[data-simplebar],
-        html[data-layout="twocolumn"] #navbar-nav[data-simplebar] {
-            height: 100%;
-            max-height: 100%;
-            overflow: hidden;
-        }
-
         html[data-layout="vertical"] #scrollbar .simplebar-content-wrapper,
-        html[data-layout="twocolumn"] #scrollbar .simplebar-content-wrapper,
-        html[data-layout="vertical"] #navbar-nav .simplebar-content-wrapper,
-        html[data-layout="twocolumn"] #navbar-nav .simplebar-content-wrapper {
+        html[data-layout="twocolumn"] #scrollbar .simplebar-content-wrapper {
             max-height: 100%;
         }
 
-        html[data-layout="vertical"] #navbar-nav .simplebar-content,
-        html[data-layout="twocolumn"] #navbar-nav .simplebar-content {
+        html[data-layout="vertical"] #scrollbar .simplebar-content,
+        html[data-layout="twocolumn"] #scrollbar .simplebar-content {
             padding-bottom: 1.25rem !important;
         }
 
         #navbar-nav .nav-link,
-        #navbar-nav .menu-link,
-        #navbar-nav .menu-dropdown {
-            transition: background-color 0.18s ease, color 0.18s ease, padding-left 0.18s ease, transform 0.18s ease;
+        #navbar-nav .menu-link {
+            transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
         }
 
         #navbar-nav .menu-dropdown .nav-link:hover {
@@ -862,7 +848,7 @@
                 </button>
             </div>
 
-            <div id="scrollbar">
+            <div id="scrollbar" data-simplebar>
                 <div class="container-fluid">
                     <div id="two-column-menu"></div>
                     @php
@@ -968,7 +954,7 @@
                         @if ($showAllModulesForAdmin)
                             <li class="nav-item">
                             <a class="nav-link menu-link collapsed" href="#sidebarApps" data-bs-toggle="collapse"
-                                role="button" aria-expanded="true" aria-controls="sidebarApps">
+                                role="button" aria-expanded="false" aria-controls="sidebarApps">
                                 <i class="ri-apps-2-line"></i> <span data-key="t-apps">Apis de ventas</span>
                             </a>
                             <div class="collapse menu-dropdown" id="sidebarApps">
@@ -1880,7 +1866,7 @@
 
     <script src="{{ asset('libs/sweetalert2/sweetalert2.min.js') }}"></script>
     <!-- App js -->
-    <script src="{{ asset('js/app.js') }}"></script>
+    <script src="{{ asset('js/app.js') }}?v={{ $appVersion }}"></script>
     <!-- Mobile Optimization JS -->
     <script src="{{ asset('js/mobile-optimization.js') }}"></script>
 
@@ -1895,14 +1881,12 @@
                         return;
                     }
 
-                    ['scrollbar', 'navbar-nav'].forEach(function (elementId) {
-                        const element = document.getElementById(elementId);
-                        const instance = element ? window.SimpleBar.instances.get(element) : null;
+                    const element = document.getElementById('scrollbar');
+                    const instance = element ? window.SimpleBar.instances.get(element) : null;
 
-                        if (instance && typeof instance.recalculate === 'function') {
-                            instance.recalculate();
-                        }
-                    });
+                    if (instance && typeof instance.recalculate === 'function') {
+                        instance.recalculate();
+                    }
                 });
             }
 
@@ -1932,41 +1916,7 @@
                 });
             }
 
-            function bindSidebarWheelScroll() {
-                const scrollbar = document.getElementById('scrollbar');
-
-                if (!scrollbar || scrollbar.dataset.wheelScrollBound === '1') {
-                    return;
-                }
-
-                scrollbar.dataset.wheelScrollBound = '1';
-                scrollbar.addEventListener('wheel', function (event) {
-                    const scrollElement = document.querySelector('#scrollbar .simplebar-content-wrapper') || scrollbar;
-
-                    if (!scrollElement) {
-                        return;
-                    }
-
-                    const canScroll = scrollElement.scrollHeight > scrollElement.clientHeight;
-                    if (!canScroll) {
-                        return;
-                    }
-
-                    const delta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
-                    const atTop = scrollElement.scrollTop <= 0;
-                    const atBottom = Math.ceil(scrollElement.scrollTop + scrollElement.clientHeight) >= scrollElement.scrollHeight;
-
-                    if ((delta < 0 && atTop) || (delta > 0 && atBottom)) {
-                        return;
-                    }
-
-                    event.preventDefault();
-                    scrollElement.scrollTop += delta;
-                }, { passive: false });
-            }
-
             recalculateMenuScroll();
-            bindSidebarWheelScroll();
             window.addEventListener('resize', recalculateMenuScroll);
             window.addEventListener('orientationchange', recalculateMenuScroll);
             document.addEventListener('shown.bs.collapse', function (event) {

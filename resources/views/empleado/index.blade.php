@@ -261,6 +261,7 @@
         let chartSalarioCiudad = null;
         let chartEmpleadosCiudad = null;
         let chartSalarioEmpresa = null;
+        let tablaEmpleados = null;
 
         function formatoMonto(valor) {
             return Number(valor || 0).toLocaleString('en-US', {
@@ -439,10 +440,12 @@
                 }
             });
 
-            chartEstado.render();
-            chartSalarioCiudad.render();
-            chartEmpleadosCiudad.render();
-            chartSalarioEmpresa.render();
+            return Promise.all([
+                chartEstado.render(),
+                chartSalarioCiudad.render(),
+                chartEmpleadosCiudad.render(),
+                chartSalarioEmpresa.render(),
+            ]);
         }
 
         function renderResumen(payload) {
@@ -474,15 +477,17 @@
             document.getElementById('badgeEmpresaActual').textContent = empresaTexto(obtenerEmpresaActual());
         }
 
-        function cargarDashboard() {
+        function cargarDashboard(forzarActualizacion = false) {
             const empresa = obtenerEmpresaActual();
             actualizarBadgeEmpresa();
             const url = new URL('/empleados/dashboard', window.location.origin);
             url.searchParams.set('empresa', empresa);
-            url.searchParams.set('_ts', Date.now());
+
+            if (forzarActualizacion) {
+                url.searchParams.set('refresh', '1');
+            }
 
             return fetch(url.toString(), {
-                cache: 'no-store',
                 headers: {
                     'Accept': 'application/json',
                 },
@@ -490,8 +495,11 @@
                 .then(response => parsearRespuestaJson(response, 'Error al cargar dashboard de empleados'))
                 .then(payload => {
                     renderResumen(payload);
-                    renderCharts(payload);
                     renderTablaCiudades(payload);
+
+                    return new Promise(resolve => {
+                        window.requestAnimationFrame(resolve);
+                    }).then(() => renderCharts(payload));
                 })
                 .catch(error => {
                     console.error('Error dashboard empleados:', error);
@@ -499,57 +507,73 @@
                 });
         }
 
+        function textoSeguro(valor) {
+            const elemento = document.createElement('div');
+            elemento.textContent = valor ?? '';
+
+            return elemento.innerHTML;
+        }
+
         function list() {
-            const empresa = obtenerEmpresaActual();
-            const url = new URL('/empleados/list', window.location.origin);
-            url.searchParams.set('empresa', empresa);
-            url.searchParams.set('_ts', Date.now());
-
-            return fetch(url.toString(), {
-                cache: 'no-store',
-                headers: {
-                    'Accept': 'application/json',
-                },
-            })
-                .then(response => parsearRespuestaJson(response, 'Error al cargar listado de empleados'))
-                .then(data => {
-                    const tableBody = document.querySelector('#tableEmpleados tbody');
-                    tableBody.innerHTML = '';
-
-                    data.forEach(item => {
-                        const activo = !item.fechasalida;
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${item.company}</td>
-                            <td>${item.empleadoid}</td>
-                            <td>${item.idcentrocosto ?? ''}</td>
-                            <td>${item.nombres}</td>
-                            <td>${item.apellidos}</td>
-                            <td>${item.cedula ?? ''}</td>
-                            <td>${item.ciudad ?? ''}</td>
-                            <td class="text-end">$${formatoMonto(item.salariomensual || 0)}</td>
-                            <td>${item.fechaingreso ?? ''}</td>
-                            <td>${activo ? '<span class="badge bg-success-subtle text-success">Activo</span>' : '<span class="badge bg-danger-subtle text-danger">' + (item.fechasalida ?? '') + '</span>'}</td>
-                        `;
-                        tableBody.appendChild(row);
-                    });
-
-                    if ($.fn.DataTable.isDataTable('#tableEmpleados')) {
-                        $('#tableEmpleados').DataTable().destroy();
-                    }
-
-                    $('#tableEmpleados').DataTable({
-                        responsive: true,
-                        scrollX: true,
-                        pageLength: 10,
-                        dom: 'Bfrtip',
-                        buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
-                    });
-                })
-                .catch(error => {
-                    console.error('Error fetching empleados:', error);
-                    Swal.fire('Error', 'No se pudieron cargar los empleados.', 'error');
+            if (tablaEmpleados) {
+                return new Promise(resolve => {
+                    tablaEmpleados.ajax.reload(() => resolve(), true);
                 });
+            }
+
+            tablaEmpleados = $('#tableEmpleados').DataTable({
+                processing: true,
+                serverSide: true,
+                deferRender: true,
+                searchDelay: 350,
+                responsive: true,
+                scrollX: true,
+                pageLength: 10,
+                ajax: {
+                    url: '/empleados/list',
+                    data: function (params) {
+                        params.empresa = obtenerEmpresaActual();
+                    },
+                    error: function (_xhr, _error, detalle) {
+                        console.error('Error fetching empleados:', detalle);
+                        Swal.fire('Error', 'No se pudieron cargar los empleados.', 'error');
+                    }
+                },
+                columns: [
+                    { data: 'company', render: textoSeguro },
+                    { data: 'empleadoid', render: textoSeguro },
+                    { data: 'idcentrocosto', defaultContent: '', render: textoSeguro },
+                    { data: 'nombres', render: textoSeguro },
+                    { data: 'apellidos', render: textoSeguro },
+                    { data: 'cedula', defaultContent: '', render: textoSeguro },
+                    { data: 'ciudad', defaultContent: '', render: textoSeguro },
+                    {
+                        data: 'salariomensual',
+                        className: 'text-end',
+                        render: function (valor, tipo) {
+                            return tipo === 'display' ? '$' + formatoMonto(valor || 0) : Number(valor || 0);
+                        }
+                    },
+                    { data: 'fechaingreso', defaultContent: '', render: textoSeguro },
+                    {
+                        data: 'fechasalida',
+                        defaultContent: '',
+                        render: function (valor, tipo) {
+                            if (tipo !== 'display') {
+                                return valor || '';
+                            }
+
+                            return valor
+                                ? '<span class="badge bg-danger-subtle text-danger">' + textoSeguro(valor) + '</span>'
+                                : '<span class="badge bg-success-subtle text-success">Activo</span>';
+                        }
+                    }
+                ],
+                dom: 'Bfrtip',
+                buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+            });
+
+            return Promise.resolve();
         }
 
         document.querySelector("#btnSincronizar").addEventListener("click", async function () {
@@ -598,8 +622,7 @@
 
                 textSwal.innerHTML = "Sincronizando: 100%";
                 clearInterval(interval);
-                await cargarDashboard();
-                await list();
+                await Promise.all([cargarDashboard(), list()]);
 
                 Swal.fire({
                     title: "Listo",
@@ -620,19 +643,17 @@
             }
         });
 
-        document.getElementById('empresa').addEventListener('change', async function () {
-            await cargarDashboard();
-            await list();
+        document.getElementById('empresa').addEventListener('change', function () {
+            Promise.all([cargarDashboard(), list()]);
         });
 
-        document.getElementById('btnRefrescarDashboard').addEventListener('click', async function () {
-            await cargarDashboard();
-            await list();
+        document.getElementById('btnRefrescarDashboard').addEventListener('click', function () {
+            Promise.all([cargarDashboard(true), list()]);
         });
 
-        document.addEventListener('DOMContentLoaded', async function () {
-            await cargarDashboard();
-            await list();
+        document.addEventListener('DOMContentLoaded', function () {
+            cargarDashboard();
+            list();
         });
     </script>
 @endsection
