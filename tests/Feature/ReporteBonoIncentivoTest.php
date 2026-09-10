@@ -195,19 +195,20 @@ class ReporteBonoIncentivoTest extends TestCase
             ->assertOk()
             ->assertJsonPath('meta.total_no_tradicional', 3400)
             ->assertJsonPath('meta.total_venta_externa', 0)
-            ->assertJsonPath('meta.total_bono', 17)
+            ->assertJsonPath('meta.total_bono', 2)
             ->assertJsonPath('meta.empleados_pendientes', 1)
             ->assertJsonPath('meta.venta_externa_disponible', false)
-            ->assertJsonPath('data.0.empleadoid', 3743)
-            ->assertJsonPath('data.0.centro_costo', '4717-Centro principal')
-            ->assertJsonPath('data.0.ruta', 'Ruta Sur')
-            ->assertJsonPath('data.0.faltante', 50)
-            ->assertJsonPath('data.0.estado', 'con_faltante')
-            ->assertJsonPath('data.1.cedula', '')
-            ->assertJsonPath('data.1.agencia', 'Agencia Delta')
-            ->assertJsonPath('data.1.estado', 'pendiente_empleado');
+            ->assertJsonPath('data.1.empleadoid', 3743)
+            ->assertJsonPath('data.1.centro_costo', '4717-Centro principal')
+            ->assertJsonPath('data.1.ruta', 'Ruta Sur')
+            ->assertJsonPath('data.1.faltante', 50)
+            ->assertJsonPath('data.1.estado', 'con_faltante')
+            ->assertJsonPath('data.0.cedula', '')
+            ->assertJsonPath('data.0.agencia', 'Agencia Delta')
+            ->assertJsonPath('data.0.estado', 'pendiente_empleado');
 
-        $this->assertSame(15.0, (float) $response->json('data.0.bono'));
+        $this->assertSame(0.0, (float) $response->json('data.1.bono'));
+        $this->assertSame(2.0, (float) $response->json('data.0.bono'));
     }
 
     public function test_bonus_report_validates_the_date_range(): void
@@ -274,5 +275,15 @@ class ReporteBonoIncentivoTest extends TestCase
         $net = $service->generate('2026-09-01', '2026-09-04', 'Lotonet');
         $this->assertEquals(0, $net['meta']['total_venta_externa']);
         $this->assertSame([], $net['meta']['ventas_ds_pendientes']);
+
+        DB::table('faltantes_bet')->insert([
+            'observacion' => $first, 'monto' => 0.01, 'fecha' => '2026-09-01',
+        ]);
+        $blocked = $service->generate('2026-09-01', '2026-09-04');
+        $blockedRows = $blocked['data']->keyBy('cedula');
+        $this->assertEquals(0, $blockedRows[$first]['bono']);
+        $this->assertEquals(5033.34, $blockedRows[$first]['venta_externa']);
+        $this->assertEquals($rows[$second]['bono'], $blockedRows[$second]['bono']);
+        $this->assertEquals(round($report['meta']['total_bono'] - $rows[$first]['bono'], 3), $blocked['meta']['total_bono']);
     }
 }

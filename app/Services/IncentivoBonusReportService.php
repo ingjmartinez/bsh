@@ -66,7 +66,7 @@ class IncentivoBonusReportService
                 'venta_externa' => $externalAmount,
                 'total' => $total,
                 'porcentaje_bono' => self::BONUS_PERCENTAGE,
-                'bono' => round($total * (self::BONUS_PERCENTAGE / 100), 3),
+                'bono' => $shortage > 0 ? 0.0 : round($total * (self::BONUS_PERCENTAGE / 100), 3),
                 'faltante' => $shortage,
                 'estado' => match (true) {
                     ! $employee => 'pendiente_empleado',
