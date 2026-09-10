@@ -133,6 +133,7 @@ class ReporteBonoIncentivoTest extends TestCase
 
         $this->assertNotNull($module);
         $this->assertSame('Reporte de Bonos', $module['nombre']);
+        $this->assertSame('module.incentivos.item.reporte_de_bonos.view', $module['permission']);
 
         $this->withoutMiddleware()
             ->get(route('incentivos.reporte-bonos.index'))

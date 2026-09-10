@@ -74,7 +74,6 @@
             flex-direction: column;
             height: var(--crm-sidebar-height);
             max-height: var(--crm-sidebar-height);
-            overflow: hidden;
         }
 
         html[data-layout="vertical"] .app-menu.navbar-menu .navbar-brand-box,
@@ -88,7 +87,9 @@
             min-height: 0;
             height: calc(var(--crm-sidebar-height) - var(--crm-sidebar-brand-height)) !important;
             max-height: calc(var(--crm-sidebar-height) - var(--crm-sidebar-brand-height));
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
+            overscroll-behavior: contain;
             scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
             scrollbar-width: thin;
         }
@@ -230,11 +231,18 @@
             opacity: 0.75;
         }
 
-        .layout-width,
-        .vertical-menu,
-        .main-content {
-            transform: translateZ(0);
-            backface-visibility: hidden;
+        @media (min-width: 768px) and (max-width: 1024px) {
+            html[data-layout="vertical"][data-sidebar-size="sm"] #scrollbar {
+                overflow: visible;
+            }
+
+            html[data-layout="vertical"][data-sidebar-size="sm"] .app-menu.navbar-menu .navbar-nav .nav-link i {
+                display: inline-flex;
+                visibility: visible;
+                opacity: 1;
+                justify-content: center;
+                min-width: 1.75rem;
+            }
         }
 
         .task-notif-item {
@@ -1872,10 +1880,7 @@
 
     <script>
         (function () {
-            function recalculateMenuScroll() {
-                const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-                document.documentElement.style.setProperty('--crm-sidebar-height', viewportHeight + 'px');
-
+            function refreshMenuScroll() {
                 window.requestAnimationFrame(function () {
                     if (!window.SimpleBar || !window.SimpleBar.instances || typeof window.SimpleBar.instances.get !== 'function') {
                         return;
@@ -1916,14 +1921,11 @@
                 });
             }
 
-            recalculateMenuScroll();
-            window.addEventListener('resize', recalculateMenuScroll);
-            window.addEventListener('orientationchange', recalculateMenuScroll);
             document.addEventListener('shown.bs.collapse', function (event) {
-                recalculateMenuScroll();
+                refreshMenuScroll();
                 keepMenuSectionVisible(event.target);
             });
-            document.addEventListener('hidden.bs.collapse', recalculateMenuScroll);
+            document.addEventListener('hidden.bs.collapse', refreshMenuScroll);
         })();
     </script>
 

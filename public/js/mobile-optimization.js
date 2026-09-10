@@ -111,9 +111,6 @@
             const initialOrientation = this.getOrientation();
             document.body.classList.add(`orientation-${initialOrientation}`);
 
-            // Prevenir zoom en doble tap
-            this.preventDoubleTapZoom();
-
             // Ajustar modales
             this.optimizeModals();
 
@@ -121,22 +118,6 @@
             this.optimizeTables();
 
             console.log('✓ Mobile Optimization initialized');
-        },
-
-        /**
-         * Prevenir zoom con doble tap
-         */
-        preventDoubleTapZoom() {
-            let lastTap = 0;
-            document.addEventListener('touchend', (e) => {
-                const currentTime = new Date().getTime();
-                const tapLength = currentTime - lastTap;
-                
-                if (tapLength < 500 && tapLength > 0) {
-                    e.preventDefault();
-                }
-                lastTap = currentTime;
-            }, false);
         },
 
         /**

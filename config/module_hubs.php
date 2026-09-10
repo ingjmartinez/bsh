@@ -472,6 +472,7 @@ return [
                 'icono' => 'ri-percent-line',
                 'categoria' => 'Reportes',
                 'tags' => ['bonos', 'reporte', '0.5%', 'ventas no tradicionales'],
+                'permission' => 'module.incentivos.item.reporte_de_bonos.view',
                 'activo' => true,
             ],
             [

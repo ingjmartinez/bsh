@@ -482,10 +482,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/incentivos/save/pago-incentivos-admin', [IncentivosController::class, 'savePagoAdmin']);
 
     Route::get('/incentivos/reporte-pagos', [IncentivosController::class, 'reportePagos']);
-    Route::get('/incentivos/reporte-bonos', [ReporteBonosController::class, 'index'])
-        ->name('incentivos.reporte-bonos.index');
-    Route::get('/incentivos/reporte-bonos/datos', [ReporteBonosController::class, 'datos'])
-        ->name('incentivos.reporte-bonos.datos');
+    Route::middleware('permission:module.incentivos.item.reporte_de_bonos.view')->group(function () {
+        Route::get('/incentivos/reporte-bonos', [ReporteBonosController::class, 'index'])
+            ->name('incentivos.reporte-bonos.index');
+        Route::get('/incentivos/reporte-bonos/datos', [ReporteBonosController::class, 'datos'])
+            ->name('incentivos.reporte-bonos.datos');
+    });
     Route::get('/incentivos/reporte-nuevo-incentivo-view', [IncentivosController::class, 'reporteNuevoIncentivoView']);
     Route::get('/incentivos/reporte-nuevo-incentivo', [IncentivosController::class, 'reporteNuevoIncentivo']);
     Route::get('/incentivos/reporte-nuevo-incentivo-v2-view', [IncentivosController::class, 'reporteNuevoIncentivoV2View']);
