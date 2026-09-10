@@ -14,7 +14,7 @@ class RunAutoProcesoProgramado extends Command
 {
     protected $signature = 'auto-proceso:run-due {--force}';
 
-    protected $description = 'Ejecuta auto proceso de lotobet y lotedom segun configuracion';
+    protected $description = 'Ejecuta auto procesos de ventas según su configuración';
 
     public function handle(AutoProcesoService $service): int
     {
@@ -28,6 +28,7 @@ class RunAutoProcesoProgramado extends Command
 
         if ($configs->isEmpty()) {
             $this->info('No hay configuraciones habilitadas');
+
             return self::SUCCESS;
         }
 
@@ -35,8 +36,8 @@ class RunAutoProcesoProgramado extends Command
             $alreadyRanToday = $config->last_run_at && $config->last_run_at->setTimezone(config('app.timezone'))->isSameDay($now);
             $isDueMinute = substr((string) $config->hora, 0, 5) === $currentTime;
 
-            if (!$this->option('force')) {
-                if (!$isDueMinute || $alreadyRanToday) {
+            if (! $this->option('force')) {
+                if (! $isDueMinute || $alreadyRanToday) {
                     continue;
                 }
             }
@@ -96,7 +97,7 @@ class RunAutoProcesoProgramado extends Command
 
         $config->update([
             'last_run_at' => now(),
-            'last_status' => !empty($result['ok']) ? 'ok' : 'error',
+            'last_status' => ! empty($result['ok']) ? 'ok' : 'error',
             'last_summary' => [
                 'fecha' => $fechaProceso,
                 'ok_count' => $result['ok_count'] ?? 0,
@@ -118,7 +119,7 @@ class RunAutoProcesoProgramado extends Command
             Mail::to((string) $config->correo)->send(new AutoProcesoResumenMail([
                 'sistema' => (string) $config->sistema,
                 'fecha' => $fechaProceso,
-                'estado' => !empty($result['ok']) ? 'OK' : 'Con errores',
+                'estado' => ! empty($result['ok']) ? 'OK' : 'Con errores',
                 'ok_count' => $result['ok_count'] ?? 0,
                 'error_count' => $result['error_count'] ?? 0,
                 'no_data_count' => $result['no_data_count'] ?? 0,

@@ -23,6 +23,7 @@ class ReporteBonoIncentivoTest extends TestCase
         foreach (['ventas_usuarios_bet', 'ventas_usuarios_net'] as $tableName) {
             Schema::create($tableName, function (Blueprint $table): void {
                 $table->id();
+                $table->unsignedBigInteger('consorcio_id')->nullable();
                 $table->string('agencia_id');
                 $table->string('cedula')->nullable();
                 $table->integer('producto_id');
@@ -74,6 +75,7 @@ class ReporteBonoIncentivoTest extends TestCase
     protected function tearDown(): void
     {
         foreach ([
+            'ventas_ds_virtual',
             'faltantes_bet',
             'centros_de_costo',
             'agencias',
@@ -105,7 +107,8 @@ class ReporteBonoIncentivoTest extends TestCase
         $this->assertStringContainsString('id="reporte_bonos_fecha_ini"', $html);
         $this->assertStringContainsString('id="reporte_bonos_fecha_fin"', $html);
         $this->assertStringContainsString('id="reporte_bonos_sistema"', $html);
-        $this->assertStringContainsString('Venta externa pendiente de integración', $html);
+        $this->assertStringContainsString('DS se divide en partes iguales', $html);
+        $this->assertStringContainsString('reporteBonosDsPendientesPanel', $html);
         $this->assertStringNotContainsString('btnGenerarReporteBono', $calculationHtml);
 
         $document = new \DOMDocument;
@@ -122,7 +125,7 @@ class ReporteBonoIncentivoTest extends TestCase
             'Grupo',
             'Ruta',
             'No Tradicionales',
-            'VentaExterna',
+            'Ventas DS',
             'Total',
             'Incentivo',
             'Faltante',
@@ -217,5 +220,59 @@ class ReporteBonoIncentivoTest extends TestCase
             ]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors('fecha_fin');
+    }
+
+    public function test_ds_sales_are_shared_equally_by_day_terminal_and_consortium(): void
+    {
+        Schema::create('ventas_ds_virtual', function (Blueprint $table): void {
+            $table->id();
+            $table->date('fecha');
+            $table->unsignedBigInteger('consorcio_id');
+            $table->string('agencia_id');
+            $table->decimal('ventas', 18, 2);
+        });
+
+        $first = '00123456789';
+        $second = '00223456789';
+        $third = '00323456789';
+        foreach ([
+            ['2026-09-01', 7, '0100', $first, 900],
+            ['2026-09-01', 7, '0100', '001-2345678-9', 100],
+            ['2026-09-01', 7, '0100', $second, 10],
+            ['2026-09-01', 8, '0100', $third, 100],
+            ['2026-09-01', 7, '0200', $third, 100],
+            ['2026-09-01', 7, '0100', $third, 0],
+            ['2026-09-02', 7, '0100', $second, 100],
+            ['2026-09-03', 7, '0100', $first, 100],
+            ['2026-09-03', 7, '0100', $second, 100],
+            ['2026-09-03', 7, '0100', $third, 100],
+        ] as [$date, $consortium, $terminal, $identity, $amount]) {
+            DB::table('ventas_usuarios_bet')->insert([
+                'fecha' => $date, 'consorcio_id' => $consortium, 'agencia_id' => $terminal,
+                'cedula' => $identity, 'monto' => $amount, 'producto_id' => 20, 'tipo' => 'Tradicional',
+            ]);
+        }
+
+        foreach (['2026-09-01' => 10000, '2026-09-02' => 4000, '2026-09-03' => 100, '2026-09-04' => 500] as $date => $amount) {
+            DB::table('ventas_ds_virtual')->insert([
+                'fecha' => $date, 'consorcio_id' => 7, 'agencia_id' => '0100', 'ventas' => $amount,
+            ]);
+        }
+
+        $service = app(\App\Services\IncentivoBonusReportService::class);
+        $report = $service->generate('2026-09-01', '2026-09-04');
+        $rows = $report['data']->keyBy('cedula');
+        $this->assertEquals(5033.34, $rows[$first]['venta_externa']);
+        $this->assertEquals(9033.33, $rows[$second]['venta_externa']);
+        $this->assertEquals(33.33, $rows[$third]['venta_externa']);
+        $this->assertEquals(25.167, $rows[$first]['bono']);
+        $this->assertEquals(14100, $report['meta']['total_venta_externa']);
+        $this->assertEquals(500, $report['meta']['total_ds_pendiente']);
+        $this->assertEquals(14600, $report['meta']['total_ds_recibido']);
+        $this->assertSame('2026-09-04', $report['meta']['ventas_ds_pendientes'][0]['fecha']);
+        $this->assertEquals(10000, $service->generate('2026-09-01', '2026-09-01', 'Lotobet')['meta']['total_venta_externa']);
+        $net = $service->generate('2026-09-01', '2026-09-04', 'Lotonet');
+        $this->assertEquals(0, $net['meta']['total_venta_externa']);
+        $this->assertSame([], $net['meta']['ventas_ds_pendientes']);
     }
 }

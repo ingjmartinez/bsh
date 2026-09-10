@@ -40,17 +40,6 @@
     <link href="{{ asset('css/mobile.css') }}" rel="stylesheet" type="text/css" />
 
     <style>
-        :root {
-            --crm-sidebar-height: 100vh;
-            --crm-sidebar-brand-height: 70px;
-        }
-
-        @supports (height: 100dvh) {
-            :root {
-                --crm-sidebar-height: 100dvh;
-            }
-        }
-
         html {
             scroll-behavior: smooth;
         }
@@ -60,189 +49,6 @@
         .page-content {
             -webkit-overflow-scrolling: touch;
             scroll-behavior: smooth;
-        }
-
-        #scrollbar .simplebar-content-wrapper {
-            -webkit-overflow-scrolling: touch;
-            overscroll-behavior: contain;
-            scroll-behavior: auto;
-        }
-
-        html[data-layout="vertical"] .app-menu.navbar-menu,
-        html[data-layout="twocolumn"] .app-menu.navbar-menu {
-            display: flex;
-            flex-direction: column;
-            height: var(--crm-sidebar-height);
-            max-height: var(--crm-sidebar-height);
-        }
-
-        html[data-layout="vertical"] .app-menu.navbar-menu .navbar-brand-box,
-        html[data-layout="twocolumn"] .app-menu.navbar-menu .navbar-brand-box {
-            flex: 0 0 var(--crm-sidebar-brand-height);
-        }
-
-        html[data-layout="vertical"] #scrollbar,
-        html[data-layout="twocolumn"] #scrollbar {
-            flex: 1 1 auto;
-            min-height: 0;
-            height: calc(var(--crm-sidebar-height) - var(--crm-sidebar-brand-height)) !important;
-            max-height: calc(var(--crm-sidebar-height) - var(--crm-sidebar-brand-height));
-            overflow-x: hidden;
-            overflow-y: auto;
-            overscroll-behavior: contain;
-            scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
-            scrollbar-width: thin;
-        }
-
-        html[data-layout="vertical"] #scrollbar .container-fluid,
-        html[data-layout="twocolumn"] #scrollbar .container-fluid {
-            height: 100%;
-            min-height: 0;
-            padding-bottom: 2rem;
-        }
-
-        html[data-layout="vertical"] #navbar-nav,
-        html[data-layout="twocolumn"] #navbar-nav {
-            min-height: 0;
-            padding-bottom: 1.25rem;
-        }
-
-        html[data-layout="vertical"] #scrollbar .simplebar-content-wrapper,
-        html[data-layout="twocolumn"] #scrollbar .simplebar-content-wrapper {
-            max-height: 100%;
-        }
-
-        html[data-layout="vertical"] #scrollbar .simplebar-content,
-        html[data-layout="twocolumn"] #scrollbar .simplebar-content {
-            padding-bottom: 1.25rem !important;
-        }
-
-        #navbar-nav .nav-link,
-        #navbar-nav .menu-link {
-            transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
-        }
-
-        #navbar-nav .menu-dropdown .nav-link:hover {
-            transform: translateX(2px);
-        }
-
-        #navbar-nav .sidebar-brand-title {
-            padding: 1.05rem 1.5rem 0.7rem;
-        }
-
-        #navbar-nav .sidebar-brand-title .brand-mark {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.55rem;
-            color: #ffffff;
-            font-size: 1.05rem;
-            font-weight: 700;
-            letter-spacing: 0;
-            line-height: 1.1;
-        }
-
-        #navbar-nav .sidebar-brand-title .brand-mark i {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 30px;
-            height: 30px;
-            border-radius: 8px;
-            color: var(--bsh-yellow, #ECBE13);
-            background: rgba(236, 190, 19, 0.14);
-            font-size: 1rem;
-        }
-
-        html[data-sidebar-size="sm"] #navbar-nav .sidebar-brand-title,
-        html[data-sidebar-size="sm-hover"] #navbar-nav .sidebar-brand-title {
-            display: none;
-        }
-
-        #navbar-nav .menu-dropdown.show {
-            max-height: none;
-            overflow: visible;
-            overscroll-behavior: contain;
-            padding-right: 0;
-        }
-
-        #navbar-nav .menu-dropdown.show::-webkit-scrollbar {
-            width: 10px;
-        }
-
-        #navbar-nav .menu-dropdown.show::-webkit-scrollbar-thumb {
-            background-color: rgba(255, 255, 255, 0.28);
-            background-clip: content-box;
-            border: 3px solid transparent;
-            border-radius: 999px;
-        }
-
-        #navbar-nav .menu-dropdown.show::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        #scrollbar,
-        #navbar-nav {
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
-        }
-
-        #scrollbar::-webkit-scrollbar,
-        #navbar-nav::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        #scrollbar::-webkit-scrollbar-thumb,
-        #navbar-nav::-webkit-scrollbar-thumb {
-            background-color: rgba(255, 255, 255, 0.24);
-            background-clip: content-box;
-            border: 2px solid transparent;
-            border-radius: 999px;
-        }
-
-        #scrollbar::-webkit-scrollbar-track,
-        #navbar-nav::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        #scrollbar::-webkit-scrollbar-thumb:hover,
-        #navbar-nav::-webkit-scrollbar-thumb:hover {
-            background-color: rgba(255, 255, 255, 0.42);
-        }
-
-        #scrollbar .simplebar-track.simplebar-vertical,
-        #navbar-nav .simplebar-track.simplebar-vertical {
-            right: 1px;
-            width: 10px;
-            background: transparent;
-        }
-
-        #scrollbar .simplebar-scrollbar::before,
-        #navbar-nav .simplebar-scrollbar::before {
-            left: 3px;
-            right: 3px;
-            background: rgba(255, 255, 255, 0.30);
-            border-radius: 999px;
-            opacity: 0.55;
-        }
-
-        #scrollbar .simplebar-track.simplebar-vertical:hover .simplebar-scrollbar::before,
-        #navbar-nav .simplebar-track.simplebar-vertical:hover .simplebar-scrollbar::before {
-            background: rgba(255, 255, 255, 0.46);
-            opacity: 0.75;
-        }
-
-        @media (min-width: 768px) and (max-width: 1024px) {
-            html[data-layout="vertical"][data-sidebar-size="sm"] #scrollbar {
-                overflow: visible;
-            }
-
-            html[data-layout="vertical"][data-sidebar-size="sm"] .app-menu.navbar-menu .navbar-nav .nav-link i {
-                display: inline-flex;
-                visibility: visible;
-                opacity: 1;
-                justify-content: center;
-                min-width: 1.75rem;
-            }
         }
 
         .task-notif-item {
@@ -291,6 +97,9 @@
             }
         }
     </style>
+
+    <link href="{{ asset('css/sidebar.css') }}?v={{ filemtime(public_path('css/sidebar.css')) }}" rel="stylesheet"
+        type="text/css" />
 
 </head>
 
@@ -856,12 +665,13 @@
                 </button>
             </div>
 
-            <div id="scrollbar" data-simplebar>
+            <div id="scrollbar" data-simplebar data-simplebar-auto-hide="false">
                 <div class="container-fluid">
                     <div id="two-column-menu"></div>
                     @php
                         $showAllModulesForAdmin = auth()->check() && auth()->user()->hasAnyRole(['superadmin', 'admin']);
-                        $canModule = fn (string $module): bool => $showAllModulesForAdmin || (bool) auth()->user()?->can("module.{$module}.view");
+                        $moduleHubAccess = app(\App\Support\ModuleHubAccess::class);
+                        $canModule = fn (string $module): bool => $moduleHubAccess->canAccessModule(auth()->user(), $module);
                     @endphp
                     <ul class="navbar-nav" id="navbar-nav">
                         <li class="sidebar-brand-title">
@@ -960,12 +770,17 @@
                         @endif
 
                         @if ($showAllModulesForAdmin)
+                            @php
+                                $isVentasDsVirtualActive = request()->routeIs('ventas-ds-virtual.*');
+                            @endphp
                             <li class="nav-item">
-                            <a class="nav-link menu-link collapsed" href="#sidebarApps" data-bs-toggle="collapse"
-                                role="button" aria-expanded="false" aria-controls="sidebarApps">
+                            <a class="nav-link menu-link {{ $isVentasDsVirtualActive ? '' : 'collapsed' }}"
+                                href="#sidebarApps" data-bs-toggle="collapse" role="button"
+                                aria-expanded="{{ $isVentasDsVirtualActive ? 'true' : 'false' }}"
+                                aria-controls="sidebarApps">
                                 <i class="ri-apps-2-line"></i> <span data-key="t-apps">Apis de ventas</span>
                             </a>
-                            <div class="collapse menu-dropdown" id="sidebarApps">
+                            <div class="collapse menu-dropdown {{ $isVentasDsVirtualActive ? 'show' : '' }}" id="sidebarApps">
                                 <ul class="nav nav-sm flex-column">
                                     <li class="nav-item">
                                         <a href="{{ url('/generar-lotobet') }}" class="nav-link">
@@ -980,6 +795,12 @@
                                     <li class="nav-item">
                                         <a href="{{ url('/generar-delta') }}" class="nav-link">
                                             <span data-key="t-dashboards">Generar Delta</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('ventas-ds-virtual.index') }}"
+                                            class="nav-link {{ $isVentasDsVirtualActive ? 'active' : '' }}">
+                                            <span data-key="t-dashboards">Ventas DS Virtual</span>
                                         </a>
                                     </li>
 

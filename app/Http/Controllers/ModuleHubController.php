@@ -2,90 +2,75 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\ModuleHubAccess;
+use Illuminate\View\View;
+
 class ModuleHubController extends Controller
 {
-    public function dashboard()
+    public function __construct(private readonly ModuleHubAccess $moduleHubAccess) {}
+
+    public function dashboard(): View
     {
         return $this->show('dashboard');
     }
 
-    public function comercial()
+    public function comercial(): View
     {
         return $this->show('comercial');
     }
 
-    public function contabilidad()
+    public function contabilidad(): View
     {
         return $this->show('contabilidad');
     }
 
-    public function operaciones()
+    public function operaciones(): View
     {
         return $this->show('operaciones');
     }
 
-    public function mantenimiento()
+    public function mantenimiento(): View
     {
         return $this->show('mantenimiento');
     }
 
-    public function tecnologia()
+    public function tecnologia(): View
     {
         return $this->show('tecnologia');
     }
 
-    public function incentivos()
+    public function incentivos(): View
     {
         return $this->show('incentivos');
     }
 
-    public function procesos()
+    public function procesos(): View
     {
         return $this->show('procesos');
     }
 
-    public function gerencia()
+    public function gerencia(): View
     {
         return $this->show('gerencia');
     }
 
-    public function serviciosGenerales()
+    public function serviciosGenerales(): View
     {
         return $this->show('servicios_generales');
     }
 
-    public function show(string $module)
+    public function show(string $module): View
     {
         $hub = config("module_hubs.{$module}");
 
         abort_unless(is_array($hub), 404);
 
         $user = auth()->user();
-        $isAdmin = $user && method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['superadmin', 'admin']);
-
-        abort_unless($isAdmin || ($user && $user->can("module.{$module}.view")), 403);
+        abort_unless($this->moduleHubAccess->canAccessModule($user, $module, $hub), 403);
 
         $items = collect($hub['items'] ?? [])
-            ->filter(function ($item) use ($user) {
-                if (! (bool) ($item['activo'] ?? true)) {
-                    return false;
-                }
-
-                if (!empty($item['permission']) && (! $user || ! $user->can($item['permission']))) {
-                    return false;
-                }
-
-                if (!empty($item['role'])) {
-                    $roles = is_array($item['role']) ? $item['role'] : [$item['role']];
-
-                    if (! $user || ! method_exists($user, 'hasAnyRole') || ! $user->hasAnyRole($roles)) {
-                        return false;
-                    }
-                }
-
-                return true;
-            })
-            ->map(function ($item) {
+            ->filter(fn ($item): bool => is_array($item) && $this->moduleHubAccess->canViewItem($user, $module, $item))
+            ->map(function (array $item): array {
                 $item['url'] = url($item['url']);
                 $item['tags'] = $item['tags'] ?? [];
 

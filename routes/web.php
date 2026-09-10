@@ -55,6 +55,7 @@ use App\Http\Controllers\TokenController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VentasController;
 use App\Http\Controllers\VentasDeltaController;
+use App\Http\Controllers\VentasDsVirtualController;
 use App\Http\Controllers\VentasProductosController;
 use Illuminate\Support\Facades\Route;
 
@@ -180,6 +181,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/ventas-producto-lotobet', [VentasProductosController::class, 'getVentasProductosLotobet']);
         Route::get('/save-ventas-producto-lotobet', [VentasProductosController::class, 'saveVentasProductosLotobet']);
         Route::get('/delete-ventas-producto-lotobet', [VentasProductosController::class, 'deleteVentasProductosLotobet']);
+
+        Route::prefix('ventas-ds-virtual')->name('ventas-ds-virtual.')->controller(VentasDsVirtualController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/data', 'data')->name('data');
+            Route::post('/sync', 'sync')->name('sync');
+            Route::delete('/', 'destroy')->name('destroy');
+        });
 
         Route::get('/get-recargas-lotobet', [RecargasController::class, 'getRecargasLotobet']);
         Route::get('/save-recargas-lotobet', [RecargasController::class, 'saveRecargasLotobet']);

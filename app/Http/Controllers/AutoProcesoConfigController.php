@@ -37,7 +37,7 @@ class AutoProcesoConfigController extends Controller
             'process_date' => ['nullable', 'date'],
         ]);
 
-        if (!empty($validated['enabled'])) {
+        if (! empty($validated['enabled'])) {
             if (empty($validated['hora']) || empty($validated['correo'])) {
                 return response()->json([
                     'message' => 'Hora y correo son obligatorios cuando esta habilitado',
@@ -100,7 +100,7 @@ class AutoProcesoConfigController extends Controller
 
     private function validateSistema(string $sistema): void
     {
-        if (!in_array(strtolower($sistema), ['lotobet', 'lotedom', 'delta'], true)) {
+        if (! in_array(strtolower($sistema), ['lotobet', 'lotedom', 'delta', 'ds_virtual'], true)) {
             abort(404);
         }
     }

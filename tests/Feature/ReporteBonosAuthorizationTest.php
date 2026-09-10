@@ -71,6 +71,47 @@ class ReporteBonosAuthorizationTest extends TestCase
             ->assertSee('Reporte de Bonos');
     }
 
+    public function test_item_permission_displays_incentivos_in_sidebar_without_module_permission(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(self::PERMISSION);
+
+        $this->assertFalse($user->can('module.incentivos.view'));
+
+        $this->actingAs($user)
+            ->get(route('incentivos.reporte-bonos.index'))
+            ->assertOk()
+            ->assertSee('href="'.route('incentivos.index').'"', false);
+    }
+
+    public function test_item_permission_only_displays_bonus_report_in_incentivos_hub(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(self::PERMISSION);
+
+        $this->actingAs($user)
+            ->get(route('incentivos.index'))
+            ->assertOk()
+            ->assertSee('Reporte de Bonos')
+            ->assertDontSee('Procesar Incentivos')
+            ->assertDontSee('Reporte de Pagos')
+            ->assertDontSee('Porcentaje Incentivo');
+    }
+
+    public function test_module_permission_does_not_grant_unselected_item_permissions(): void
+    {
+        $modulePermission = Permission::findOrCreate('module.incentivos.view');
+        $user = User::factory()->create();
+        $user->givePermissionTo($modulePermission);
+
+        $this->actingAs($user)
+            ->get(route('incentivos.index'))
+            ->assertOk()
+            ->assertDontSee('Reporte de Bonos')
+            ->assertDontSee('Procesar Incentivos')
+            ->assertDontSee('Reporte de Pagos');
+    }
+
     private function createAuthorizationTables(): void
     {
         Schema::create('users', function (Blueprint $table): void {

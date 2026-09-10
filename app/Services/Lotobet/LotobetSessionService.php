@@ -12,8 +12,11 @@ use RuntimeException;
 class LotobetSessionService
 {
     private const TOKEN_ID = 1;
+
     private const TOKEN_URL = 'https://apiadmin.prodrl.lotvirtual.com/api/v1/MfgFGBXCFF/17BuSHQhIS/eyJLSmNm1j';
+
     private const BASE_URL = 'https://apiadmin.prodrl.lotvirtual.com/api/V1';
+
     private const COMPANY_CODE = '07';
 
     private array $headers = [
@@ -28,20 +31,20 @@ class LotobetSessionService
         $response = $this->request(self::TOKEN_URL);
         $data = json_decode($response['body'], true);
 
-        if (!is_array($data)) {
+        if (! is_array($data)) {
             throw new RuntimeException('La API de token devolvio una respuesta invalida.');
         }
 
         $tokenValue = data_get($data, 'Content.Token');
         $fechaString = data_get($data, 'Content.DateExpire');
 
-        if (!is_string($tokenValue) || trim($tokenValue) === '') {
+        if (! is_string($tokenValue) || trim($tokenValue) === '') {
             $message = data_get($data, 'msg') ?: data_get($data, 'message') ?: 'La API no devolvio un token valido.';
             throw new RuntimeException((string) $message);
         }
 
         $fecha = $this->parseTokenExpiry($fechaString);
-        if (!$fecha) {
+        if (! $fecha) {
             throw new RuntimeException('No se pudo interpretar la fecha de expiracion del token.');
         }
 
@@ -54,7 +57,7 @@ class LotobetSessionService
     public function getToken(): Token
     {
         $token = Token::find(self::TOKEN_ID);
-        if (!$token || now()->greaterThan($token->fecha) || !is_file($this->cookiePath())) {
+        if (! $token || now()->greaterThan($token->fecha) || ! is_file($this->cookiePath())) {
             return $this->generateToken();
         }
 
@@ -66,19 +69,24 @@ class LotobetSessionService
         return $this->getReport('kotFQlCe5XVFoJcjEz', $fecha);
     }
 
+    public function getVentasDsVirtual(string $fecha): array
+    {
+        return $this->getReport('Egdsrgre', $fecha);
+    }
+
     public function getReport(string $endpointKey, string $fecha): array
     {
         $token = $this->getToken();
-        $url = self::BASE_URL . "/{$endpointKey}/{$token->token}/{$fecha}/" . self::COMPANY_CODE;
+        $url = self::BASE_URL."/{$endpointKey}/{$token->token}/{$fecha}/".self::COMPANY_CODE;
         $response = $this->request($url);
         $data = json_decode($response['body'], true);
 
-        if (!is_array($data)) {
+        if (! is_array($data)) {
             throw new RuntimeException('Respuesta invalida de API externa.');
         }
 
         $code = strtolower(trim((string) ($data['code'] ?? '')));
-        if ($code !== '' && !in_array($code, ['0', '200', 'success', 'ok'], true)) {
+        if ($code !== '' && ! in_array($code, ['0', '200', 'success', 'ok'], true)) {
             $message = (string) ($data['msg'] ?? $data['message'] ?? 'La API de Lotobet rechazo la solicitud.');
 
             if ($code === '401' || str_contains(strtolower($message), 'token')) {
@@ -147,7 +155,7 @@ class LotobetSessionService
 
     private function parseTokenExpiry($fechaString): ?Carbon
     {
-        if (!is_string($fechaString) || trim($fechaString) === '') {
+        if (! is_string($fechaString) || trim($fechaString) === '') {
             return null;
         }
 

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Agencia;
 use App\Models\CentroDeCosto;
 use App\Models\Empleado;
+use App\Models\VentaDsVirtual;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +14,9 @@ use Illuminate\Support\Facades\Schema;
 class IncentivoBonusReportService
 {
     private const BONUS_PERCENTAGE = 0.5;
+
+    /** @var array<int, array{fecha: string, consorcio_id: int, terminal: string, monto: float}> */
+    private array $pendingDsSales = [];
 
     /**
      * @return array<string, mixed>
@@ -88,19 +92,88 @@ class IncentivoBonusReportService
                 'total_faltantes' => round((float) $rows->sum('faltante'), 2),
                 'empleados_pendientes' => $rows->where('estado', 'pendiente_empleado')->count(),
                 'agencias_pendientes' => $rows->where('estado', 'pendiente_agencia')->count(),
-                'venta_externa_disponible' => false,
+                'venta_externa_disponible' => Schema::hasTable('ventas_ds_virtual'),
+                'ventas_ds_pendientes' => $this->pendingDsSales,
+                'total_ds_pendiente' => round(array_sum(array_column($this->pendingDsSales, 'monto')), 2),
+                'total_ds_recibido' => round((float) $rows->sum('venta_externa') + array_sum(array_column($this->pendingDsSales, 'monto')), 2),
             ],
         ];
     }
 
     /**
-     * Punto de integración para la futura fuente de ventas externas.
+     * Distribuye DS entre las cédulas que vendieron en el mismo consorcio, terminal y día.
      *
      * @return Collection<string, array{cedula: string, monto: float, terminal: string, sistema: string}>
      */
     protected function externalSales(string $startDate, string $endDate, string $system): Collection
     {
-        return collect();
+        $this->pendingDsSales = [];
+        if ($system === 'Lotonet' || ! Schema::hasTable('ventas_ds_virtual')) {
+            return collect();
+        }
+
+        $source = collect(['ventas_usuarios_bet', 'vt_usuarios_bet'])
+            ->first(fn (string $table): bool => Schema::hasTable($table));
+        $identities = collect();
+        if ($source && Schema::hasColumn($source, 'consorcio_id')) {
+            $identities = DB::table($source)
+                ->whereBetween('fecha', [$startDate, $endDate])
+                ->where('monto', '>', 0)
+                ->whereNotNull('cedula')
+                ->select(['fecha', 'consorcio_id', 'agencia_id', 'cedula'])
+                ->distinct()
+                ->get()
+                ->groupBy(fn (object $row): string => $this->dsDailyKey($row))
+                ->map(fn (Collection $rows): Collection => $rows
+                    ->map(fn (object $row): string => $this->normalizeCedula($row->cedula))
+                    ->filter(fn (string $cedula): bool => strlen($cedula) === 11)
+                    ->unique()->sort()->values());
+        }
+
+        $grouped = [];
+        $dailySales = VentaDsVirtual::query()
+            ->whereBetween('fecha', [$startDate, $endDate])
+            ->select(['fecha', 'consorcio_id', 'agencia_id'])
+            ->selectRaw('SUM(ventas) AS monto')
+            ->groupBy('fecha', 'consorcio_id', 'agencia_id')
+            ->orderBy('fecha')
+            ->toBase()->get();
+
+        foreach ($dailySales as $sale) {
+            $cedulas = $identities->get($this->dsDailyKey($sale), collect());
+            $cents = (int) round((float) $sale->monto * 100);
+            if ($cedulas->isEmpty()) {
+                if ($cents !== 0) {
+                    $this->pendingDsSales[] = [
+                        'fecha' => (string) $sale->fecha,
+                        'consorcio_id' => (int) $sale->consorcio_id,
+                        'terminal' => trim((string) $sale->agencia_id),
+                        'monto' => $cents / 100,
+                    ];
+                }
+
+                continue;
+            }
+
+            $share = intdiv($cents, $cedulas->count());
+            $remainder = $cents % $cedulas->count();
+            foreach ($cedulas as $index => $cedula) {
+                $allocated = $share + ($index < abs($remainder) ? ($remainder <=> 0) : 0);
+                $grouped[$cedula] = [
+                    'cedula' => $cedula,
+                    'monto' => ($grouped[$cedula]['monto'] ?? 0) + $allocated / 100,
+                    'terminal' => trim((string) $sale->agencia_id),
+                    'sistema' => 'Lotobet',
+                ];
+            }
+        }
+
+        return collect($grouped);
+    }
+
+    private function dsDailyKey(object $row): string
+    {
+        return (string) $row->fecha.'|'.(string) $row->consorcio_id.'|'.trim((string) $row->agencia_id);
     }
 
     /**

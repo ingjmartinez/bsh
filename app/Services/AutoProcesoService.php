@@ -11,9 +11,10 @@ use App\Http\Controllers\PaqueticoController;
 use App\Http\Controllers\PremioController;
 use App\Http\Controllers\RecargasController;
 use App\Http\Controllers\TokenController;
-use App\Http\Controllers\VentasDeltaController;
 use App\Http\Controllers\VentasController;
+use App\Http\Controllers\VentasDeltaController;
 use App\Http\Controllers\VentasProductosController;
+use App\Services\Lotobet\VentasDsVirtualService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -24,7 +25,7 @@ class AutoProcesoService
         $startedAt = microtime(true);
         $sistema = strtolower($sistema);
 
-        if (!in_array($sistema, ['lotobet', 'lotedom', 'delta'], true)) {
+        if (! in_array($sistema, ['lotobet', 'lotedom', 'delta', 'ds_virtual'], true)) {
             return [
                 'ok' => false,
                 'message' => 'Sistema no soportado',
@@ -38,6 +39,12 @@ class AutoProcesoService
         $details[] = $tokenStep;
 
         if (empty($tokenStep['ok'])) {
+            return $this->buildResult($details, $startedAt);
+        }
+
+        if ($sistema === 'ds_virtual') {
+            $details[] = $this->runDsVirtual($fecha);
+
             return $this->buildResult($details, $startedAt);
         }
 
@@ -69,7 +76,7 @@ class AutoProcesoService
     private function runTokenStep(string $sistema): array
     {
         $method = match ($sistema) {
-            'lotobet' => 'generateToken',
+            'lotobet', 'ds_virtual' => 'generateToken',
             'delta' => 'loginFlash',
             default => 'iniciarSession',
         };
@@ -87,7 +94,7 @@ class AutoProcesoService
                 ? $controller->{$method}($request)
                 : $controller->{$method}();
 
-            if (!$response instanceof JsonResponse) {
+            if (! $response instanceof JsonResponse) {
                 return [
                     'modulo' => $modulo,
                     'ok' => false,
@@ -104,7 +111,7 @@ class AutoProcesoService
                 : ($payload['total'] ?? null);
             $message = $payload['message'] ?? $payload['success'] ?? $payload['error'] ?? 'Sin mensaje';
             $hasNoData = $this->isNoDataResult($modulo, $statusCode, $payload, (string) $message, $total);
-            $ok = $statusCode < 400 && !isset($payload['error']) && !$hasNoData;
+            $ok = $statusCode < 400 && ! isset($payload['error']) && ! $hasNoData;
 
             if ($hasNoData) {
                 $message = 'API sin datos: no se guardaron datos.';
@@ -135,18 +142,50 @@ class AutoProcesoService
         return (microtime(true) - $startedAt) >= $maxSeconds;
     }
 
+    /**
+     * @return array{modulo: string, ok: bool, message: string, total: int|null, no_data: bool, timed_out: bool}
+     */
+    private function runDsVirtual(string $fecha): array
+    {
+        try {
+            $result = app(VentasDsVirtualService::class)->sync($fecha);
+            $total = $result['received'];
+            $hasNoData = $total === 0;
+
+            return [
+                'modulo' => 'Ventas DS Virtual',
+                'ok' => ! $hasNoData,
+                'message' => $hasNoData
+                    ? 'API sin datos: no se guardaron datos.'
+                    : "Datos sincronizados correctamente. Total: {$total}",
+                'total' => $total,
+                'no_data' => $hasNoData,
+                'timed_out' => false,
+            ];
+        } catch (\Throwable $exception) {
+            return [
+                'modulo' => 'Ventas DS Virtual',
+                'ok' => false,
+                'message' => $exception->getMessage(),
+                'total' => null,
+                'no_data' => false,
+                'timed_out' => false,
+            ];
+        }
+    }
+
     private function buildResult(array $details, float $startedAt): array
     {
-        $timedOut = collect($details)->contains(fn (array $row) => !empty($row['timed_out']));
+        $timedOut = collect($details)->contains(fn (array $row) => ! empty($row['timed_out']));
         $noDataCount = collect($details)->where('no_data', true)->count();
         $okCount = collect($details)->where('ok', true)->count();
         $errorCount = collect($details)
-            ->reject(fn (array $row) => !empty($row['ok']) || !empty($row['no_data']))
+            ->reject(fn (array $row) => ! empty($row['ok']) || ! empty($row['no_data']))
             ->count();
         $elapsedSeconds = (int) floor(microtime(true) - $startedAt);
 
         return [
-            'ok' => $errorCount === 0 && !$timedOut,
+            'ok' => $errorCount === 0 && ! $timedOut,
             'message' => $timedOut
                 ? 'Proceso cancelado por tiempo limite'
                 : ($errorCount === 0 ? 'Proceso completado' : 'Proceso completado con errores'),

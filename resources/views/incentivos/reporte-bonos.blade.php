@@ -54,11 +54,16 @@
                             </div>
                             <div class="col-md-6 col-xl-3">
                                 <div class="alert alert-info py-2 mb-0 small" id="reporteBonosVentaExternaAviso">
-                                    Venta externa pendiente de integración; se mostrará en cero hasta recibir el endpoint.
+                                    DS se divide en partes iguales entre las cédulas que vendieron en la misma terminal y día.
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div class="alert alert-warning d-none" id="reporteBonosDsPendientesPanel">
+                    <strong>Ventas DS pendientes de asociar</strong>
+                    <div id="reporteBonosDsPendientes" style="white-space: pre-line"></div>
                 </div>
 
                 <div class="row g-3 mb-3">
@@ -70,7 +75,7 @@
                     </div>
                     <div class="col-md-6 col-xl-3">
                         <div class="card border-0 shadow-sm h-100"><div class="card-body">
-                            <div class="text-muted text-uppercase small">VentaExterna</div>
+                            <div class="text-muted text-uppercase small">Ventas DS</div>
                             <div class="fs-4 fw-semibold" id="reporteBonosVentaExterna">RD$ 0.00</div>
                         </div></div>
                     </div>
@@ -102,7 +107,7 @@
                                 <thead><tr>
                                     <th>Cédula</th><th>Nombre</th><th>Empleada</th><th>Centro de Costo</th>
                                     <th>Division</th><th>Grupo</th><th>Ruta</th>
-                                    <th class="text-end">No Tradicionales</th><th class="text-end">VentaExterna</th>
+                                    <th class="text-end">No Tradicionales</th><th class="text-end">Ventas DS</th>
                                     <th class="text-end">Total</th><th class="text-end">Incentivo</th><th class="text-end">Faltante</th>
                                 </tr></thead>
                                 <tbody></tbody>
@@ -189,7 +194,10 @@
             document.getElementById('reporteBonosVentaExterna').textContent = `RD$ ${reporteBonosMonto(meta.total_venta_externa)}`;
             document.getElementById('reporteBonosTotalVentas').textContent = `RD$ ${reporteBonosMonto(meta.total_ventas)}`;
             document.getElementById('reporteBonosTotalIncentivo').textContent = `RD$ ${reporteBonosMonto(meta.total_bono)}`;
-            document.getElementById('reporteBonosVentaExternaAviso').classList.toggle('d-none', Boolean(meta.venta_externa_disponible));
+            document.getElementById('reporteBonosVentaExternaAviso').textContent = `DS repartido en partes iguales por terminal y día. Pendiente de asociar: RD$ ${reporteBonosMonto(meta.total_ds_pendiente)} (fuera del bono).`;
+            const pendientes = Array.isArray(meta.ventas_ds_pendientes) ? meta.ventas_ds_pendientes : [];
+            document.getElementById('reporteBonosDsPendientes').textContent = pendientes.map(item => `${item.fecha} · Consorcio ${item.consorcio_id} · Terminal ${item.terminal}: RD$ ${reporteBonosMonto(item.monto)}`).join('\n');
+            document.getElementById('reporteBonosDsPendientesPanel').classList.toggle('d-none', pendientes.length === 0);
         }
 
         async function generarReporteBonos() {

@@ -1,0 +1,170 @@
+:root {
+    --crm-sidebar-height: 100vh;
+    --crm-sidebar-brand-height: 70px;
+}
+
+@supports (height: 100dvh) {
+    :root {
+        --crm-sidebar-height: 100dvh;
+    }
+}
+
+html[data-layout="vertical"] .app-menu.navbar-menu,
+html[data-layout="twocolumn"] .app-menu.navbar-menu {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    height: var(--crm-sidebar-height);
+    max-height: var(--crm-sidebar-height);
+    padding-bottom: 0;
+}
+
+html[data-layout="vertical"] .app-menu.navbar-menu .navbar-brand-box,
+html[data-layout="twocolumn"] .app-menu.navbar-menu .navbar-brand-box {
+    flex: 0 0 var(--crm-sidebar-brand-height);
+}
+
+html[data-layout="vertical"] #scrollbar,
+html[data-layout="twocolumn"] #scrollbar {
+    flex: 1 1 0;
+    min-height: 0;
+    height: auto !important;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+    scrollbar-width: thin;
+}
+
+html[data-layout="vertical"] #scrollbar > .simplebar-wrapper,
+html[data-layout="twocolumn"] #scrollbar > .simplebar-wrapper {
+    height: 100%;
+    max-height: 100%;
+}
+
+html[data-layout="vertical"] #scrollbar .simplebar-content-wrapper,
+html[data-layout="twocolumn"] #scrollbar .simplebar-content-wrapper {
+    height: 100% !important;
+    max-height: 100%;
+    overflow-x: hidden !important;
+    overflow-y: scroll !important;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: auto;
+}
+
+html[data-layout="vertical"] #scrollbar .container-fluid,
+html[data-layout="twocolumn"] #scrollbar .container-fluid {
+    height: auto;
+    min-height: 100%;
+    padding-bottom: 2rem;
+}
+
+html[data-layout="vertical"] #navbar-nav,
+html[data-layout="twocolumn"] #navbar-nav {
+    min-height: 0;
+    padding-bottom: 1.25rem;
+}
+
+html[data-layout="vertical"] #scrollbar .simplebar-content,
+html[data-layout="twocolumn"] #scrollbar .simplebar-content {
+    padding-bottom: 1.25rem !important;
+}
+
+#navbar-nav .nav-link,
+#navbar-nav .menu-link {
+    transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+#navbar-nav .menu-dropdown .nav-link:hover {
+    transform: translateX(2px);
+}
+
+#navbar-nav .sidebar-brand-title {
+    padding: 1.05rem 1.5rem 0.7rem;
+}
+
+#navbar-nav .sidebar-brand-title .brand-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: #ffffff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.1;
+}
+
+#navbar-nav .sidebar-brand-title .brand-mark i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    color: var(--bsh-yellow, #ecbe13);
+    background: rgba(236, 190, 19, 0.14);
+    font-size: 1rem;
+}
+
+html[data-sidebar-size="sm"] #navbar-nav .sidebar-brand-title,
+html[data-sidebar-size="sm-hover"] #navbar-nav .sidebar-brand-title {
+    display: none;
+}
+
+#navbar-nav .menu-dropdown.show {
+    max-height: none;
+    overflow: visible;
+    overscroll-behavior: contain;
+    padding-right: 0;
+}
+
+#scrollbar .simplebar-track.simplebar-vertical {
+    right: 1px;
+    width: 12px;
+    background: transparent;
+    pointer-events: auto;
+}
+
+#scrollbar .simplebar-scrollbar::before {
+    left: 3px;
+    right: 3px;
+    background: rgba(255, 255, 255, 0.48);
+    border-radius: 999px;
+    opacity: 0.85;
+}
+
+#scrollbar::-webkit-scrollbar {
+    width: 10px;
+}
+
+#scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.38);
+    background-clip: content-box;
+    border: 2px solid transparent;
+    border-radius: 999px;
+}
+
+#scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+    html[data-layout="vertical"][data-sidebar-size="sm"] .app-menu.navbar-menu .navbar-nav .nav-link i {
+        display: inline-flex;
+        visibility: visible;
+        opacity: 1;
+        justify-content: center;
+        min-width: 1.75rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #navbar-nav .nav-link,
+    #navbar-nav .menu-link,
+    #navbar-nav .menu-dropdown {
+        transition: none;
+    }
+}
