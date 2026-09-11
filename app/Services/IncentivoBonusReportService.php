@@ -61,7 +61,7 @@ class IncentivoBonusReportService
                 'ruta' => $agency?->ruta,
                 'terminal' => $terminal,
                 'agencia' => $this->agencyName($agency),
-                'empresa' => $agency?->empresa,
+                'empresa' => $this->employeeCompany($employee),
                 'no_tradicional' => $nonTraditionalAmount,
                 'venta_externa' => $externalAmount,
                 'total' => $total,
@@ -385,5 +385,14 @@ class IncentivoBonusReportService
         }
 
         return trim((string) ($agency->nombre_agencia ?? $agency->nombre ?? $agency->agencia ?? $agency->codigo));
+    }
+
+    private function employeeCompany(?Empleado $employee): ?string
+    {
+        return match ($employee?->companyid) {
+            126 => 'BSH',
+            100 => 'QPL',
+            default => null,
+        };
     }
 }

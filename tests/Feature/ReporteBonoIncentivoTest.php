@@ -118,8 +118,8 @@ class ReporteBonoIncentivoTest extends TestCase
 
         $this->assertSame([
             'Cédula',
-            'Nombre',
-            'Empleada',
+            'Empleado',
+            'Empresa',
             'Centro de Costo',
             'Division',
             'Grupo',
@@ -159,7 +159,7 @@ class ReporteBonoIncentivoTest extends TestCase
             ['agencia_id' => '300', 'cedula' => null, 'producto_id' => 10, 'tipo' => 'No Tradicional', 'monto' => 400, 'fecha' => '2026-07-21'],
         ]);
         DB::table('empleados')->insert([
-            'companyid' => 168,
+            'companyid' => 126,
             'empleadoid' => 3743,
             'idcentrocosto' => 4717,
             'cedula' => '001-2345678-9',
@@ -199,6 +199,7 @@ class ReporteBonoIncentivoTest extends TestCase
             ->assertJsonPath('meta.empleados_pendientes', 1)
             ->assertJsonPath('meta.venta_externa_disponible', false)
             ->assertJsonPath('data.1.empleadoid', 3743)
+            ->assertJsonPath('data.1.empresa', 'BSH')
             ->assertJsonPath('data.1.centro_costo', '4717-Centro principal')
             ->assertJsonPath('data.1.ruta', 'Ruta Sur')
             ->assertJsonPath('data.1.faltante', 50)
@@ -209,6 +210,42 @@ class ReporteBonoIncentivoTest extends TestCase
 
         $this->assertSame(0.0, (float) $response->json('data.1.bono'));
         $this->assertSame(2.0, (float) $response->json('data.0.bono'));
+    }
+
+    public function test_bonus_report_maps_the_company_from_the_employee_company_id(): void
+    {
+        DB::table('catalogo_juegos')->insert([
+            'producto_id' => 10,
+            'tipo' => 'No Tradicional',
+        ]);
+        DB::table('ventas_usuarios_bet')->insert([
+            'agencia_id' => '100',
+            'cedula' => '00223456789',
+            'producto_id' => 10,
+            'tipo' => 'No Tradicional',
+            'monto' => 100,
+            'fecha' => '2026-07-10',
+        ]);
+        DB::table('empleados')->insert([
+            'companyid' => 100,
+            'empleadoid' => 4000,
+            'cedula' => '002-2345678-9',
+            'nombres' => 'Juan',
+            'apellidos' => 'Pérez',
+            'estatus' => true,
+        ]);
+        DB::table('agencias')->insert([
+            'codigo' => '100',
+            'terminal' => '100',
+            'nombre' => 'Agencia Uno',
+            'sistema' => 'lotobet',
+            'empresa' => 'OTRA',
+        ]);
+
+        $report = app(\App\Services\IncentivoBonusReportService::class)
+            ->generate('2026-07-01', '2026-07-31', 'Lotobet');
+
+        $this->assertSame('QPL', $report['data']->first()['empresa']);
     }
 
     public function test_bonus_report_validates_the_date_range(): void

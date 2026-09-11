@@ -105,7 +105,7 @@
                         <div class="table-responsive">
                             <table class="table table-bordered table-striped align-middle nowrap w-100" id="tablaReporteBonos">
                                 <thead><tr>
-                                    <th>Cédula</th><th>Nombre</th><th>Empleada</th><th>Centro de Costo</th>
+                                    <th>Cédula</th><th>Empleado</th><th>Empresa</th><th>Centro de Costo</th>
                                     <th>Division</th><th>Grupo</th><th>Ruta</th>
                                     <th class="text-end">No Tradicionales</th><th class="text-end">Ventas DS</th>
                                     <th class="text-end">Total</th><th class="text-end">Incentivo</th><th class="text-end">Faltante</th>
@@ -174,8 +174,8 @@
                 }, 'print'],
                 columns: [
                     { data: 'cedula', defaultContent: '', render: reporteBonosRenderTexto },
-                    { data: 'nombre', defaultContent: '', render: reporteBonosRenderTexto },
                     { data: 'empleada', defaultContent: '', render: reporteBonosRenderTexto },
+                    { data: 'empresa', defaultContent: '', render: reporteBonosRenderTexto },
                     { data: 'centro_costo', defaultContent: '', render: reporteBonosRenderTexto },
                     { data: 'division', defaultContent: '', render: reporteBonosRenderTexto },
                     { data: 'grupo', defaultContent: '', render: reporteBonosRenderTexto },
