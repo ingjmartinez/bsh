@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class Empleado extends Model
 {
     public $timestamps = false;
+
     protected $primaryKey = 'id';
+
     protected $fillable = [
         'companyid',
         'empleadoid',
@@ -37,4 +39,16 @@ class Empleado extends Model
         'fuente_sync',
         'ultima_sync_at',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'companyid' => 'integer',
+            'empleadoid' => 'integer',
+            'estatus' => 'boolean',
+        ];
+    }
 }

@@ -53,7 +53,9 @@ class IncentivoBonusReportService
                 'cedula' => $cedula,
                 'empleadoid' => $employee?->empleadoid,
                 'nombre' => $employee ? trim($employee->nombres.' '.$employee->apellidos) : 'Pendiente de vincular',
-                'empleada' => $employee ? trim($employee->empleadoid.'-'.$employee->nombres.' '.$employee->apellidos) : null,
+                'empleada' => $employee
+                    ? trim($employee->empleadoid.'-'.$employee->nombres.' '.$employee->apellidos)
+                    : 'VALIDAR EN MAESTRA DE EMPLEADOS',
                 'idcentrocosto' => $employee?->idcentrocosto,
                 'centro_costo' => $this->costCenterLabel($costCenter, $employee?->idcentrocosto),
                 'division' => $costCenter?->id_division,
@@ -255,13 +257,13 @@ class IncentivoBonusReportService
         $employees = collect();
         foreach ($cedulas->chunk(800) as $chunk) {
             $query = Empleado::query()
-                ->whereIn(DB::raw("REPLACE(REPLACE(TRIM(cedula), '-', ''), ' ', '')"), $chunk->all());
+                ->whereIn(DB::raw($this->normalizedCedulaSql()), $chunk->all());
 
             if (Schema::hasColumn('empleados', 'estatus')) {
                 $query->orderByDesc('estatus');
             }
 
-            $employees = $employees->merge($query->get());
+            $employees = $employees->merge($query->orderByDesc('id')->get());
         }
 
         return $employees
@@ -364,6 +366,15 @@ class IncentivoBonusReportService
         return preg_replace('/\D+/', '', (string) $cedula) ?? '';
     }
 
+    private function normalizedCedulaSql(): string
+    {
+        if (DB::connection()->getDriverName() === 'mysql') {
+            return "REGEXP_REPLACE(TRIM(cedula), '[^0-9]', '')";
+        }
+
+        return "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TRIM(cedula), '-', ''), ' ', ''), '.', ''), '/', ''), '_', '')";
+    }
+
     private function agencyKey(string $system, string $terminal): string
     {
         return mb_strtolower(trim($system)).'|'.trim($terminal);
@@ -389,6 +400,10 @@ class IncentivoBonusReportService
 
     private function employeeCompany(?Empleado $employee): ?string
     {
+        if (! $employee) {
+            return null;
+        }
+
         return match ($employee?->companyid) {
             126 => 'BSH',
             100 => 'QPL',

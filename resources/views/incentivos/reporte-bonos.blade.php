@@ -147,6 +147,19 @@
             return tipo === 'display' ? reporteBonosTextoSeguro(valor) : (valor ?? '');
         }
 
+        function reporteBonosRenderEmpleado(valor, tipo) {
+            if (tipo !== 'display') {
+                return valor ?? '';
+            }
+
+            const textoSeguro = reporteBonosTextoSeguro(valor);
+            if (valor === 'VALIDAR EN MAESTRA DE EMPLEADOS') {
+                return `<span class="d-inline-block rounded px-2 py-1 fw-semibold text-dark" style="background-color: #fff3cd; box-shadow: 0 0 0.5rem rgba(255, 193, 7, 0.55);">${textoSeguro}</span>`;
+            }
+
+            return textoSeguro;
+        }
+
         function reporteBonosRenderMonto(valor, tipo) {
             return tipo === 'display' ? reporteBonosMonto(valor) : reporteBonosNumero(valor);
         }
@@ -174,7 +187,7 @@
                 }, 'print'],
                 columns: [
                     { data: 'cedula', defaultContent: '', render: reporteBonosRenderTexto },
-                    { data: 'empleada', defaultContent: '', render: reporteBonosRenderTexto },
+                    { data: 'empleada', defaultContent: '', render: reporteBonosRenderEmpleado },
                     { data: 'empresa', defaultContent: '', render: reporteBonosRenderTexto },
                     { data: 'centro_costo', defaultContent: '', render: reporteBonosRenderTexto },
                     { data: 'division', defaultContent: '', render: reporteBonosRenderTexto },
