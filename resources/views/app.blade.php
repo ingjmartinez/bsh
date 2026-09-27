@@ -101,9 +101,80 @@
     <link href="{{ asset('css/sidebar.css') }}?v={{ filemtime(public_path('css/sidebar.css')) }}" rel="stylesheet"
         type="text/css" />
 
+    @if (auth()->user()?->hasRole('admin2'))
+        <style id="admin2-delete-guard">
+            form:has(input[name="_method"][value="DELETE" i]),
+            button[class*="delete" i],
+            button[class*="eliminar" i],
+            button[id*="delete" i],
+            button[id*="eliminar" i],
+            button[title*="eliminar" i],
+            button[aria-label*="eliminar" i],
+            button[onclick*="eliminar" i],
+            button[onclick*="delete" i],
+            a[class*="delete" i],
+            a[class*="eliminar" i],
+            a[id*="delete" i],
+            a[id*="eliminar" i],
+            a[title*="eliminar" i],
+            a[aria-label*="eliminar" i],
+            a[href*="/delete-" i],
+            a[href*="/destroy/" i],
+            [data-action*="delete" i],
+            [data-action*="eliminar" i],
+            [data-url*="/delete-" i] {
+                display: none !important;
+            }
+        </style>
+        <script id="admin2-delete-observer">
+            (() => {
+                const destructivePattern = /\b(eliminar|borrar|remover|vaciar|delete|destroy|remove)\b/i;
+                const actionSelector = 'button, a, input[type="button"], input[type="submit"], [role="button"]';
+
+                const hideDeleteActions = (root) => {
+                    const forms = root.matches?.('form') ? [root] : [];
+                    forms.push(...root.querySelectorAll('form'));
+                    forms.forEach((form) => {
+                        if (form.querySelector('input[name="_method"]')?.value?.toUpperCase() === 'DELETE') {
+                            form.hidden = true;
+                            form.setAttribute('aria-hidden', 'true');
+                        }
+                    });
+
+                    const actions = root.matches?.(actionSelector) ? [root] : [];
+                    actions.push(...root.querySelectorAll(actionSelector));
+                    actions.forEach((element) => {
+                        const descriptor = [
+                            element.textContent,
+                            element.getAttribute('title'),
+                            element.getAttribute('aria-label'),
+                            element.getAttribute('href'),
+                            element.getAttribute('action'),
+                            element.id,
+                            element.className,
+                        ].filter(Boolean).join(' ');
+
+                        if (destructivePattern.test(descriptor)) {
+                            element.hidden = true;
+                            element.setAttribute('aria-hidden', 'true');
+                        }
+                    });
+                };
+
+                new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => mutation.addedNodes.forEach((node) => {
+                        if (node.nodeType === Node.ELEMENT_NODE) {
+                            hideDeleteActions(node);
+                        }
+                    }));
+                }).observe(document.documentElement, { childList: true, subtree: true });
+            })();
+        </script>
+    @endif
+
 </head>
 
-<body>
+<body @class(['admin2-readonly' => auth()->user()?->hasRole('admin2')])>
     @php
         $appVersion = config('app.version', '1.0.0');
     @endphp
@@ -669,7 +740,7 @@
                 <div class="container-fluid">
                     <div id="two-column-menu"></div>
                     @php
-                        $showAllModulesForAdmin = auth()->check() && auth()->user()->hasAnyRole(['superadmin', 'admin']);
+                        $showAllModulesForAdmin = auth()->check() && auth()->user()->hasAnyRole(['superadmin', 'admin', 'admin2']);
                         $moduleHubAccess = app(\App\Support\ModuleHubAccess::class);
                         $canModule = fn (string $module): bool => $moduleHubAccess->canAccessModule(auth()->user(), $module);
                     @endphp
@@ -693,6 +764,46 @@
                                     class="nav-link menu-link {{ request()->routeIs('inicio.index') || request()->is('dashboard*') || request()->is('ventas-lotobet-dashboard*') || request()->is('ventas-lotedom-dashboard*') || request()->is('ventas-lotobet-flash-dashboard*') || request()->is('kpi-lotobet*') ? 'active' : '' }}">
                                     <i class="ri-apps-2-line"></i> <span data-key="t-apps">Dashboard</span>
                                 </a>
+                            </li>
+                        @endif
+
+                        @if ($canModule('bi'))
+                            @php
+                                $isBiLotobetActive = request()->routeIs('bi.lotobet-real', 'bi.lotobet-real.*');
+                                $isBiLotodomActive = request()->routeIs('bi.lotodom');
+                                $isBiDeltaActive = request()->routeIs('bi.delta');
+                                $isBiActive = request()->routeIs('bi.index') || $isBiLotobetActive || $isBiLotodomActive || $isBiDeltaActive;
+                            @endphp
+                            <li class="nav-item">
+                                <a class="nav-link menu-link {{ $isBiActive ? '' : 'collapsed' }}"
+                                    href="#sidebarBi" data-bs-toggle="collapse" role="button"
+                                    aria-expanded="{{ $isBiActive ? 'true' : 'false' }}"
+                                    aria-controls="sidebarBi">
+                                    <i class="ri-pie-chart-2-line"></i>
+                                    <span data-key="t-bi">BI</span>
+                                </a>
+                                <div class="collapse menu-dropdown {{ $isBiActive ? 'show' : '' }}" id="sidebarBi">
+                                    <ul class="nav nav-sm flex-column">
+                                        <li class="nav-item">
+                                            <a href="{{ route('bi.lotobet-real') }}"
+                                                class="nav-link {{ $isBiLotobetActive ? 'active' : '' }}">
+                                                Lotobet Real
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('bi.lotodom') }}"
+                                                class="nav-link {{ $isBiLotodomActive ? 'active' : '' }}">
+                                                Lotodom
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('bi.delta') }}"
+                                                class="nav-link {{ $isBiDeltaActive ? 'active' : '' }}">
+                                                Delta
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
                             </li>
                         @endif
 
@@ -771,16 +882,18 @@
 
                         @if ($showAllModulesForAdmin)
                             @php
-                                $isVentasDsVirtualActive = request()->routeIs('ventas-ds-virtual.*');
+                                $isGenerarDsVirtualActive = request()->routeIs('ventas-ds-virtual.generate');
+                                $isVentasDsVirtualActive = request()->routeIs('ventas-ds-virtual.index');
+                                $isDsVirtualActive = $isGenerarDsVirtualActive || $isVentasDsVirtualActive;
                             @endphp
                             <li class="nav-item">
-                            <a class="nav-link menu-link {{ $isVentasDsVirtualActive ? '' : 'collapsed' }}"
+                            <a class="nav-link menu-link {{ $isDsVirtualActive ? '' : 'collapsed' }}"
                                 href="#sidebarApps" data-bs-toggle="collapse" role="button"
-                                aria-expanded="{{ $isVentasDsVirtualActive ? 'true' : 'false' }}"
+                                aria-expanded="{{ $isDsVirtualActive ? 'true' : 'false' }}"
                                 aria-controls="sidebarApps">
                                 <i class="ri-apps-2-line"></i> <span data-key="t-apps">Apis de ventas</span>
                             </a>
-                            <div class="collapse menu-dropdown {{ $isVentasDsVirtualActive ? 'show' : '' }}" id="sidebarApps">
+                            <div class="collapse menu-dropdown {{ $isDsVirtualActive ? 'show' : '' }}" id="sidebarApps">
                                 <ul class="nav nav-sm flex-column">
                                     <li class="nav-item">
                                         <a href="{{ url('/generar-lotobet') }}" class="nav-link">
@@ -795,6 +908,12 @@
                                     <li class="nav-item">
                                         <a href="{{ url('/generar-delta') }}" class="nav-link">
                                             <span data-key="t-dashboards">Generar Delta</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('ventas-ds-virtual.generate') }}"
+                                            class="nav-link {{ $isGenerarDsVirtualActive ? 'active' : '' }}">
+                                            <span data-key="t-dashboards">Generar DS Virtual</span>
                                         </a>
                                     </li>
                                     <li class="nav-item">

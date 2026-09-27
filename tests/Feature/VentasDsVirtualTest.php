@@ -31,6 +31,7 @@ class VentasDsVirtualTest extends TestCase
     public function test_submodule_routes_menu_and_table_are_registered(): void
     {
         $this->assertTrue(Route::has('ventas-ds-virtual.index'));
+        $this->assertTrue(Route::has('ventas-ds-virtual.generate'));
         $this->assertTrue(Route::has('ventas-ds-virtual.data'));
         $this->assertTrue(Route::has('ventas-ds-virtual.sync'));
         $this->assertTrue(Route::has('ventas-ds-virtual.destroy'));
@@ -46,16 +47,49 @@ class VentasDsVirtualTest extends TestCase
         ]));
 
         $layout = file_get_contents(resource_path('views/app.blade.php'));
-        $view = file_get_contents(resource_path('views/lotobet/ventas-ds-virtual.blade.php'));
+        $listView = file_get_contents(resource_path('views/lotobet/ventas-ds-virtual-listado.blade.php'));
+        $generateView = file_get_contents(resource_path('views/lotobet/ventas-ds-virtual.blade.php'));
         $this->assertIsString($layout);
-        $this->assertIsString($view);
+        $this->assertIsString($listView);
+        $this->assertIsString($generateView);
         $this->assertStringContainsString("route('ventas-ds-virtual.index')", $layout);
+        $this->assertStringContainsString("route('ventas-ds-virtual.generate')", $layout);
         $this->assertStringContainsString('Ventas DS Virtual', $layout);
         $this->assertSame(1, substr_count($layout, "route('ventas-ds-virtual.index')"));
+        $this->assertSame(1, substr_count($layout, "route('ventas-ds-virtual.generate')"));
+        $this->assertLessThan(
+            strpos($layout, "route('ventas-ds-virtual.index')"),
+            strpos($layout, "route('ventas-ds-virtual.generate')")
+        );
         $this->assertLessThan(
             strpos($layout, 'href="#sidebarEmail"'),
             strpos($layout, "route('ventas-ds-virtual.index')")
         );
+        foreach ([
+            'btnGenerarTokenDsVirtual',
+            'btnGenerarData',
+            'btnGuardarData',
+            'btnEliminarData',
+            'btnGenerarDataFecha',
+            'btnGuardarDataFecha',
+            'btnEliminarDataFecha',
+            'tableVentasDsVirtual',
+            'modalRangoDsVirtual',
+        ] as $elementId) {
+            $this->assertStringContainsString('id="'.$elementId.'"', $listView);
+            $this->assertStringNotContainsString('id="'.$elementId.'"', $generateView);
+        }
+        $this->assertStringNotContainsString("route('ventas-ds-virtual.generate')", $listView);
+        $this->assertStringContainsString('Configurar Token', $listView);
+        $this->assertStringContainsString('id="btnGenerarTokenDsVirtual"', $listView);
+        $this->assertStringContainsString("url('/generar-token')", $listView);
+        $this->assertStringContainsString("route('ventas-ds-virtual.data')", $listView);
+        $this->assertStringContainsString("route('ventas-ds-virtual.sync')", $listView);
+        $this->assertStringContainsString("route('ventas-ds-virtual.destroy')", $listView);
+        $this->assertStringContainsString('formatMoney(item.ventas)', $listView);
+        $this->assertStringContainsString('formatMoney(item.premios_pagados)', $listView);
+        $this->assertStringContainsString("buttons: ['copy', 'csv', 'excel', 'pdf', 'print']", $listView);
+
         foreach ([
             'btnGenerarToken',
             'btnProcesarUno',
@@ -68,9 +102,26 @@ class VentasDsVirtualTest extends TestCase
             'modalRango',
             'modalConfigAuto',
         ] as $elementId) {
-            $this->assertStringContainsString('id="'.$elementId.'"', $view);
+            $this->assertStringContainsString('id="'.$elementId.'"', $generateView);
+            $this->assertStringNotContainsString('id="'.$elementId.'"', $listView);
         }
-        $this->assertStringContainsString("url('/auto-proceso/ds_virtual/config')", $view);
+        $this->assertStringContainsString("url('/auto-proceso/ds_virtual/config')", $generateView);
+        $this->assertStringContainsString('Generar Token DS Virtual', $generateView);
+        $this->assertStringContainsString("url('/generar-token')", $generateView);
+        $this->assertStringContainsString("route('ventas-ds-virtual.index')", $generateView);
+    }
+
+    public function test_listado_y_proceso_masivo_usan_vistas_separadas(): void
+    {
+        $this->withoutMiddleware()
+            ->get(route('ventas-ds-virtual.index'))
+            ->assertOk()
+            ->assertViewIs('lotobet.ventas-ds-virtual-listado');
+
+        $this->withoutMiddleware()
+            ->get(route('ventas-ds-virtual.generate'))
+            ->assertOk()
+            ->assertViewIs('lotobet.ventas-ds-virtual');
     }
 
     public function test_sync_uses_lotobet_session_and_is_idempotent(): void

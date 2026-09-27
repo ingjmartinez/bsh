@@ -77,7 +77,9 @@ class WhatsAppChatbotService
 
     private const TABLA_AGENCIAS_REAL = 'agencias';
 
-    private const TABLA_AGENCIAS_LOTEDOM_DELTA = 'agencias_lotedom';
+    private const TABLA_AGENCIAS_LOTEDOM = 'agencias_lotedom';
+
+    private const TABLA_AGENCIAS_DELTA = 'agencias_delta';
 
     public static function sessionClosedMessage(): string
     {
@@ -1091,12 +1093,12 @@ class WhatsAppChatbotService
 
     private function terminalLotedomExiste(string $terminalCodigo): bool
     {
-        return $this->terminalExisteEnCatalogoLotedomDelta($terminalCodigo, 'lotedom');
+        return $this->terminalExisteEnCatalogoLotedom($terminalCodigo);
     }
 
     private function terminalDeltaExiste(string $terminalCodigo): bool
     {
-        return $this->terminalExisteEnCatalogoLotedomDelta($terminalCodigo, 'delta');
+        return $this->terminalExisteEnTabla(self::TABLA_AGENCIAS_DELTA, $terminalCodigo);
     }
 
     private function terminalExisteParaSistema(string $sistema, string $terminalCodigo): bool
@@ -1108,9 +1110,9 @@ class WhatsAppChatbotService
         };
     }
 
-    private function terminalExisteEnCatalogoLotedomDelta(string $terminalCodigo, string $sistema): bool
+    private function terminalExisteEnCatalogoLotedom(string $terminalCodigo): bool
     {
-        $tabla = self::TABLA_AGENCIAS_LOTEDOM_DELTA;
+        $tabla = self::TABLA_AGENCIAS_LOTEDOM;
 
         if (! Schema::hasTable($tabla) || ! Schema::hasColumn($tabla, 'terminal')) {
             return false;
@@ -1135,7 +1137,6 @@ class WhatsAppChatbotService
             $query->where('estatus', 1);
         }
 
-        $sistema = Str::lower(trim($sistema));
         $columns = ['terminal'];
 
         if ($hasSistema) {
@@ -1148,7 +1149,7 @@ class WhatsAppChatbotService
 
         return $query
             ->get($columns)
-            ->contains(function ($row) use ($terminalNormalizado, $sistema, $hasSistema, $hasEmpresa) {
+            ->contains(function ($row) use ($terminalNormalizado, $hasSistema, $hasEmpresa) {
                 if ($this->normalizarTerminalReal((string) ($row->terminal ?? '')) !== $terminalNormalizado) {
                     return false;
                 }
@@ -1156,15 +1157,7 @@ class WhatsAppChatbotService
                 $sistemaValor = $hasSistema ? Str::lower((string) ($row->sistema ?? '')) : '';
                 $empresaValor = $hasEmpresa ? Str::lower((string) ($row->empresa ?? '')) : '';
 
-                if ($sistema === 'delta') {
-                    return str_contains($sistemaValor, 'delta') || str_contains($empresaValor, 'delta');
-                }
-
-                if ($sistema === 'lotedom') {
-                    return str_contains($sistemaValor, 'lotedom') || str_contains($empresaValor, 'lotedom');
-                }
-
-                return false;
+                return str_contains($sistemaValor, 'lotedom') || str_contains($empresaValor, 'lotedom');
             });
     }
 

@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Token;
-use Illuminate\Http\Request;
 use App\Models\PagoAOtraEmpresa;
 use App\Models\PagoAOtraEmpresaNet;
+use App\Models\Token;
 use App\Support\LotedomRowMapper;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class PagoAOtraEmpresaController extends Controller
@@ -21,7 +21,7 @@ class PagoAOtraEmpresaController extends Controller
 
         $token = Token::find(1);
 
-        if (!$token) {
+        if (! $token) {
             return response()->json(['error' => 'Genere un token'], 404);
         }
 
@@ -30,7 +30,7 @@ class PagoAOtraEmpresaController extends Controller
             return response()->json(['error' => 'El token ha expirado, genere uno nuevo'], 401);
         }
 
-        curl_setopt_array($curl, array(
+        curl_setopt_array($curl, [
             CURLOPT_URL => "https://apiadmin.prodrl.lotvirtual.com/api/V1/XCu6kLrhpbrkYOIvt6/{$token->token}/{$fecha}/07",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
@@ -39,13 +39,13 @@ class PagoAOtraEmpresaController extends Controller
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_HTTPHEADER => array(
+            CURLOPT_HTTPHEADER => [
                 'AhfCC: yB0tt5KW3wVVCYYtCpen',
-                'AhfVB: xSzdgtOKbGRhUhtv1ois'
-            ),
+                'AhfVB: xSzdgtOKbGRhUhtv1ois',
+            ],
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_SSL_VERIFYPEER => 0,
-        ));
+        ]);
 
         $response = curl_exec($curl);
 
@@ -71,7 +71,7 @@ class PagoAOtraEmpresaController extends Controller
 
         $token = Token::find(1);
 
-        if (!$token) {
+        if (! $token) {
             return response()->json(['error' => 'Genere un token'], 404);
         }
 
@@ -83,10 +83,10 @@ class PagoAOtraEmpresaController extends Controller
         $existe = PagoAOtraEmpresa::whereDate('fecha', $fecha)->exists();
 
         if ($existe) {
-            return response()->json(['message' => 'Ya hay data guardada en la fecha: ' . $fecha]);
+            return response()->json(['message' => 'Ya hay data guardada en la fecha: '.$fecha]);
         }
 
-        curl_setopt_array($curl, array(
+        curl_setopt_array($curl, [
             CURLOPT_URL => "https://apiadmin.prodrl.lotvirtual.com/api/V1/XCu6kLrhpbrkYOIvt6/{$token->token}/{$fecha}/07",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
@@ -95,13 +95,13 @@ class PagoAOtraEmpresaController extends Controller
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_HTTPHEADER => array(
+            CURLOPT_HTTPHEADER => [
                 'AhfCC: yB0tt5KW3wVVCYYtCpen',
-                'AhfVB: xSzdgtOKbGRhUhtv1ois'
-            ),
+                'AhfVB: xSzdgtOKbGRhUhtv1ois',
+            ],
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_SSL_VERIFYPEER => 0,
-        ));
+        ]);
 
         $response = curl_exec($curl);
 
@@ -113,25 +113,25 @@ class PagoAOtraEmpresaController extends Controller
 
         foreach ($ventas['Content'] as $v) {
             $data[] = [
-                'agencia_id'    => $v['agencia_id'] ?? null,
-                'monto'         => $v['monto'] ?? null,
-                'fecha'         => $v['fecha'] ?? null,
-                'cedula'        => $v['cedula'] ?? $v['identificacion'] ?? null,
-                'tipo_pago'     => $v['tipo_pago'] ?? $v['plataforma_pago'] ?? null,
-                'created_at'    => now(),
-                'updated_at'    => now(),
+                'agencia_id' => $v['agencia_id'] ?? null,
+                'monto' => $v['monto'] ?? null,
+                'fecha' => $v['fecha'] ?? null,
+                'cedula' => $v['cedula'] ?? $v['identificacion'] ?? null,
+                'tipo_pago' => $v['tipo_pago'] ?? $v['plataforma_pago'] ?? null,
+                'created_at' => now(),
+                'updated_at' => now(),
             ];
         }
 
-        if (!empty($data)) {
+        if (! empty($data)) {
             foreach (array_chunk($data, 5000) as $chunk) {
                 DB::table('pagos_aotra_empresa_bet')->insert($chunk);
             }
         }
 
         return response()->json([
-            'message' => 'Datos guardados correctamente. Total insertados: ' . count($data),
-            'total' => count($data)
+            'message' => 'Datos guardados correctamente. Total insertados: '.count($data),
+            'total' => count($data),
         ]);
     }
 
@@ -156,8 +156,8 @@ class PagoAOtraEmpresaController extends Controller
 
         $fecha = $request->query('fecha');
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => "http://contable.apploteka.com/api/finan/pagos_a_otra_empresa/{$fecha}/5",
+        curl_setopt_array($curl, [
+            CURLOPT_URL => "https://lotedom-api.orkapi.net/api/finan/pagos_a_otra_empresa/{$fecha}",
             CURLOPT_PROXY => '',
             CURLOPT_NOPROXY => '*',
             CURLOPT_RETURNTRANSFER => true,
@@ -167,22 +167,20 @@ class PagoAOtraEmpresaController extends Controller
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_HTTPHEADER => array(
+            CURLOPT_HTTPHEADER => [
                 'token: ZFozLWdBYyqERusVdTsW',
-                'Content-Type: application/json',
-                'Cookie: _orkapi_session=ZEhSS1BsNWdUVUo5YS9CTlBZRU5Ialk3MGttb3pPci9wZEsxMWUxNGtUR0hjTWd1NU95cVRXY21jTFdQRWttNmVrOHRQbm5pQUI3T2ZsR1liT0ZqMGZKVGJsQmlxcENESENITEhGRXU5T2h4Z1Y1ekJUMUZYQjB3UGFuSTM1SVVtcVBlTC9WSXYzOVFHVDZWQm10ejVoL1RlNWtvRklVNTEwalRFeHVLV05VPS0tdzJ2SlRSb2NiZW03NGxvelRkK0pXQT09--05d6531100f387106bdeff0762ad421c499d1535'
-            ),
-        ));
+                'Cookie: _orkapi_session=mBuhrBXgfS%2BcdU%2FQp3EoRhgkh%2F2Ujit0eiPO0qGqgOqTIzhG5nNCM2X6vcpkMxoqpAHdnVlZQAcH5WBHkFE06UObTZs4b1dT39vDWwjoa2nU%2FaeT9s57iBd0E2cfUF6L730vbmgeCfuFgnzQ%2B7hb0b0hoxUfwen7SzF8j%2BXCERxro57dRZW9iFx3bp7mvo1vbIUIeVdUe7IYMgWT%2FLw2LiyggRKXcp8EMD1YeuTYY%2FPZTXtDjQiE9QqOhbt2vRrRib%2FagV1AcNhLsnKokXm1%2FKTjDblPwonkuCIWhJYncA%3D%3D--u06kmofng8Mclj2V--Q4%2BlvChhFsPrmRval8O09w%3D%3D',
+            ],
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_SSL_VERIFYPEER => 0,
+        ]);
 
         $response = curl_exec($curl);
 
         curl_close($curl);
 
         $ventas = json_decode($response, true);
-        $data = array_map(
-            fn (array $row): array => LotedomRowMapper::pago($row, $fecha),
-            $ventas['data']['result'] ?? []
-        );
+        $data = is_array($ventas) ? ($ventas['data']['result'] ?? []) : [];
 
         return response()->json(['pagos' => $data, 'code' => $ventas['code'] ?? 0, 'message' => '']);
     }
@@ -201,11 +199,11 @@ class PagoAOtraEmpresaController extends Controller
         $existe = PagoAOtraEmpresaNet::whereDate('fecha', $fecha)->exists();
 
         if ($existe) {
-            return response()->json(['message' => 'Ya hay data guardada en la fecha: ' . $fecha]);
+            return response()->json(['message' => 'Ya hay data guardada en la fecha: '.$fecha]);
         }
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => "http://contable.apploteka.com/api/finan/pagos_a_otra_empresa/{$fecha}/5",
+        curl_setopt_array($curl, [
+            CURLOPT_URL => "https://lotedom-api.orkapi.net/api/finan/pagos_a_otra_empresa/{$fecha}",
             CURLOPT_PROXY => '',
             CURLOPT_NOPROXY => '*',
             CURLOPT_RETURNTRANSFER => true,
@@ -215,12 +213,13 @@ class PagoAOtraEmpresaController extends Controller
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_HTTPHEADER => array(
+            CURLOPT_HTTPHEADER => [
                 'token: ZFozLWdBYyqERusVdTsW',
-                'Content-Type: application/json',
-                'Cookie: _orkapi_session=ZEhSS1BsNWdUVUo5YS9CTlBZRU5Ialk3MGttb3pPci9wZEsxMWUxNGtUR0hjTWd1NU95cVRXY21jTFdQRWttNmVrOHRQbm5pQUI3T2ZsR1liT0ZqMGZKVGJsQmlxcENESENITEhGRXU5T2h4Z1Y1ekJUMUZYQjB3UGFuSTM1SVVtcVBlTC9WSXYzOVFHVDZWQm10ejVoL1RlNWtvRklVNTEwalRFeHVLV05VPS0tdzJ2SlRSb2NiZW03NGxvelRkK0pXQT09--05d6531100f387106bdeff0762ad421c499d1535'
-            ),
-        ));
+                'Cookie: _orkapi_session=mBuhrBXgfS%2BcdU%2FQp3EoRhgkh%2F2Ujit0eiPO0qGqgOqTIzhG5nNCM2X6vcpkMxoqpAHdnVlZQAcH5WBHkFE06UObTZs4b1dT39vDWwjoa2nU%2FaeT9s57iBd0E2cfUF6L730vbmgeCfuFgnzQ%2B7hb0b0hoxUfwen7SzF8j%2BXCERxro57dRZW9iFx3bp7mvo1vbIUIeVdUe7IYMgWT%2FLw2LiyggRKXcp8EMD1YeuTYY%2FPZTXtDjQiE9QqOhbt2vRrRib%2FagV1AcNhLsnKokXm1%2FKTjDblPwonkuCIWhJYncA%3D%3D--u06kmofng8Mclj2V--Q4%2BlvChhFsPrmRval8O09w%3D%3D',
+            ],
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_SSL_VERIFYPEER => 0,
+        ]);
 
         $response = curl_exec($curl);
         $curlError = curl_error($curl);
@@ -230,7 +229,7 @@ class PagoAOtraEmpresaController extends Controller
 
         if ($response === false || $httpCode >= 400) {
             return response()->json([
-                'error' => $curlError !== '' ? $curlError : 'La API de Lotedom respondio con HTTP ' . $httpCode . '.',
+                'error' => $curlError !== '' ? $curlError : 'La API de Lotedom respondio con HTTP '.$httpCode.'.',
             ], $httpCode >= 400 ? $httpCode : 502);
         }
 
@@ -241,15 +240,15 @@ class PagoAOtraEmpresaController extends Controller
             is_array($ventas) ? ($ventas['data']['result'] ?? []) : []
         );
 
-        if (!empty($data)) {
+        if (! empty($data)) {
             foreach (array_chunk($data, 5000) as $chunk) {
                 DB::table('pagos_aotra_empresa_net')->insert($chunk);
             }
         }
 
         return response()->json([
-            'message' => 'Datos guardados correctamente. Total insertados: ' . count($data),
-            'total' => count($data)
+            'message' => 'Datos guardados correctamente. Total insertados: '.count($data),
+            'total' => count($data),
         ]);
     }
 

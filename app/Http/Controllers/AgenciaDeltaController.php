@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\IncumplimientoHorarioReportMail;
 use App\Exports\AgenciasDeltaExport;
-use App\Imports\AgenciasDeltaImport;
 use App\Imports\AgenciasActualizacionMasivaImport;
-use App\Models\AgenciaLotedom;
+use App\Imports\AgenciasDeltaImport;
+use App\Mail\IncumplimientoHorarioReportMail;
+use App\Models\AgenciaDelta;
 use App\Models\CoordinadorOperador;
 use App\Models\OperadorRuta;
 use Carbon\Carbon;
@@ -15,14 +15,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
 
 class AgenciaDeltaController extends Controller
 {
     private const FUENTE_VENTAS_USUARIOS = 'ventas_flash_bet';
-    private const TABLA_AGENCIAS = 'agencias_lotedom';
+
+    private const TABLA_AGENCIAS = 'agencias_delta';
 
     /**
      * Display a listing of the resource.
@@ -70,6 +70,10 @@ class AgenciaDeltaController extends Controller
             'empresa' => 'nullable|string|max:60',
             'operador' => ['nullable', 'string', 'max:55', Rule::in($operadores)],
             'coordinador' => ['nullable', 'string', 'max:55', Rule::in($coordinadores)],
+            'grupo' => 'nullable|string|max:75',
+            'central' => 'nullable|string|max:75',
+            'gerente_de_servicio' => 'nullable|string|max:75',
+            'tipo_pago' => 'nullable|string|max:75',
             'estatus' => 'required|integer|in:0,1',
             'aplica_incentivo' => 'required|boolean',
         ], [
@@ -81,7 +85,7 @@ class AgenciaDeltaController extends Controller
         $validated['nombre'] = $validated['nombre_agencia'] ?? null;
         $validated['sistema'] = trim((string) ($validated['sistema'] ?? '')) ?: 'delta';
 
-        $agencia = AgenciaLotedom::create($validated);
+        $agencia = AgenciaDelta::create($validated);
         $this->sincronizarAsignacionesCoordinadorOperador(
             $agencia->id,
             $validated['coordinador'] ?? '',
@@ -95,24 +99,20 @@ class AgenciaDeltaController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(AgenciaLotedom $agenciaLotedom)
+    public function show(AgenciaDelta $agenciaDelta)
     {
-        $this->abortUnlessDelta($agenciaLotedom);
-
-        return view('agencias-delta.show', ['agencia' => $agenciaLotedom]);
+        return view('agencias-delta.show', ['agencia' => $agenciaDelta]);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(AgenciaLotedom $agenciaLotedom)
+    public function edit(AgenciaDelta $agenciaDelta)
     {
-        $this->abortUnlessDelta($agenciaLotedom);
-
         [$operadores, $coordinadores] = $this->obtenerOpcionesCoordinadorOperador();
 
         return view('agencias-delta.edit', [
-            'agencia' => $agenciaLotedom,
+            'agencia' => $agenciaDelta,
             'operadores' => $operadores,
             'coordinadores' => $coordinadores,
         ]);
@@ -121,10 +121,8 @@ class AgenciaDeltaController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, AgenciaLotedom $agenciaLotedom)
+    public function update(Request $request, AgenciaDelta $agenciaDelta)
     {
-        $this->abortUnlessDelta($agenciaLotedom);
-
         [$operadores, $coordinadores] = $this->obtenerOpcionesCoordinadorOperador();
 
         $validated = $request->validate([
@@ -134,8 +132,8 @@ class AgenciaDeltaController extends Controller
                 'nullable',
                 'string',
                 'max:25',
-                function ($attribute, $value, $fail) use ($agenciaLotedom) {
-                    if ($this->terminalExisteEnOtraAgencia((string) $value, (int) $agenciaLotedom->id)) {
+                function ($attribute, $value, $fail) use ($agenciaDelta) {
+                    if ($this->terminalExisteEnOtraAgencia((string) $value, (int) $agenciaDelta->id)) {
                         $fail('El codigo de terminal ya pertenece a otra agencia.');
                     }
                 },
@@ -148,6 +146,10 @@ class AgenciaDeltaController extends Controller
             'ruta' => 'nullable|string|max:255',
             'operador' => ['nullable', 'string', 'max:255', Rule::in($operadores)],
             'coordinador' => ['nullable', 'string', 'max:255', Rule::in($coordinadores)],
+            'grupo' => 'nullable|string|max:75',
+            'central' => 'nullable|string|max:75',
+            'gerente_de_servicio' => 'nullable|string|max:75',
+            'tipo_pago' => 'nullable|string|max:75',
             'estatus' => 'required|integer|in:0,1',
             'aplica_incentivo' => 'required|boolean',
         ], [
@@ -159,9 +161,9 @@ class AgenciaDeltaController extends Controller
         $validated['nombre'] = $validated['nombre_agencia'] ?? null;
         $validated['sistema'] = trim((string) ($validated['sistema'] ?? '')) ?: 'delta';
 
-        $agenciaLotedom->update($validated);
+        $agenciaDelta->update($validated);
         $this->sincronizarAsignacionesCoordinadorOperador(
-            $agenciaLotedom->id,
+            $agenciaDelta->id,
             $validated['coordinador'] ?? '',
             $validated['operador'] ?? ''
         );
@@ -204,7 +206,7 @@ class AgenciaDeltaController extends Controller
             ->whereRaw("{$nombreCoordinadorSql} = ?", [$nombreCompleto])
             ->value('id');
 
-        if (!$coordinadorOperadorId) {
+        if (! $coordinadorOperadorId) {
             return;
         }
 
@@ -243,7 +245,7 @@ class AgenciaDeltaController extends Controller
             ->whereRaw("{$nombreOperadorSql} = ?", [$nombreCompleto])
             ->value('id');
 
-        if (!$operadorRutaId) {
+        if (! $operadorRutaId) {
             return;
         }
 
@@ -269,7 +271,7 @@ class AgenciaDeltaController extends Controller
 
         $operadores = $registrosOperadorRuta
             ->where('puesto', 'operador')
-            ->map(fn($item) => trim($item->nombre . ' ' . $item->apellido))
+            ->map(fn ($item) => trim($item->nombre.' '.$item->apellido))
             ->filter()
             ->unique()
             ->values()
@@ -277,7 +279,7 @@ class AgenciaDeltaController extends Controller
 
         $coordinadores = $registrosCoordinador
             ->where('puesto', 'coordinador')
-            ->map(fn($item) => trim($item->nombre . ' ' . $item->apellido))
+            ->map(fn ($item) => trim($item->nombre.' '.$item->apellido))
             ->filter()
             ->unique()
             ->values()
@@ -289,11 +291,9 @@ class AgenciaDeltaController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(AgenciaLotedom $agenciaLotedom)
+    public function destroy(AgenciaDelta $agenciaDelta)
     {
-        $this->abortUnlessDelta($agenciaLotedom);
-
-        $agenciaLotedom->delete();
+        $agenciaDelta->delete();
 
         return redirect()->route('agencias-delta.index')
             ->with('success', 'Agencia Delta eliminada exitosamente.');
@@ -306,7 +306,6 @@ class AgenciaDeltaController extends Controller
     {
         $query = $this->queryAgenciasDelta();
         $estatusFilter = $request->input('estatus_filter', 'todos');
-        $empresaFilter = $request->input('empresa_filter', 'delta');
 
         if ($estatusFilter === 'activo') {
             $query->where('estatus', 1);
@@ -314,27 +313,27 @@ class AgenciaDeltaController extends Controller
             $query->where('estatus', 0);
         }
 
-        if ($empresaFilter !== 'delta') {
-            $query = AgenciaLotedom::query();
-        }
-
         // Si hay búsqueda
         if ($request->has('search') && $request->search['value']) {
             $search = $request->search['value'];
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('agencia', 'like', "%{$search}%")
-                  ->orWhere('nombre_agencia', 'like', "%{$search}%")
-                  ->orWhere('terminal', 'like', "%{$search}%")
-                                    ->orWhere('horario_am', 'like', "%{$search}%")
-                                    ->orWhere('horario_pm', 'like', "%{$search}%")
-                  ->orWhere('sistema', 'like', "%{$search}%")
-                                      ->orWhere('empresa', 'like', "%{$search}%")
-                  ->orWhere('ciudad', 'like', "%{$search}%")
-                  ->orWhere('ruta', 'like', "%{$search}%")
-                  ->orWhere('operador', 'like', "%{$search}%")
-                                    ->orWhere('coordinador', 'like', "%{$search}%")
-                                    ->orWhere('estatus', 'like', "%{$search}%")
-                                    ->orWhere('aplica_incentivo', 'like', "%{$search}%");
+                    ->orWhere('nombre_agencia', 'like', "%{$search}%")
+                    ->orWhere('terminal', 'like', "%{$search}%")
+                    ->orWhere('horario_am', 'like', "%{$search}%")
+                    ->orWhere('horario_pm', 'like', "%{$search}%")
+                    ->orWhere('sistema', 'like', "%{$search}%")
+                    ->orWhere('empresa', 'like', "%{$search}%")
+                    ->orWhere('ciudad', 'like', "%{$search}%")
+                    ->orWhere('ruta', 'like', "%{$search}%")
+                    ->orWhere('operador', 'like', "%{$search}%")
+                    ->orWhere('coordinador', 'like', "%{$search}%")
+                    ->orWhere('grupo', 'like', "%{$search}%")
+                    ->orWhere('central', 'like', "%{$search}%")
+                    ->orWhere('gerente_de_servicio', 'like', "%{$search}%")
+                    ->orWhere('tipo_pago', 'like', "%{$search}%")
+                    ->orWhere('estatus', 'like', "%{$search}%")
+                    ->orWhere('aplica_incentivo', 'like', "%{$search}%");
             });
         }
 
@@ -347,9 +346,9 @@ class AgenciaDeltaController extends Controller
         $length = $request->input('length', 10);
 
         $agencias = $query->orderBy('created_at', 'desc')
-                          ->skip($start)
-                          ->take($length)
-                          ->get();
+            ->skip($start)
+            ->take($length)
+            ->get();
 
         $totalActivas = $this->queryAgenciasDelta()->where('estatus', 1)->count();
         $totalInactivas = $this->queryAgenciasDelta()->where('estatus', 0)->count();
@@ -368,20 +367,7 @@ class AgenciaDeltaController extends Controller
 
     private function queryAgenciasDelta()
     {
-        return AgenciaLotedom::query()
-            ->where(function ($empresaQuery) {
-                $empresaQuery
-                    ->whereRaw('LOWER(COALESCE(sistema, "")) LIKE ?', ['%delta%'])
-                    ->orWhereRaw('LOWER(COALESCE(empresa, "")) LIKE ?', ['%delta%']);
-            });
-    }
-
-    private function abortUnlessDelta(AgenciaLotedom $agencia): void
-    {
-        $sistema = strtolower((string) ($agencia->sistema ?? ''));
-        $empresa = strtolower((string) ($agencia->empresa ?? ''));
-
-        abort_unless(str_contains($sistema, 'delta') || str_contains($empresa, 'delta'), 404);
+        return AgenciaDelta::query();
     }
 
     /**
@@ -466,7 +452,7 @@ class AgenciaDeltaController extends Controller
             ->select(array_merge(['id'], array_keys($campos)))
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function (AgenciaLotedom $agencia) use ($campos) {
+            ->map(function (AgenciaDelta $agencia) use ($campos) {
                 $camposFaltantes = [];
 
                 foreach ($campos as $campo => $etiqueta) {
@@ -513,6 +499,10 @@ class AgenciaDeltaController extends Controller
             'ruta' => 'Ruta',
             'operador' => 'Operador',
             'coordinador' => 'Coordinador',
+            'grupo' => 'Grupo',
+            'central' => 'Central',
+            'gerente_de_servicio' => 'Gerente de servicio',
+            'tipo_pago' => 'Tipo de pago',
             'estatus' => 'Estatus',
             'aplica_incentivo' => 'Incentivo',
         ];
@@ -692,7 +682,7 @@ class AgenciaDeltaController extends Controller
             ->values();
 
         if ($idsActivas->isNotEmpty()) {
-            AgenciaLotedom::query()
+            AgenciaDelta::query()
                 ->whereIn('id', $idsActivas)
                 ->update(['estatus' => 0]);
         }
@@ -710,7 +700,7 @@ class AgenciaDeltaController extends Controller
     public function actualizarEstatusAgencia(Request $request)
     {
         $validated = $request->validate([
-            'agencia_id' => ['required', 'integer', 'exists:agencias_lotedom,id'],
+            'agencia_id' => ['required', 'integer', 'exists:agencias_delta,id'],
             'estatus' => ['required', 'integer', 'in:0,1'],
         ]);
 
@@ -749,8 +739,8 @@ class AgenciaDeltaController extends Controller
         $terminalesExistentes = $this->queryAgenciasDelta()
             ->whereNotNull('terminal')
             ->pluck('terminal')
-            ->map(fn($terminal) => $this->normalizarTerminal((string) $terminal))
-            ->filter(fn($terminal) => $terminal !== '0')
+            ->map(fn ($terminal) => $this->normalizarTerminal((string) $terminal))
+            ->filter(fn ($terminal) => $terminal !== '0')
             ->unique()
             ->flip();
 
@@ -760,6 +750,7 @@ class AgenciaDeltaController extends Controller
         foreach ($terminalesPorClave as $terminalKey => $terminalOriginal) {
             if ($terminalesExistentes->has($terminalKey)) {
                 $omitidas++;
+
                 continue;
             }
 
@@ -781,22 +772,22 @@ class AgenciaDeltaController extends Controller
         ];
     }
 
-    private function crearAgenciaNoRegistrada(string $terminalOriginal): AgenciaLotedom
+    private function crearAgenciaNoRegistrada(string $terminalOriginal): AgenciaDelta
     {
         $columns = array_flip(\Schema::getColumnListing(self::TABLA_AGENCIAS));
         $terminal = substr(trim($terminalOriginal), 0, 25);
         $payloadBase = $this->payloadAgenciaNoRegistrada($columns, $terminal, false);
 
         try {
-            return AgenciaLotedom::query()->create($payloadBase);
+            return AgenciaDelta::query()->create($payloadBase);
         } catch (QueryException $e) {
-            if (!$this->esErrorPorNuloNoPermitido($e)) {
+            if (! $this->esErrorPorNuloNoPermitido($e)) {
                 throw $e;
             }
         }
 
         // Compatibilidad con esquemas legacy donde algunos campos string son NOT NULL.
-        return AgenciaLotedom::query()->create($this->payloadAgenciaNoRegistrada($columns, $terminal, true));
+        return AgenciaDelta::query()->create($this->payloadAgenciaNoRegistrada($columns, $terminal, true));
     }
 
     private function payloadAgenciaNoRegistrada(array $columns, string $terminal, bool $fallbackCompleto): array
@@ -824,7 +815,7 @@ class AgenciaDeltaController extends Controller
         }
 
         foreach (['horario_am', 'horario_pm', 'empresa', 'ciudad', 'ruta', 'operador', 'coordinador'] as $column) {
-            if ($fallbackCompleto && isset($columns[$column]) && !array_key_exists($column, $payload)) {
+            if ($fallbackCompleto && isset($columns[$column]) && ! array_key_exists($column, $payload)) {
                 $payload[$column] = '';
             }
         }
@@ -859,12 +850,12 @@ class AgenciaDeltaController extends Controller
             ->where('estatus', 1)
             ->orderBy('terminal')
             ->get()
-            ->filter(function (AgenciaLotedom $agencia) use ($ventasPorTerminal) {
+            ->filter(function (AgenciaDelta $agencia) use ($ventasPorTerminal) {
                 $terminalKey = $this->normalizarTerminal((string) $agencia->terminal);
 
-                return $terminalKey !== '0' && !$ventasPorTerminal->has($terminalKey);
+                return $terminalKey !== '0' && ! $ventasPorTerminal->has($terminalKey);
             })
-            ->map(fn(AgenciaLotedom $agencia) => $this->formatearAgenciaModal($agencia))
+            ->map(fn (AgenciaDelta $agencia) => $this->formatearAgenciaModal($agencia))
             ->values()
             ->all();
 
@@ -882,7 +873,7 @@ class AgenciaDeltaController extends Controller
             ->where('estatus', 0)
             ->orderBy('terminal')
             ->get()
-            ->map(fn(AgenciaLotedom $agencia) => $this->formatearAgenciaModal($agencia))
+            ->map(fn (AgenciaDelta $agencia) => $this->formatearAgenciaModal($agencia))
             ->values()
             ->all();
     }
@@ -899,12 +890,12 @@ class AgenciaDeltaController extends Controller
             ->whereNotNull('terminal')
             ->orderBy('terminal')
             ->get()
-            ->filter(function (AgenciaLotedom $agencia) use ($ventasPorTerminal) {
+            ->filter(function (AgenciaDelta $agencia) use ($ventasPorTerminal) {
                 $terminalKey = $this->normalizarTerminal((string) $agencia->terminal);
 
                 return $terminalKey !== '0' && $ventasPorTerminal->has($terminalKey);
             })
-            ->map(fn(AgenciaLotedom $agencia) => $this->formatearAgenciaModal($agencia))
+            ->map(fn (AgenciaDelta $agencia) => $this->formatearAgenciaModal($agencia))
             ->values()
             ->all();
 
@@ -923,14 +914,14 @@ class AgenciaDeltaController extends Controller
         $terminalesRegistradas = $this->queryAgenciasDelta()
             ->whereNotNull('terminal')
             ->pluck('terminal')
-            ->map(fn($terminal) => $this->normalizarTerminal((string) $terminal))
-            ->filter(fn($terminal) => $terminal !== '0')
+            ->map(fn ($terminal) => $this->normalizarTerminal((string) $terminal))
+            ->filter(fn ($terminal) => $terminal !== '0')
             ->unique()
             ->flip();
 
         $ventas = DB::table(self::FUENTE_VENTAS_USUARIOS)
             ->selectRaw("COALESCE(NULLIF(TRIM(LEADING '0' FROM TRIM(CAST(numero_externo AS CHAR))), ''), '0') AS terminal_key")
-            ->selectRaw("TRIM(CAST(numero_externo AS CHAR)) AS terminal_original")
+            ->selectRaw('TRIM(CAST(numero_externo AS CHAR)) AS terminal_original')
             ->selectRaw('COALESCE(venta_loteria, 0) + COALESCE(venta_recarga, 0) + COALESCE(ventas_no_tradicional, 0) AS monto')
             ->selectRaw('fecha AS fecha')
             ->whereNotNull('numero_externo')
@@ -950,7 +941,7 @@ class AgenciaDeltaController extends Controller
             ->orderByDesc('total_venta')
             ->get()
             ->filter(function ($row) use ($terminalesRegistradas) {
-                return !$terminalesRegistradas->has((string) ($row->terminal_key ?? '0'));
+                return ! $terminalesRegistradas->has((string) ($row->terminal_key ?? '0'));
             })
             ->map(function ($row) {
                 $terminalOriginal = trim((string) ($row->terminal_original ?? ''));
@@ -997,11 +988,11 @@ class AgenciaDeltaController extends Controller
             ->whereRaw('terminal_key <> ?', ['0'])
             ->distinct()
             ->pluck('terminal_key')
-            ->map(fn($terminal) => (string) $terminal)
+            ->map(fn ($terminal) => (string) $terminal)
             ->flip();
     }
 
-    private function formatearAgenciaModal(AgenciaLotedom $agencia): array
+    private function formatearAgenciaModal(AgenciaDelta $agencia): array
     {
         return [
             'id' => $agencia->id,
@@ -1038,7 +1029,7 @@ class AgenciaDeltaController extends Controller
             ->whereNotNull('terminal')
             ->where(function ($q) {
                 $q->whereNotNull('horario_am')
-                  ->orWhereNotNull('horario_pm');
+                    ->orWhereNotNull('horario_pm');
             })
             ->get();
 
@@ -1073,7 +1064,7 @@ class AgenciaDeltaController extends Controller
 
             // Compatibilidad: se mantiene entrada_real como primera entrada y salida_real como última salida.
             $entradaReal = $entradasReales[0] ?? null;
-            $salidaReal = !empty($salidasReales) ? $salidasReales[array_key_last($salidasReales)] : null;
+            $salidaReal = ! empty($salidasReales) ? $salidasReales[array_key_last($salidasReales)] : null;
 
             // Nuevas columnas: salida AM real y entrada PM real.
             $salidaAmReal = $this->seleccionarHoraCercana(
@@ -1102,7 +1093,7 @@ class AgenciaDeltaController extends Controller
                     $minutosTarde = $entradaProgramadaDateTime->diffInMinutes($entradaReal);
                     $observaciones[] = 'Entrada tardía';
                 }
-            } elseif ($entradaProgramadaDateTime && !$entradaReal) {
+            } elseif ($entradaProgramadaDateTime && ! $entradaReal) {
                 $incumpleEntrada = true;
                 $observaciones[] = 'Sin registro de entrada';
             }
@@ -1113,14 +1104,14 @@ class AgenciaDeltaController extends Controller
                     $minutosSalidaAntes = $salidaReal->diffInMinutes($salidaProgramadaDateTime);
                     $observaciones[] = 'Salida anticipada';
                 }
-            } elseif ($salidaProgramadaDateTime && !$salidaReal) {
+            } elseif ($salidaProgramadaDateTime && ! $salidaReal) {
                 $incumpleSalida = true;
                 $observaciones[] = 'Sin registro de salida';
             }
 
             $incumplida = $incumpleEntrada || $incumpleSalida;
 
-            if ($soloIncumplidas && !$incumplida) {
+            if ($soloIncumplidas && ! $incumplida) {
                 continue;
             }
 
@@ -1236,14 +1227,14 @@ class AgenciaDeltaController extends Controller
             ->selectRaw('salida')
             ->where(function ($q) use ($fecha) {
                 $q->whereDate('entrada', $fecha)
-                  ->orWhereDate('salida', $fecha);
+                    ->orWhereDate('salida', $fecha);
             })
             ->get();
 
         $map = [];
 
         foreach ($bet as $row) {
-            if (!isset($map[$row->terminal_key])) {
+            if (! isset($map[$row->terminal_key])) {
                 $map[$row->terminal_key] = [
                     'entrada' => null,
                     'salida' => null,
@@ -1257,14 +1248,14 @@ class AgenciaDeltaController extends Controller
 
             if ($row->entrada) {
                 $map[$row->terminal_key]['entradas'][] = $row->entrada;
-                if (!$map[$row->terminal_key]['entrada'] || Carbon::parse($row->entrada)->lessThan(Carbon::parse($map[$row->terminal_key]['entrada']))) {
+                if (! $map[$row->terminal_key]['entrada'] || Carbon::parse($row->entrada)->lessThan(Carbon::parse($map[$row->terminal_key]['entrada']))) {
                     $map[$row->terminal_key]['entrada'] = $row->entrada;
                 }
             }
 
             if ($row->salida) {
                 $map[$row->terminal_key]['salidas'][] = $row->salida;
-                if (!$map[$row->terminal_key]['salida'] || Carbon::parse($row->salida)->greaterThan(Carbon::parse($map[$row->terminal_key]['salida']))) {
+                if (! $map[$row->terminal_key]['salida'] || Carbon::parse($row->salida)->greaterThan(Carbon::parse($map[$row->terminal_key]['salida']))) {
                     $map[$row->terminal_key]['salida'] = $row->salida;
                 }
             }
@@ -1273,7 +1264,7 @@ class AgenciaDeltaController extends Controller
         }
 
         foreach ($net as $row) {
-            if (!isset($map[$row->terminal_key])) {
+            if (! isset($map[$row->terminal_key])) {
                 $map[$row->terminal_key] = [
                     'entrada' => null,
                     'salida' => null,
@@ -1287,14 +1278,14 @@ class AgenciaDeltaController extends Controller
 
             if ($row->entrada) {
                 $map[$row->terminal_key]['entradas'][] = $row->entrada;
-                if (!$map[$row->terminal_key]['entrada'] || Carbon::parse($row->entrada)->lessThan(Carbon::parse($map[$row->terminal_key]['entrada']))) {
+                if (! $map[$row->terminal_key]['entrada'] || Carbon::parse($row->entrada)->lessThan(Carbon::parse($map[$row->terminal_key]['entrada']))) {
                     $map[$row->terminal_key]['entrada'] = $row->entrada;
                 }
             }
 
             if ($row->salida) {
                 $map[$row->terminal_key]['salidas'][] = $row->salida;
-                if (!$map[$row->terminal_key]['salida'] || Carbon::parse($row->salida)->greaterThan(Carbon::parse($map[$row->terminal_key]['salida']))) {
+                if (! $map[$row->terminal_key]['salida'] || Carbon::parse($row->salida)->greaterThan(Carbon::parse($map[$row->terminal_key]['salida']))) {
                     $map[$row->terminal_key]['salida'] = $row->salida;
                 }
             }
@@ -1313,42 +1304,45 @@ class AgenciaDeltaController extends Controller
 
     private function normalizarTerminal(?string $terminal): string
     {
-        if (!$terminal) {
+        if (! $terminal) {
             return '0';
         }
 
         $valor = ltrim(trim($terminal), '0');
+
         return $valor === '' ? '0' : $valor;
     }
 
     private function extraerHoraInicio(?string $horario): ?string
     {
-        if (!$horario || !str_contains($horario, '/')) {
+        if (! $horario || ! str_contains($horario, '/')) {
             return null;
         }
 
         $partes = explode('/', $horario);
+
         return isset($partes[0]) ? trim($partes[0]) : null;
     }
 
     private function extraerHoraFin(?string $horario): ?string
     {
-        if (!$horario || !str_contains($horario, '/')) {
+        if (! $horario || ! str_contains($horario, '/')) {
             return null;
         }
 
         $partes = explode('/', $horario);
+
         return isset($partes[1]) ? trim($partes[1]) : null;
     }
 
     private function parseFechaHora(string $fecha, ?string $hora): ?Carbon
     {
-        if (!$hora) {
+        if (! $hora) {
             return null;
         }
 
         try {
-            return Carbon::createFromFormat('Y-m-d g:i A', $fecha . ' ' . strtoupper($hora));
+            return Carbon::createFromFormat('Y-m-d g:i A', $fecha.' '.strtoupper($hora));
         } catch (\Throwable $e) {
             return null;
         }
@@ -1359,7 +1353,7 @@ class AgenciaDeltaController extends Controller
         $parsed = [];
 
         foreach ($horas as $hora) {
-            if (!$hora) {
+            if (! $hora) {
                 continue;
             }
 
@@ -1393,7 +1387,7 @@ class AgenciaDeltaController extends Controller
             return null;
         }
 
-        if (!$objetivo) {
+        if (! $objetivo) {
             return $filtradas[0];
         }
 
@@ -1413,15 +1407,15 @@ class AgenciaDeltaController extends Controller
         $terminalesRegistradas = $this->queryAgenciasDelta()
             ->whereNotNull('terminal')
             ->pluck('terminal')
-            ->map(fn($terminal) => $this->normalizarTerminal((string) $terminal))
-            ->filter(fn($terminal) => $terminal !== '0')
+            ->map(fn ($terminal) => $this->normalizarTerminal((string) $terminal))
+            ->filter(fn ($terminal) => $terminal !== '0')
             ->unique()
             ->values()
             ->flip();
 
         $ventas = DB::table(self::FUENTE_VENTAS_USUARIOS)
             ->selectRaw("COALESCE(NULLIF(TRIM(LEADING '0' FROM TRIM(CAST(numero_externo AS CHAR))), ''), '0') AS terminal_key")
-            ->selectRaw("TRIM(CAST(numero_externo AS CHAR)) AS terminal_original")
+            ->selectRaw('TRIM(CAST(numero_externo AS CHAR)) AS terminal_original')
             ->selectRaw('COALESCE(venta_loteria, 0) + COALESCE(venta_recarga, 0) + COALESCE(ventas_no_tradicional, 0) AS monto')
             ->selectRaw('fecha AS fecha')
             ->whereNotNull('numero_externo')
@@ -1442,7 +1436,8 @@ class AgenciaDeltaController extends Controller
         $terminalesNoRegistradas = $ventasConsolidadas
             ->filter(function ($row) use ($terminalesRegistradas) {
                 $terminal = (string) ($row->terminal_key ?? '0');
-                return !$terminalesRegistradas->has($terminal);
+
+                return ! $terminalesRegistradas->has($terminal);
             })
             ->map(function ($row) {
                 $terminalOriginal = trim((string) ($row->terminal_original ?? ''));
@@ -1469,8 +1464,8 @@ class AgenciaDeltaController extends Controller
         $terminalesRegistradas = $this->queryAgenciasDelta()
             ->whereNotNull('terminal')
             ->pluck('terminal')
-            ->map(fn($terminal) => $this->normalizarTerminal((string) $terminal))
-            ->filter(fn($terminal) => $terminal !== '0')
+            ->map(fn ($terminal) => $this->normalizarTerminal((string) $terminal))
+            ->filter(fn ($terminal) => $terminal !== '0')
             ->unique()
             ->values()
             ->flip();
@@ -1498,7 +1493,7 @@ class AgenciaDeltaController extends Controller
             ->filter(fn ($row) => ($row['terminal_key'] ?? '0') !== '0')
             ->groupBy('terminal_key')
             ->filter(function ($rows, $terminalKey) use ($terminalesRegistradas) {
-                return !$terminalesRegistradas->has((string) $terminalKey);
+                return ! $terminalesRegistradas->has((string) $terminalKey);
             })
             ->map(function ($rows, $terminalKey) {
                 $rows = collect($rows)->values();
@@ -1533,7 +1528,7 @@ class AgenciaDeltaController extends Controller
      */
     public function export()
     {
-        return Excel::download(new AgenciasDeltaExport, 'agencias_delta_' . date('Y-m-d_His') . '.xlsx');
+        return Excel::download(new AgenciasDeltaExport, 'agencias_delta_'.date('Y-m-d_His').'.xlsx');
     }
 
     /**
@@ -1546,7 +1541,7 @@ class AgenciaDeltaController extends Controller
         ]);
 
         try {
-            $import = new AgenciasDeltaImport();
+            $import = new AgenciasDeltaImport;
             Excel::import($import, $request->file('file'));
 
             $resultado = [
@@ -1564,7 +1559,7 @@ class AgenciaDeltaController extends Controller
                 ->with('import_result', $resultado);
         } catch (\Exception $e) {
             return redirect()->route('agencias-delta.index')
-                ->with('error', 'Error al importar: ' . $e->getMessage());
+                ->with('error', 'Error al importar: '.$e->getMessage());
         }
     }
 
@@ -1579,7 +1574,7 @@ class AgenciaDeltaController extends Controller
         ]);
 
         try {
-            $import = new AgenciasActualizacionMasivaImport();
+            $import = new AgenciasActualizacionMasivaImport;
             Excel::import($import, $request->file('file'));
 
             $rows = $import->rows ?? collect();
@@ -1603,25 +1598,29 @@ class AgenciaDeltaController extends Controller
                 $row = collect($rowCollection)->toArray();
 
                 $agencia = $this->buscarAgenciaParaActualizacion($row);
-                if (!$agencia) {
+                if (! $agencia) {
                     $noEncontradas++;
+
                     continue;
                 }
 
                 $updates = $this->extraerCamposParaActualizacionMasiva($row);
 
-                if (array_key_exists('operador', $updates) && $updates['operador'] !== '' && !$operadoresSet->has($updates['operador'])) {
+                if (array_key_exists('operador', $updates) && $updates['operador'] !== '' && ! $operadoresSet->has($updates['operador'])) {
                     $filasInvalidas++;
+
                     continue;
                 }
 
-                if (array_key_exists('coordinador', $updates) && $updates['coordinador'] !== '' && !$coordinadoresSet->has($updates['coordinador'])) {
+                if (array_key_exists('coordinador', $updates) && $updates['coordinador'] !== '' && ! $coordinadoresSet->has($updates['coordinador'])) {
                     $filasInvalidas++;
+
                     continue;
                 }
 
                 if (empty($updates)) {
                     $sinCambios++;
+
                     continue;
                 }
 
@@ -1630,6 +1629,7 @@ class AgenciaDeltaController extends Controller
                     && $this->terminalExisteEnOtraAgencia((string) $updates['terminal'], (int) $agencia->id)
                 ) {
                     $filasInvalidas++;
+
                     continue;
                 }
 
@@ -1660,7 +1660,7 @@ class AgenciaDeltaController extends Controller
                 ->with('mass_update_result', $resultado);
         } catch (\Exception $e) {
             return redirect()->route('agencias-delta.index')
-                ->with('error', 'Error en actualizacion masiva: ' . $e->getMessage());
+                ->with('error', 'Error en actualizacion masiva: '.$e->getMessage());
         }
     }
 
@@ -1674,7 +1674,7 @@ class AgenciaDeltaController extends Controller
         ]);
 
         try {
-            $import = new AgenciasActualizacionMasivaImport();
+            $import = new AgenciasActualizacionMasivaImport;
             Excel::import($import, $request->file('file'));
 
             $rows = $import->rows ?? collect();
@@ -1689,9 +1689,10 @@ class AgenciaDeltaController extends Controller
                 ->map(function ($rowCollection) {
                     $row = collect($rowCollection)->toArray();
                     $terminal = $this->valorColumna($row, ['terminal']);
+
                     return trim((string) ($terminal ?? ''));
                 })
-                ->filter(fn($terminal) => $terminal !== '')
+                ->filter(fn ($terminal) => $terminal !== '')
                 ->values();
 
             $terminalesUnicos = $terminales->unique()->values();
@@ -1699,8 +1700,8 @@ class AgenciaDeltaController extends Controller
             $terminalesEncontradas = $this->queryAgenciasDelta()
                 ->whereIn('terminal', $terminalesUnicos)
                 ->pluck('terminal')
-                ->map(fn($terminal) => trim((string) $terminal))
-                ->filter(fn($terminal) => $terminal !== '')
+                ->map(fn ($terminal) => trim((string) $terminal))
+                ->filter(fn ($terminal) => $terminal !== '')
                 ->unique()
                 ->values();
 
@@ -1720,12 +1721,12 @@ class AgenciaDeltaController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'ok' => false,
-                'message' => 'Error al reconocer terminales: ' . $e->getMessage(),
+                'message' => 'Error al reconocer terminales: '.$e->getMessage(),
             ], 500);
         }
     }
 
-    private function buscarAgenciaParaActualizacion(array $row): ?AgenciaLotedom
+    private function buscarAgenciaParaActualizacion(array $row): ?AgenciaDelta
     {
         $id = $this->valorColumna($row, ['id']);
         if ($id !== null && $id !== '') {
@@ -1761,6 +1762,10 @@ class AgenciaDeltaController extends Controller
             'ruta' => ['ruta'],
             'operador' => ['operador'],
             'coordinador' => ['coordinador'],
+            'grupo' => ['grupo'],
+            'central' => ['central'],
+            'gerente_de_servicio' => ['gerente_de_servicio', 'gerente de servicio'],
+            'tipo_pago' => ['tipo_pago', 'tipo pago'],
             'estatus' => ['estatus'],
             'aplica_incentivo' => ['aplica_incentivo', 'aplica incentivo'],
         ];
@@ -1774,11 +1779,23 @@ class AgenciaDeltaController extends Controller
 
             if ($campo === 'estatus') {
                 $updates[$campo] = $this->parseEstatus((string) $valor);
+
+                continue;
+            }
+
+            if ($campo === 'sistema') {
+                $sistema = $this->normalizarSistemaActualizacionMasiva((string) $valor);
+
+                if ($sistema !== null) {
+                    $updates[$campo] = $sistema;
+                }
+
                 continue;
             }
 
             if ($campo === 'aplica_incentivo') {
                 $updates[$campo] = $this->parseAplicaIncentivo((string) $valor);
+
                 continue;
             }
 
@@ -1786,6 +1803,14 @@ class AgenciaDeltaController extends Controller
         }
 
         return $updates;
+    }
+
+    private function normalizarSistemaActualizacionMasiva(string $value): ?string
+    {
+        return match (strtolower(trim($value))) {
+            'delta', 'lotobet delta' => 'delta',
+            default => null,
+        };
     }
 
     private function valorColumna(array $row, array $aliases): mixed
@@ -1861,21 +1886,22 @@ class AgenciaDeltaController extends Controller
             'Ruta',
             'Operador',
             'Coordinador',
+            'Grupo',
+            'Central',
+            'Gerente de Servicio',
+            'Tipo de Pago',
             'Estatus',
             'Aplica Incentivo',
         ];
 
         $data = [
             $headers,
-            ['20907', '5546', '7:00 AM / 2:00 PM', '2:00 PM / 9:00 PM', 'Agencia Delta Ejemplo', 'Delta', 'Grupo A', 'San Pedro', 'Ruta 0501', 'Jose Ruby', 'Aramis', '1', 'SI'],
+            ['20907', '5546', '7:00 AM / 2:00 PM', '2:00 PM / 9:00 PM', 'Agencia Delta Ejemplo', 'Delta', 'Empresa A', 'San Pedro', 'Ruta 0501', 'Jose Ruby', 'Aramis', 'Grupo A', 'Central 1', 'Gerente Uno', 'Semanal', '1', 'SI'],
         ];
 
         $filename = 'plantilla_agencias_delta.xlsx';
 
-        return Excel::download(new class($data) implements 
-            \Maatwebsite\Excel\Concerns\FromArray,
-            \Maatwebsite\Excel\Concerns\WithStyles,
-            \Maatwebsite\Excel\Concerns\ShouldAutoSize
+        return Excel::download(new class($data) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithStyles
         {
             protected $data;
 
@@ -1916,6 +1942,10 @@ class AgenciaDeltaController extends Controller
             'Horario AM',
             'Horario PM',
             'Sistema',
+            'Grupo',
+            'Central',
+            'Gerente de Servicio',
+            'Tipo de Pago',
             'Estatus',
             'Aplica Incentivo',
         ];
@@ -1926,10 +1956,7 @@ class AgenciaDeltaController extends Controller
 
         $filename = 'plantilla_actualizacion_masiva_agencias_delta.xlsx';
 
-        return Excel::download(new class($data) implements
-            \Maatwebsite\Excel\Concerns\FromArray,
-            \Maatwebsite\Excel\Concerns\WithStyles,
-            \Maatwebsite\Excel\Concerns\ShouldAutoSize
+        return Excel::download(new class($data) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithStyles
         {
             protected $data;
 

@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 
 class PaqueticoController extends Controller
 {
+    private const PRODUCTO_ID = 'PAQUETICOS_ZATACA';
+
     public function get(Request $request)
     {
         header('Content-Type: application/json');
@@ -17,8 +19,8 @@ class PaqueticoController extends Controller
 
         $curl = curl_init();
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => "http://contable.apploteka.com/api/finan/compra_paqueticos/{$fecha}/5",
+        curl_setopt_array($curl, [
+            CURLOPT_URL => "https://lotedom-api.orkapi.net/api/finan/productos_externos/{$fecha}",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -26,18 +28,13 @@ class PaqueticoController extends Controller
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_POSTFIELDS => '{
-            "usuario": {
-                "username": "fcolombo",
-                "password": "RUHTe9t9ZEUzHsyT"
-            }
-            }',
-            CURLOPT_HTTPHEADER => array(
+            CURLOPT_HTTPHEADER => [
                 'token: ZFozLWdBYyqERusVdTsW',
-                'Content-Type: application/json',
-                'Cookie: _orkapi_session=QkViaFBzMmJPTEU0U3YxWEEyd0k4eVZuR2RkTFV2bktWY0srZ2NyaWc1Y2J1eGhhdTRxZXZ3VDByTG9vT3VFL0ZpTlNvalgzK3dOcG5EZGNHTDAxbE5OMGU3dUFzaHYxYVlkSzhFc241eE52YXpaaHNOcmFtbUVPdnVTSUZ1L1A3UEVoSDhtV3QvUVZJUy9USU45WUU4OU03SUUxZ0JjQXNVUFBRY2Z6VlFRPS0tc1ZQNDA1NExkWldOTDluU2lLVzhLdz09--384f330e993c1c076f324f7ed51ee9439ccf2a85'
-            ),
-        ));
+                'Cookie: _orkapi_session=gYHpUnlJPzeJ4Q4BBxpzUMLB3t1xysT0uubxOi1MHTT04iCiTRnoB0s4SUoIHeh3MlQX%2FoJ2Un6%2Fd5tpa5QnRqz1c7lhQyrTpzQ%2BfeSjGILNO6FO9T2Lba8KZMWx6wL1TagahpRU2wvGJLvf4%2FzSWfxMt6LAkxmUkBlmtfonut%2FULWbTwPwhHfBrWgKurg2l34KpWujnG6laaaO7rYzAiGDooAbTIaI0MVevV%2F3BnHN6RFgOlrAHJ8ZNQlMKl79udwYEo1LC6yBvihXeWwnuJCbR73RdOEdDe3PbYJzKHQ%3D%3D--ULLy9F7ay3cc2F%2Bj--WDpxNmUrgmf1GuXEhEq8dg%3D%3D',
+            ],
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_SSL_VERIFYPEER => 0,
+        ]);
 
         $response = curl_exec($curl);
 
@@ -45,12 +42,10 @@ class PaqueticoController extends Controller
 
         $items = json_decode($response, true);
 
-        $data = $items['data']['result'] ?? [];
-
-        foreach ($data as &$v) {
-            $v['identificacion'] = str_replace('-', '', $v['identificacion']);
-        }
-        unset($v); // 🔹 Importante: liberar la referencia
+        $data = array_values(array_filter(
+            $items['data']['result'] ?? [],
+            fn (array $row): bool => ($row['producto_id'] ?? null) === self::PRODUCTO_ID
+        ));
 
         return response()->json(['paquetico' => $data, 'code' => $items['code'], 'message' => 'Resultas obtenidos correctamente']);
     }
@@ -69,11 +64,11 @@ class PaqueticoController extends Controller
         $existe = Paquetico::whereDate('fecha', $fecha)->exists();
 
         if ($existe) {
-            return response()->json(['message' => 'Ya hay data guardada en la fecha: ' . $fecha]);
+            return response()->json(['message' => 'Ya hay data guardada en la fecha: '.$fecha]);
         }
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => "http://contable.apploteka.com/api/finan/compra_paqueticos/{$fecha}/5",
+        curl_setopt_array($curl, [
+            CURLOPT_URL => "https://lotedom-api.orkapi.net/api/finan/productos_externos/{$fecha}",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -81,18 +76,13 @@ class PaqueticoController extends Controller
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_POSTFIELDS => '{
-            "usuario": {
-                "username": "fcolombo",
-                "password": "RUHTe9t9ZEUzHsyT"
-            }
-            }',
-            CURLOPT_HTTPHEADER => array(
+            CURLOPT_HTTPHEADER => [
                 'token: ZFozLWdBYyqERusVdTsW',
-                'Content-Type: application/json',
-                'Cookie: _orkapi_session=QkViaFBzMmJPTEU0U3YxWEEyd0k4eVZuR2RkTFV2bktWY0srZ2NyaWc1Y2J1eGhhdTRxZXZ3VDByTG9vT3VFL0ZpTlNvalgzK3dOcG5EZGNHTDAxbE5OMGU3dUFzaHYxYVlkSzhFc241eE52YXpaaHNOcmFtbUVPdnVTSUZ1L1A3UEVoSDhtV3QvUVZJUy9USU45WUU4OU03SUUxZ0JjQXNVUFBRY2Z6VlFRPS0tc1ZQNDA1NExkWldOTDluU2lLVzhLdz09--384f330e993c1c076f324f7ed51ee9439ccf2a85'
-            ),
-        ));
+                'Cookie: _orkapi_session=gYHpUnlJPzeJ4Q4BBxpzUMLB3t1xysT0uubxOi1MHTT04iCiTRnoB0s4SUoIHeh3MlQX%2FoJ2Un6%2Fd5tpa5QnRqz1c7lhQyrTpzQ%2BfeSjGILNO6FO9T2Lba8KZMWx6wL1TagahpRU2wvGJLvf4%2FzSWfxMt6LAkxmUkBlmtfonut%2FULWbTwPwhHfBrWgKurg2l34KpWujnG6laaaO7rYzAiGDooAbTIaI0MVevV%2F3BnHN6RFgOlrAHJ8ZNQlMKl79udwYEo1LC6yBvihXeWwnuJCbR73RdOEdDe3PbYJzKHQ%3D%3D--ULLy9F7ay3cc2F%2Bj--WDpxNmUrgmf1GuXEhEq8dg%3D%3D',
+            ],
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_SSL_VERIFYPEER => 0,
+        ]);
 
         $response = curl_exec($curl);
 
@@ -100,20 +90,25 @@ class PaqueticoController extends Controller
 
         $items = json_decode($response, true);
 
+        $rows = array_values(array_filter(
+            $items['data']['result'] ?? [],
+            fn (array $row): bool => ($row['producto_id'] ?? null) === self::PRODUCTO_ID
+        ));
+
         $data = array_map(
             fn (array $row): array => LotedomRowMapper::recarga($row, $fecha),
-            $items['data']['result'] ?? []
+            $rows
         );
 
-        if (!empty($data)) {
+        if (! empty($data)) {
             foreach (array_chunk($data, 5000) as $chunk) {
                 DB::table('paquetico_net')->insert($chunk);
             }
         }
 
         return response()->json([
-            'message' => 'Datos guardados correctamente. Total insertados: ' . count($data),
-            'total' => count($data)
+            'message' => 'Datos guardados correctamente. Total insertados: '.count($data),
+            'total' => count($data),
         ]);
     }
 

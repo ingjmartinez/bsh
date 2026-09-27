@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\IncumplimientoHorarioReportMail;
 use App\Exports\AgenciasLotedomExport;
-use App\Imports\AgenciasLotedomImport;
 use App\Imports\AgenciasActualizacionMasivaImport;
+use App\Imports\AgenciasLotedomImport;
+use App\Mail\IncumplimientoHorarioReportMail;
 use App\Models\AgenciaLotedom;
 use App\Models\CoordinadorOperador;
 use App\Models\OperadorRuta;
@@ -15,13 +15,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
 
 class AgenciaLotedomController extends Controller
 {
     private const FUENTE_VENTAS_USUARIOS = 'ventas_usuarios_net';
+
     private const TABLA_AGENCIAS = 'agencias_lotedom';
 
     /**
@@ -70,6 +70,10 @@ class AgenciaLotedomController extends Controller
             'empresa' => 'nullable|string|max:60',
             'operador' => ['nullable', 'string', 'max:55', Rule::in($operadores)],
             'coordinador' => ['nullable', 'string', 'max:55', Rule::in($coordinadores)],
+            'grupo' => 'nullable|string|max:75',
+            'central' => 'nullable|string|max:75',
+            'gerente_de_servicio' => 'nullable|string|max:75',
+            'tipo_pago' => 'nullable|string|max:75',
             'estatus' => 'required|integer|in:0,1',
             'aplica_incentivo' => 'required|boolean',
         ], [
@@ -142,6 +146,10 @@ class AgenciaLotedomController extends Controller
             'ruta' => 'nullable|string|max:255',
             'operador' => ['nullable', 'string', 'max:255', Rule::in($operadores)],
             'coordinador' => ['nullable', 'string', 'max:255', Rule::in($coordinadores)],
+            'grupo' => 'nullable|string|max:75',
+            'central' => 'nullable|string|max:75',
+            'gerente_de_servicio' => 'nullable|string|max:75',
+            'tipo_pago' => 'nullable|string|max:75',
             'estatus' => 'required|integer|in:0,1',
             'aplica_incentivo' => 'required|boolean',
         ], [
@@ -198,7 +206,7 @@ class AgenciaLotedomController extends Controller
             ->whereRaw("{$nombreCoordinadorSql} = ?", [$nombreCompleto])
             ->value('id');
 
-        if (!$coordinadorOperadorId) {
+        if (! $coordinadorOperadorId) {
             return;
         }
 
@@ -237,7 +245,7 @@ class AgenciaLotedomController extends Controller
             ->whereRaw("{$nombreOperadorSql} = ?", [$nombreCompleto])
             ->value('id');
 
-        if (!$operadorRutaId) {
+        if (! $operadorRutaId) {
             return;
         }
 
@@ -263,7 +271,7 @@ class AgenciaLotedomController extends Controller
 
         $operadores = $registrosOperadorRuta
             ->where('puesto', 'operador')
-            ->map(fn($item) => trim($item->nombre . ' ' . $item->apellido))
+            ->map(fn ($item) => trim($item->nombre.' '.$item->apellido))
             ->filter()
             ->unique()
             ->values()
@@ -271,7 +279,7 @@ class AgenciaLotedomController extends Controller
 
         $coordinadores = $registrosCoordinador
             ->where('puesto', 'coordinador')
-            ->map(fn($item) => trim($item->nombre . ' ' . $item->apellido))
+            ->map(fn ($item) => trim($item->nombre.' '.$item->apellido))
             ->filter()
             ->unique()
             ->values()
@@ -317,20 +325,24 @@ class AgenciaLotedomController extends Controller
         // Si hay búsqueda
         if ($request->has('search') && $request->search['value']) {
             $search = $request->search['value'];
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('agencia', 'like', "%{$search}%")
-                  ->orWhere('nombre_agencia', 'like', "%{$search}%")
-                  ->orWhere('terminal', 'like', "%{$search}%")
-                                    ->orWhere('horario_am', 'like', "%{$search}%")
-                                    ->orWhere('horario_pm', 'like', "%{$search}%")
-                  ->orWhere('sistema', 'like', "%{$search}%")
-                                      ->orWhere('empresa', 'like', "%{$search}%")
-                  ->orWhere('ciudad', 'like', "%{$search}%")
-                  ->orWhere('ruta', 'like', "%{$search}%")
-                  ->orWhere('operador', 'like', "%{$search}%")
-                                    ->orWhere('coordinador', 'like', "%{$search}%")
-                                    ->orWhere('estatus', 'like', "%{$search}%")
-                                    ->orWhere('aplica_incentivo', 'like', "%{$search}%");
+                    ->orWhere('nombre_agencia', 'like', "%{$search}%")
+                    ->orWhere('terminal', 'like', "%{$search}%")
+                    ->orWhere('horario_am', 'like', "%{$search}%")
+                    ->orWhere('horario_pm', 'like', "%{$search}%")
+                    ->orWhere('sistema', 'like', "%{$search}%")
+                    ->orWhere('empresa', 'like', "%{$search}%")
+                    ->orWhere('ciudad', 'like', "%{$search}%")
+                    ->orWhere('ruta', 'like', "%{$search}%")
+                    ->orWhere('operador', 'like', "%{$search}%")
+                    ->orWhere('coordinador', 'like', "%{$search}%")
+                    ->orWhere('grupo', 'like', "%{$search}%")
+                    ->orWhere('central', 'like', "%{$search}%")
+                    ->orWhere('gerente_de_servicio', 'like', "%{$search}%")
+                    ->orWhere('tipo_pago', 'like', "%{$search}%")
+                    ->orWhere('estatus', 'like', "%{$search}%")
+                    ->orWhere('aplica_incentivo', 'like', "%{$search}%");
             });
         }
 
@@ -343,9 +355,9 @@ class AgenciaLotedomController extends Controller
         $length = $request->input('length', 10);
 
         $agencias = $query->orderBy('created_at', 'desc')
-                          ->skip($start)
-                          ->take($length)
-                          ->get();
+            ->skip($start)
+            ->take($length)
+            ->get();
 
         $totalActivas = AgenciaLotedom::query()->where('estatus', 1)->count();
         $totalInactivas = AgenciaLotedom::query()->where('estatus', 0)->count();
@@ -497,6 +509,10 @@ class AgenciaLotedomController extends Controller
             'ruta' => 'Ruta',
             'operador' => 'Operador',
             'coordinador' => 'Coordinador',
+            'grupo' => 'Grupo',
+            'central' => 'Central',
+            'gerente_de_servicio' => 'Gerente de servicio',
+            'tipo_pago' => 'Tipo de pago',
             'estatus' => 'Estatus',
             'aplica_incentivo' => 'Incentivo',
         ];
@@ -733,8 +749,8 @@ class AgenciaLotedomController extends Controller
         $terminalesExistentes = AgenciaLotedom::query()
             ->whereNotNull('terminal')
             ->pluck('terminal')
-            ->map(fn($terminal) => $this->normalizarTerminal((string) $terminal))
-            ->filter(fn($terminal) => $terminal !== '0')
+            ->map(fn ($terminal) => $this->normalizarTerminal((string) $terminal))
+            ->filter(fn ($terminal) => $terminal !== '0')
             ->unique()
             ->flip();
 
@@ -744,6 +760,7 @@ class AgenciaLotedomController extends Controller
         foreach ($terminalesPorClave as $terminalKey => $terminalOriginal) {
             if ($terminalesExistentes->has($terminalKey)) {
                 $omitidas++;
+
                 continue;
             }
 
@@ -774,7 +791,7 @@ class AgenciaLotedomController extends Controller
         try {
             return AgenciaLotedom::query()->create($payloadBase);
         } catch (QueryException $e) {
-            if (!$this->esErrorPorNuloNoPermitido($e)) {
+            if (! $this->esErrorPorNuloNoPermitido($e)) {
                 throw $e;
             }
         }
@@ -808,7 +825,7 @@ class AgenciaLotedomController extends Controller
         }
 
         foreach (['horario_am', 'horario_pm', 'empresa', 'ciudad', 'ruta', 'operador', 'coordinador'] as $column) {
-            if ($fallbackCompleto && isset($columns[$column]) && !array_key_exists($column, $payload)) {
+            if ($fallbackCompleto && isset($columns[$column]) && ! array_key_exists($column, $payload)) {
                 $payload[$column] = '';
             }
         }
@@ -846,9 +863,9 @@ class AgenciaLotedomController extends Controller
             ->filter(function (AgenciaLotedom $agencia) use ($ventasPorTerminal) {
                 $terminalKey = $this->normalizarTerminal((string) $agencia->terminal);
 
-                return $terminalKey !== '0' && !$ventasPorTerminal->has($terminalKey);
+                return $terminalKey !== '0' && ! $ventasPorTerminal->has($terminalKey);
             })
-            ->map(fn(AgenciaLotedom $agencia) => $this->formatearAgenciaModal($agencia))
+            ->map(fn (AgenciaLotedom $agencia) => $this->formatearAgenciaModal($agencia))
             ->values()
             ->all();
 
@@ -866,7 +883,7 @@ class AgenciaLotedomController extends Controller
             ->where('estatus', 0)
             ->orderBy('terminal')
             ->get()
-            ->map(fn(AgenciaLotedom $agencia) => $this->formatearAgenciaModal($agencia))
+            ->map(fn (AgenciaLotedom $agencia) => $this->formatearAgenciaModal($agencia))
             ->values()
             ->all();
     }
@@ -888,7 +905,7 @@ class AgenciaLotedomController extends Controller
 
                 return $terminalKey !== '0' && $ventasPorTerminal->has($terminalKey);
             })
-            ->map(fn(AgenciaLotedom $agencia) => $this->formatearAgenciaModal($agencia))
+            ->map(fn (AgenciaLotedom $agencia) => $this->formatearAgenciaModal($agencia))
             ->values()
             ->all();
 
@@ -907,14 +924,14 @@ class AgenciaLotedomController extends Controller
         $terminalesRegistradas = AgenciaLotedom::query()
             ->whereNotNull('terminal')
             ->pluck('terminal')
-            ->map(fn($terminal) => $this->normalizarTerminal((string) $terminal))
-            ->filter(fn($terminal) => $terminal !== '0')
+            ->map(fn ($terminal) => $this->normalizarTerminal((string) $terminal))
+            ->filter(fn ($terminal) => $terminal !== '0')
             ->unique()
             ->flip();
 
         $ventas = DB::table(self::FUENTE_VENTAS_USUARIOS)
             ->selectRaw("COALESCE(NULLIF(TRIM(LEADING '0' FROM TRIM(CAST(agencia_id AS CHAR))), ''), '0') AS terminal_key")
-            ->selectRaw("TRIM(CAST(agencia_id AS CHAR)) AS terminal_original")
+            ->selectRaw('TRIM(CAST(agencia_id AS CHAR)) AS terminal_original')
             ->selectRaw('COALESCE(monto, 0) AS monto')
             ->selectRaw('fecha AS fecha')
             ->whereNotNull('agencia_id')
@@ -934,7 +951,7 @@ class AgenciaLotedomController extends Controller
             ->orderByDesc('total_venta')
             ->get()
             ->filter(function ($row) use ($terminalesRegistradas) {
-                return !$terminalesRegistradas->has((string) ($row->terminal_key ?? '0'));
+                return ! $terminalesRegistradas->has((string) ($row->terminal_key ?? '0'));
             })
             ->map(function ($row) {
                 $terminalOriginal = trim((string) ($row->terminal_original ?? ''));
@@ -981,7 +998,7 @@ class AgenciaLotedomController extends Controller
             ->whereRaw('terminal_key <> ?', ['0'])
             ->distinct()
             ->pluck('terminal_key')
-            ->map(fn($terminal) => (string) $terminal)
+            ->map(fn ($terminal) => (string) $terminal)
             ->flip();
     }
 
@@ -1022,7 +1039,7 @@ class AgenciaLotedomController extends Controller
             ->whereNotNull('terminal')
             ->where(function ($q) {
                 $q->whereNotNull('horario_am')
-                  ->orWhereNotNull('horario_pm');
+                    ->orWhereNotNull('horario_pm');
             })
             ->get();
 
@@ -1057,7 +1074,7 @@ class AgenciaLotedomController extends Controller
 
             // Compatibilidad: se mantiene entrada_real como primera entrada y salida_real como última salida.
             $entradaReal = $entradasReales[0] ?? null;
-            $salidaReal = !empty($salidasReales) ? $salidasReales[array_key_last($salidasReales)] : null;
+            $salidaReal = ! empty($salidasReales) ? $salidasReales[array_key_last($salidasReales)] : null;
 
             // Nuevas columnas: salida AM real y entrada PM real.
             $salidaAmReal = $this->seleccionarHoraCercana(
@@ -1086,7 +1103,7 @@ class AgenciaLotedomController extends Controller
                     $minutosTarde = $entradaProgramadaDateTime->diffInMinutes($entradaReal);
                     $observaciones[] = 'Entrada tardía';
                 }
-            } elseif ($entradaProgramadaDateTime && !$entradaReal) {
+            } elseif ($entradaProgramadaDateTime && ! $entradaReal) {
                 $incumpleEntrada = true;
                 $observaciones[] = 'Sin registro de entrada';
             }
@@ -1097,14 +1114,14 @@ class AgenciaLotedomController extends Controller
                     $minutosSalidaAntes = $salidaReal->diffInMinutes($salidaProgramadaDateTime);
                     $observaciones[] = 'Salida anticipada';
                 }
-            } elseif ($salidaProgramadaDateTime && !$salidaReal) {
+            } elseif ($salidaProgramadaDateTime && ! $salidaReal) {
                 $incumpleSalida = true;
                 $observaciones[] = 'Sin registro de salida';
             }
 
             $incumplida = $incumpleEntrada || $incumpleSalida;
 
-            if ($soloIncumplidas && !$incumplida) {
+            if ($soloIncumplidas && ! $incumplida) {
                 continue;
             }
 
@@ -1220,14 +1237,14 @@ class AgenciaLotedomController extends Controller
             ->selectRaw('salida')
             ->where(function ($q) use ($fecha) {
                 $q->whereDate('entrada', $fecha)
-                  ->orWhereDate('salida', $fecha);
+                    ->orWhereDate('salida', $fecha);
             })
             ->get();
 
         $map = [];
 
         foreach ($bet as $row) {
-            if (!isset($map[$row->terminal_key])) {
+            if (! isset($map[$row->terminal_key])) {
                 $map[$row->terminal_key] = [
                     'entrada' => null,
                     'salida' => null,
@@ -1241,14 +1258,14 @@ class AgenciaLotedomController extends Controller
 
             if ($row->entrada) {
                 $map[$row->terminal_key]['entradas'][] = $row->entrada;
-                if (!$map[$row->terminal_key]['entrada'] || Carbon::parse($row->entrada)->lessThan(Carbon::parse($map[$row->terminal_key]['entrada']))) {
+                if (! $map[$row->terminal_key]['entrada'] || Carbon::parse($row->entrada)->lessThan(Carbon::parse($map[$row->terminal_key]['entrada']))) {
                     $map[$row->terminal_key]['entrada'] = $row->entrada;
                 }
             }
 
             if ($row->salida) {
                 $map[$row->terminal_key]['salidas'][] = $row->salida;
-                if (!$map[$row->terminal_key]['salida'] || Carbon::parse($row->salida)->greaterThan(Carbon::parse($map[$row->terminal_key]['salida']))) {
+                if (! $map[$row->terminal_key]['salida'] || Carbon::parse($row->salida)->greaterThan(Carbon::parse($map[$row->terminal_key]['salida']))) {
                     $map[$row->terminal_key]['salida'] = $row->salida;
                 }
             }
@@ -1257,7 +1274,7 @@ class AgenciaLotedomController extends Controller
         }
 
         foreach ($net as $row) {
-            if (!isset($map[$row->terminal_key])) {
+            if (! isset($map[$row->terminal_key])) {
                 $map[$row->terminal_key] = [
                     'entrada' => null,
                     'salida' => null,
@@ -1271,14 +1288,14 @@ class AgenciaLotedomController extends Controller
 
             if ($row->entrada) {
                 $map[$row->terminal_key]['entradas'][] = $row->entrada;
-                if (!$map[$row->terminal_key]['entrada'] || Carbon::parse($row->entrada)->lessThan(Carbon::parse($map[$row->terminal_key]['entrada']))) {
+                if (! $map[$row->terminal_key]['entrada'] || Carbon::parse($row->entrada)->lessThan(Carbon::parse($map[$row->terminal_key]['entrada']))) {
                     $map[$row->terminal_key]['entrada'] = $row->entrada;
                 }
             }
 
             if ($row->salida) {
                 $map[$row->terminal_key]['salidas'][] = $row->salida;
-                if (!$map[$row->terminal_key]['salida'] || Carbon::parse($row->salida)->greaterThan(Carbon::parse($map[$row->terminal_key]['salida']))) {
+                if (! $map[$row->terminal_key]['salida'] || Carbon::parse($row->salida)->greaterThan(Carbon::parse($map[$row->terminal_key]['salida']))) {
                     $map[$row->terminal_key]['salida'] = $row->salida;
                 }
             }
@@ -1297,42 +1314,45 @@ class AgenciaLotedomController extends Controller
 
     private function normalizarTerminal(?string $terminal): string
     {
-        if (!$terminal) {
+        if (! $terminal) {
             return '0';
         }
 
         $valor = ltrim(trim($terminal), '0');
+
         return $valor === '' ? '0' : $valor;
     }
 
     private function extraerHoraInicio(?string $horario): ?string
     {
-        if (!$horario || !str_contains($horario, '/')) {
+        if (! $horario || ! str_contains($horario, '/')) {
             return null;
         }
 
         $partes = explode('/', $horario);
+
         return isset($partes[0]) ? trim($partes[0]) : null;
     }
 
     private function extraerHoraFin(?string $horario): ?string
     {
-        if (!$horario || !str_contains($horario, '/')) {
+        if (! $horario || ! str_contains($horario, '/')) {
             return null;
         }
 
         $partes = explode('/', $horario);
+
         return isset($partes[1]) ? trim($partes[1]) : null;
     }
 
     private function parseFechaHora(string $fecha, ?string $hora): ?Carbon
     {
-        if (!$hora) {
+        if (! $hora) {
             return null;
         }
 
         try {
-            return Carbon::createFromFormat('Y-m-d g:i A', $fecha . ' ' . strtoupper($hora));
+            return Carbon::createFromFormat('Y-m-d g:i A', $fecha.' '.strtoupper($hora));
         } catch (\Throwable $e) {
             return null;
         }
@@ -1343,7 +1363,7 @@ class AgenciaLotedomController extends Controller
         $parsed = [];
 
         foreach ($horas as $hora) {
-            if (!$hora) {
+            if (! $hora) {
                 continue;
             }
 
@@ -1377,7 +1397,7 @@ class AgenciaLotedomController extends Controller
             return null;
         }
 
-        if (!$objetivo) {
+        if (! $objetivo) {
             return $filtradas[0];
         }
 
@@ -1397,8 +1417,8 @@ class AgenciaLotedomController extends Controller
         $terminalesRegistradas = AgenciaLotedom::query()
             ->whereNotNull('terminal')
             ->pluck('terminal')
-            ->map(fn($terminal) => $this->normalizarTerminal((string) $terminal))
-            ->filter(fn($terminal) => $terminal !== '0')
+            ->map(fn ($terminal) => $this->normalizarTerminal((string) $terminal))
+            ->filter(fn ($terminal) => $terminal !== '0')
             ->unique()
             ->values()
             ->flip();
@@ -1407,7 +1427,7 @@ class AgenciaLotedomController extends Controller
 
         $ventas = DB::table(self::FUENTE_VENTAS_USUARIOS)
             ->selectRaw("COALESCE(NULLIF(TRIM(LEADING '0' FROM TRIM(CAST(agencia_id AS CHAR))), ''), '0') AS terminal_key")
-            ->selectRaw("TRIM(CAST(agencia_id AS CHAR)) AS terminal_original")
+            ->selectRaw('TRIM(CAST(agencia_id AS CHAR)) AS terminal_original')
             ->selectRaw('COALESCE(monto, 0) AS monto')
             ->selectRaw('fecha AS fecha')
             ->whereNotNull('agencia_id')
@@ -1417,6 +1437,7 @@ class AgenciaLotedomController extends Controller
                 foreach ($tiposVentaFija as $index => $tipo) {
                     if ($index === 0) {
                         $query->whereRaw('LOWER(TRIM(COALESCE(tipo, ""))) = ?', [$tipo]);
+
                         continue;
                     }
 
@@ -1438,7 +1459,8 @@ class AgenciaLotedomController extends Controller
         $terminalesNoRegistradas = $ventasConsolidadas
             ->filter(function ($row) use ($terminalesRegistradas) {
                 $terminal = (string) ($row->terminal_key ?? '0');
-                return !$terminalesRegistradas->has($terminal);
+
+                return ! $terminalesRegistradas->has($terminal);
             })
             ->map(function ($row) {
                 $terminalOriginal = trim((string) ($row->terminal_original ?? ''));
@@ -1465,8 +1487,8 @@ class AgenciaLotedomController extends Controller
         $terminalesRegistradas = AgenciaLotedom::query()
             ->whereNotNull('terminal')
             ->pluck('terminal')
-            ->map(fn($terminal) => $this->normalizarTerminal((string) $terminal))
-            ->filter(fn($terminal) => $terminal !== '0')
+            ->map(fn ($terminal) => $this->normalizarTerminal((string) $terminal))
+            ->filter(fn ($terminal) => $terminal !== '0')
             ->unique()
             ->values()
             ->flip();
@@ -1492,7 +1514,7 @@ class AgenciaLotedomController extends Controller
             ->filter(fn ($row) => ($row['terminal_key'] ?? '0') !== '0')
             ->groupBy('terminal_key')
             ->filter(function ($rows, $terminalKey) use ($terminalesRegistradas) {
-                return !$terminalesRegistradas->has((string) $terminalKey);
+                return ! $terminalesRegistradas->has((string) $terminalKey);
             })
             ->map(function ($rows, $terminalKey) {
                 $rows = collect($rows)->values();
@@ -1527,7 +1549,7 @@ class AgenciaLotedomController extends Controller
      */
     public function export()
     {
-        return Excel::download(new AgenciasLotedomExport, 'agencias_lotedom_' . date('Y-m-d_His') . '.xlsx');
+        return Excel::download(new AgenciasLotedomExport, 'agencias_lotedom_'.date('Y-m-d_His').'.xlsx');
     }
 
     /**
@@ -1540,7 +1562,7 @@ class AgenciaLotedomController extends Controller
         ]);
 
         try {
-            $import = new AgenciasLotedomImport();
+            $import = new AgenciasLotedomImport;
             Excel::import($import, $request->file('file'));
 
             $resultado = [
@@ -1558,7 +1580,7 @@ class AgenciaLotedomController extends Controller
                 ->with('import_result', $resultado);
         } catch (\Exception $e) {
             return redirect()->route('agencias-lotedom.index')
-                ->with('error', 'Error al importar: ' . $e->getMessage());
+                ->with('error', 'Error al importar: '.$e->getMessage());
         }
     }
 
@@ -1573,7 +1595,7 @@ class AgenciaLotedomController extends Controller
         ]);
 
         try {
-            $import = new AgenciasActualizacionMasivaImport();
+            $import = new AgenciasActualizacionMasivaImport;
             Excel::import($import, $request->file('file'));
 
             $rows = $import->rows ?? collect();
@@ -1597,25 +1619,29 @@ class AgenciaLotedomController extends Controller
                 $row = collect($rowCollection)->toArray();
 
                 $agencia = $this->buscarAgenciaParaActualizacion($row);
-                if (!$agencia) {
+                if (! $agencia) {
                     $noEncontradas++;
+
                     continue;
                 }
 
                 $updates = $this->extraerCamposParaActualizacionMasiva($row);
 
-                if (array_key_exists('operador', $updates) && $updates['operador'] !== '' && !$operadoresSet->has($updates['operador'])) {
+                if (array_key_exists('operador', $updates) && $updates['operador'] !== '' && ! $operadoresSet->has($updates['operador'])) {
                     $filasInvalidas++;
+
                     continue;
                 }
 
-                if (array_key_exists('coordinador', $updates) && $updates['coordinador'] !== '' && !$coordinadoresSet->has($updates['coordinador'])) {
+                if (array_key_exists('coordinador', $updates) && $updates['coordinador'] !== '' && ! $coordinadoresSet->has($updates['coordinador'])) {
                     $filasInvalidas++;
+
                     continue;
                 }
 
                 if (empty($updates)) {
                     $sinCambios++;
+
                     continue;
                 }
 
@@ -1624,6 +1650,7 @@ class AgenciaLotedomController extends Controller
                     && $this->terminalExisteEnOtraAgencia((string) $updates['terminal'], (int) $agencia->id)
                 ) {
                     $filasInvalidas++;
+
                     continue;
                 }
 
@@ -1654,7 +1681,7 @@ class AgenciaLotedomController extends Controller
                 ->with('mass_update_result', $resultado);
         } catch (\Exception $e) {
             return redirect()->route('agencias-lotedom.index')
-                ->with('error', 'Error en actualizacion masiva: ' . $e->getMessage());
+                ->with('error', 'Error en actualizacion masiva: '.$e->getMessage());
         }
     }
 
@@ -1668,7 +1695,7 @@ class AgenciaLotedomController extends Controller
         ]);
 
         try {
-            $import = new AgenciasActualizacionMasivaImport();
+            $import = new AgenciasActualizacionMasivaImport;
             Excel::import($import, $request->file('file'));
 
             $rows = $import->rows ?? collect();
@@ -1683,9 +1710,10 @@ class AgenciaLotedomController extends Controller
                 ->map(function ($rowCollection) {
                     $row = collect($rowCollection)->toArray();
                     $terminal = $this->valorColumna($row, ['terminal']);
+
                     return trim((string) ($terminal ?? ''));
                 })
-                ->filter(fn($terminal) => $terminal !== '')
+                ->filter(fn ($terminal) => $terminal !== '')
                 ->values();
 
             $terminalesUnicos = $terminales->unique()->values();
@@ -1693,8 +1721,8 @@ class AgenciaLotedomController extends Controller
             $terminalesEncontradas = AgenciaLotedom::query()
                 ->whereIn('terminal', $terminalesUnicos)
                 ->pluck('terminal')
-                ->map(fn($terminal) => trim((string) $terminal))
-                ->filter(fn($terminal) => $terminal !== '')
+                ->map(fn ($terminal) => trim((string) $terminal))
+                ->filter(fn ($terminal) => $terminal !== '')
                 ->unique()
                 ->values();
 
@@ -1714,7 +1742,7 @@ class AgenciaLotedomController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'ok' => false,
-                'message' => 'Error al reconocer terminales: ' . $e->getMessage(),
+                'message' => 'Error al reconocer terminales: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1755,6 +1783,10 @@ class AgenciaLotedomController extends Controller
             'ruta' => ['ruta'],
             'operador' => ['operador'],
             'coordinador' => ['coordinador'],
+            'grupo' => ['grupo'],
+            'central' => ['central'],
+            'gerente_de_servicio' => ['gerente_de_servicio', 'gerente de servicio'],
+            'tipo_pago' => ['tipo_pago', 'tipo pago'],
             'estatus' => ['estatus'],
             'aplica_incentivo' => ['aplica_incentivo', 'aplica incentivo'],
         ];
@@ -1768,11 +1800,23 @@ class AgenciaLotedomController extends Controller
 
             if ($campo === 'estatus') {
                 $updates[$campo] = $this->parseEstatus((string) $valor);
+
+                continue;
+            }
+
+            if ($campo === 'sistema') {
+                $sistema = $this->normalizarSistemaActualizacionMasiva((string) $valor);
+
+                if ($sistema !== null) {
+                    $updates[$campo] = $sistema;
+                }
+
                 continue;
             }
 
             if ($campo === 'aplica_incentivo') {
                 $updates[$campo] = $this->parseAplicaIncentivo((string) $valor);
+
                 continue;
             }
 
@@ -1780,6 +1824,14 @@ class AgenciaLotedomController extends Controller
         }
 
         return $updates;
+    }
+
+    private function normalizarSistemaActualizacionMasiva(string $value): ?string
+    {
+        return match (strtolower(trim($value))) {
+            'lotedom', 'lote dom' => 'lotedom',
+            default => null,
+        };
     }
 
     private function valorColumna(array $row, array $aliases): mixed
@@ -1855,21 +1907,22 @@ class AgenciaLotedomController extends Controller
             'Ruta',
             'Operador',
             'Coordinador',
+            'Grupo',
+            'Central',
+            'Gerente de Servicio',
+            'Tipo de Pago',
             'Estatus',
             'Aplica Incentivo',
         ];
 
         $data = [
             $headers,
-            ['20907', '5546', '7:00 AM / 2:00 PM', '2:00 PM / 9:00 PM', 'Agencia Lotedom Ejemplo', 'Lotedom', 'Grupo A', 'San Pedro', 'Ruta 0501', 'Jose Ruby', 'Aramis', '1', 'SI'],
+            ['20907', '5546', '7:00 AM / 2:00 PM', '2:00 PM / 9:00 PM', 'Agencia Lotedom Ejemplo', 'Lotedom', 'Empresa A', 'San Pedro', 'Ruta 0501', 'Jose Ruby', 'Aramis', 'Grupo A', 'Central 1', 'Gerente Uno', 'Semanal', '1', 'SI'],
         ];
 
         $filename = 'plantilla_agencias_lotedom.xlsx';
 
-        return Excel::download(new class($data) implements 
-            \Maatwebsite\Excel\Concerns\FromArray,
-            \Maatwebsite\Excel\Concerns\WithStyles,
-            \Maatwebsite\Excel\Concerns\ShouldAutoSize
+        return Excel::download(new class($data) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithStyles
         {
             protected $data;
 
@@ -1910,6 +1963,10 @@ class AgenciaLotedomController extends Controller
             'Horario AM',
             'Horario PM',
             'Sistema',
+            'Grupo',
+            'Central',
+            'Gerente de Servicio',
+            'Tipo de Pago',
             'Estatus',
             'Aplica Incentivo',
         ];
@@ -1920,10 +1977,7 @@ class AgenciaLotedomController extends Controller
 
         $filename = 'plantilla_actualizacion_masiva_agencias_lotedom.xlsx';
 
-        return Excel::download(new class($data) implements
-            \Maatwebsite\Excel\Concerns\FromArray,
-            \Maatwebsite\Excel\Concerns\WithStyles,
-            \Maatwebsite\Excel\Concerns\ShouldAutoSize
+        return Excel::download(new class($data) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithStyles
         {
             protected $data;
 

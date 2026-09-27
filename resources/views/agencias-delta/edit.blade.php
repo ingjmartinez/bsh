@@ -193,6 +193,42 @@
                                         </div>
 
                                         <div class="col-12 col-md-6 mb-3">
+                                            <label for="grupo" class="form-label">Grupo</label>
+                                            <input type="text" class="form-control @error('grupo') is-invalid @enderror"
+                                                   id="grupo" name="grupo" maxlength="75" value="{{ old('grupo', $agencia->grupo) }}">
+                                            @error('grupo')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label for="central" class="form-label">Central</label>
+                                            <input type="text" class="form-control @error('central') is-invalid @enderror"
+                                                   id="central" name="central" maxlength="75" value="{{ old('central', $agencia->central) }}">
+                                            @error('central')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label for="gerente_de_servicio" class="form-label">Gerente de servicio</label>
+                                            <input type="text" class="form-control @error('gerente_de_servicio') is-invalid @enderror"
+                                                   id="gerente_de_servicio" name="gerente_de_servicio" maxlength="75" value="{{ old('gerente_de_servicio', $agencia->gerente_de_servicio) }}">
+                                            @error('gerente_de_servicio')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label for="tipo_pago" class="form-label">Tipo de pago</label>
+                                            <input type="text" class="form-control @error('tipo_pago') is-invalid @enderror"
+                                                   id="tipo_pago" name="tipo_pago" maxlength="75" value="{{ old('tipo_pago', $agencia->tipo_pago) }}">
+                                            @error('tipo_pago')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+
+                                        <div class="col-12 col-md-6 mb-3">
                                             <label for="estatus" class="form-label">Estatus <span class="text-danger">*</span></label>
                                             <select class="form-select @error('estatus') is-invalid @enderror" id="estatus" name="estatus" required>
                                                 <option value="1" {{ old('estatus', (int) $agencia->estatus) == 1 ? 'selected' : '' }}>Activo</option>

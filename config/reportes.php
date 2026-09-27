@@ -17,7 +17,7 @@ return [
         'icono' => 'ri-error-warning-line',
         'categoria' => 'Operaciones',
         'tags' => ['faltantes', 'lotobet', 'agencias'],
-        'activo' => true,
+        'activo' => false,
     ],
     [
         'nombre' => 'Cuadre de Ventas',
@@ -62,7 +62,7 @@ return [
         'icono' => 'ri-arrow-left-right-line',
         'categoria' => 'Auditoria',
         'tags' => ['cruce', 'usuarios', 'lotobet', 'lotedom'],
-        'activo' => true,
+        'activo' => false,
     ],
     [
         'nombre' => 'Compensacion',

@@ -65,15 +65,14 @@
                                     style="width:100%">
                                     <thead>
                                         <tr>
-                                            <th>Consorcio</th>
-                                            <th>Producto</th>
-                                            <th>Agencia</th>
-                                            <th>Descripción</th>
-                                            <th>Monto</th>
                                             <th>Fecha</th>
-                                            <th>Importe</th>
-                                            <th>Pagado Consorcio</th>
-                                            <th>Plataforma Pago</th>
+                                            <th>Consorcio ID</th>
+                                            <th>Consorcio Código</th>
+                                            <th>Producto ID</th>
+                                            <th>Producto Nombre</th>
+                                            <th>Monto</th>
+                                            <th>Terminal Pago</th>
+                                            <th>Pagado a Consorcio ID</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -181,15 +180,14 @@
                         data.pagos.forEach(item => {
                             const row = document.createElement('tr');
                             row.innerHTML = `
-                                <td>${item.consorcio_id}</td>
-                                <td>${item.producto_id}</td>
-                                <td>${item.agencia_id}</td>
-                                <td>${item.descripcion}</td>
-                                <td>${item.monto}</td>
-                                <td>${fecha}</td>
-                                <td>${item.importe}</td>
-                                <td>${item.pagado_consorcio_id}</td>
-                                <td>${item.plataforma}</td>
+                                <td>${item.fecha ?? fecha}</td>
+                                <td>${item.consorcio_id ?? ''}</td>
+                                <td>${item.consorcio_codigo ?? ''}</td>
+                                <td>${item.producto_id ?? ''}</td>
+                                <td>${item.producto_nombre ?? ''}</td>
+                                <td>${item.monto ?? ''}</td>
+                                <td>${item.pago_terminal_codigo ?? ''}</td>
+                                <td>${item.pagado_a_consorcio_id ?? ''}</td>
                             `;
                             tableBody.appendChild(row);
                         });

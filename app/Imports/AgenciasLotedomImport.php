@@ -8,14 +8,18 @@ use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
 
-class AgenciasLotedomImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyRows
+class AgenciasLotedomImport implements SkipsEmptyRows, ToModel, WithHeadingRow, WithValidation
 {
     public int $importadas = 0;
+
     public int $omitidasExistentes = 0;
+
     public int $omitidasDuplicadasArchivo = 0;
+
     public int $omitidasSinTerminal = 0;
 
     private array $terminalesExistentes = [];
+
     private array $terminalesArchivo = [];
 
     public function __construct()
@@ -23,16 +27,14 @@ class AgenciasLotedomImport implements ToModel, WithHeadingRow, WithValidation, 
         $this->terminalesExistentes = AgenciaLotedom::query()
             ->whereNotNull('terminal')
             ->pluck('terminal')
-            ->map(fn($terminal) => $this->normalizarTerminal((string) $terminal))
-            ->filter(fn($terminal) => $terminal !== '0')
+            ->map(fn ($terminal) => $this->normalizarTerminal((string) $terminal))
+            ->filter(fn ($terminal) => $terminal !== '0')
             ->unique()
             ->flip()
             ->all();
     }
 
     /**
-     * @param array $row
-     *
      * @return \Illuminate\Database\Eloquent\Model|null
      */
     public function model(array $row)
@@ -42,16 +44,19 @@ class AgenciasLotedomImport implements ToModel, WithHeadingRow, WithValidation, 
 
         if ($terminalKey === '0') {
             $this->omitidasSinTerminal++;
+
             return null;
         }
 
         if (isset($this->terminalesExistentes[$terminalKey])) {
             $this->omitidasExistentes++;
+
             return null;
         }
 
         if (isset($this->terminalesArchivo[$terminalKey])) {
             $this->omitidasDuplicadasArchivo++;
+
             return null;
         }
 
@@ -73,6 +78,10 @@ class AgenciasLotedomImport implements ToModel, WithHeadingRow, WithValidation, 
             'ruta' => $this->valorTexto($row, ['ruta']),
             'operador' => $this->valorTexto($row, ['operador']),
             'coordinador' => $this->valorTexto($row, ['coordinador']),
+            'grupo' => $this->valorTexto($row, ['grupo']),
+            'central' => $this->valorTexto($row, ['central']),
+            'gerente_de_servicio' => $this->valorTexto($row, ['gerente_de_servicio', 'gerente de servicio']),
+            'tipo_pago' => $this->valorTexto($row, ['tipo_pago', 'tipo pago']),
             'estatus' => $this->parseEstatus($this->valorColumna($row, ['estatus']) ?? 1),
             'aplica_incentivo' => $this->parseAplicaIncentivo($this->valorColumna($row, ['aplica_incentivo', 'aplica incentivo']) ?? 1),
         ]);
@@ -92,6 +101,10 @@ class AgenciasLotedomImport implements ToModel, WithHeadingRow, WithValidation, 
             'ruta' => 'nullable',
             'operador' => 'nullable',
             'coordinador' => 'nullable',
+            'grupo' => 'nullable',
+            'central' => 'nullable',
+            'gerente_de_servicio' => 'nullable',
+            'tipo_pago' => 'nullable',
             'estatus' => 'nullable',
             'aplica_incentivo' => 'nullable',
         ];
@@ -110,6 +123,7 @@ class AgenciasLotedomImport implements ToModel, WithHeadingRow, WithValidation, 
         }
 
         $texto = trim((string) $valor);
+
         return $texto === '' ? null : $texto;
     }
 
@@ -133,11 +147,12 @@ class AgenciasLotedomImport implements ToModel, WithHeadingRow, WithValidation, 
 
     private function normalizarTerminal(?string $terminal): string
     {
-        if (!$terminal) {
+        if (! $terminal) {
             return '0';
         }
 
         $valor = ltrim(trim($terminal), '0');
+
         return $valor === '' ? '0' : $valor;
     }
 

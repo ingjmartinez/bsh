@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Models\ChatbotSession;
 use App\Services\TelegramService;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -16,6 +18,7 @@ class TelegramWebhookControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Carbon::setTestNow(Carbon::parse('2026-06-12 10:00:00'));
 
         config([
             'services.telegram.bot_token' => 'test-token',
@@ -42,11 +45,30 @@ class TelegramWebhookControllerTest extends TestCase
             $table->unique(['account', 'phone']);
             $table->unique(['channel', 'channel_recipient']);
         });
+
+        Schema::dropIfExists('agencias_delta');
+        Schema::create('agencias_delta', function (Blueprint $table): void {
+            $table->id();
+            $table->string('terminal', 25)->nullable();
+            $table->tinyInteger('estatus')->default(1);
+        });
+
+        Schema::dropIfExists('agencias_lotedom');
+        Schema::create('agencias_lotedom', function (Blueprint $table): void {
+            $table->id();
+            $table->string('terminal', 25)->nullable();
+            $table->string('sistema', 55)->nullable();
+            $table->string('empresa', 60)->nullable();
+            $table->tinyInteger('estatus')->default(1);
+        });
     }
 
     protected function tearDown(): void
     {
         Cache::flush();
+        Carbon::setTestNow();
+        Schema::dropIfExists('agencias_delta');
+        Schema::dropIfExists('agencias_lotedom');
         Schema::dropIfExists('chatbot_sessions');
 
         parent::tearDown();
@@ -154,6 +176,51 @@ class TelegramWebhookControllerTest extends TestCase
 
         $storagePath = ltrim((string) parse_url($file['url'], PHP_URL_PATH), '/');
         Storage::disk('public')->assertExists(substr($storagePath, strlen('storage/')));
+    }
+
+    public function test_telegram_valida_delta_exclusivamente_con_agencias_delta(): void
+    {
+        $this->fakeSuccessfulTelegram();
+
+        DB::table('agencias_lotedom')->insert([
+            'terminal' => 'DELTA-LEGACY',
+            'sistema' => 'delta',
+            'empresa' => 'Delta',
+            'estatus' => 1,
+        ]);
+        DB::table('agencias_delta')->insert([
+            'terminal' => 'DELTA-NUEVA',
+            'estatus' => 1,
+        ]);
+
+        ChatbotSession::query()->create([
+            'account' => 'telegram:bsh_test_bot',
+            'phone' => '18095550150',
+            'channel' => 'telegram',
+            'channel_recipient' => '900100200',
+            'step' => 'seleccion_sistema',
+            'context' => [],
+            'last_interaction_at' => now(),
+        ]);
+
+        foreach ([[201, '2'], [202, '3'], [203, 'DELTA-LEGACY']] as [$updateId, $text]) {
+            $this->withHeader('X-Telegram-Bot-Api-Secret-Token', 'test-secret')
+                ->postJson('/api/telegram/webhook', $this->messageUpdate($updateId, ['text' => $text]))
+                ->assertOk();
+        }
+
+        $session = ChatbotSession::firstOrFail();
+        $this->assertSame('ticket_numero', $session->step);
+        $this->assertArrayNotHasKey('ticket_numero', $session->context);
+
+        $this->withHeader('X-Telegram-Bot-Api-Secret-Token', 'test-secret')
+            ->postJson('/api/telegram/webhook', $this->messageUpdate(204, ['text' => 'DELTA-NUEVA']))
+            ->assertOk();
+
+        $session->refresh();
+        $this->assertSame('ticket_imagen', $session->step);
+        $this->assertSame('DELTA-NUEVA', $session->context['ticket_numero']);
+        $this->assertSame('delta', $session->context['sistema']);
     }
 
     private function fakeSuccessfulTelegram(): void

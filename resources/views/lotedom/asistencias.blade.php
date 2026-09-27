@@ -69,6 +69,7 @@
                                             <th>Agencia</th>
                                             <th>Usuario</th>
                                             <th>Cedula</th>
+                                            <th>Fecha</th>
                                             <th>Entrada</th>
                                             <th>Salida</th>
                                         </tr>
@@ -133,7 +134,7 @@
         });
 
         const btnGenerarData = document.getElementById('btnGenerarData');
-        btnGenerarData.addEventListener('click', () => {
+        btnGenerarData.addEventListener('click', async () => {
             const fecha = document.getElementById('inputFecha').value;
             if (!fecha) {
                 Swal.fire({
@@ -153,60 +154,58 @@
                 didOpen: () => Swal.showLoading()
             });
 
-            $('#tableRecargas').DataTable().destroy();
+            if ($.fn.DataTable.isDataTable('#tableRecargas')) {
+                $('#tableRecargas').DataTable().destroy();
+            }
             const tableBody = document.querySelector('#tableRecargas tbody');
             tableBody.innerHTML = '';
 
-            fetch(`/get-asistencias-lotedom?fecha=${fecha}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.code != 0) {
-                        Swal.fire({
-                            title: "Error",
-                            text: data.message,
-                            icon: "error"
-                        });
-                    } else {
-                        Swal.fire({
-                            title: "Listo",
-                            text: "Datos obtenidos correctamente",
-                            icon: "success"
-                        });
+            const result = await requestJson(`/get-asistencias-lotedom?fecha=${fecha}`);
+            if (!result.ok) {
+                Swal.fire({ title: "Error", text: result.message, icon: "error" });
+                return;
+            }
 
-                        tableBody.innerHTML = ''; // Clear existing rows
+            const asistencias = Array.isArray(result.payload?.asistencias) ? result.payload.asistencias : [];
 
-                        data.asistencias.forEach(item => {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td>${item.consorcio}</td>
-                                <td>${item.agencia}</td>
-                                <td>${item.usuario}</td>
-                                <td>${item.identificacion}</td>
-                                <td>${item.entrada}</td>
-                                <td>${item.salida}</td>
-                            `;
-                            tableBody.appendChild(row);
-                        });
+            asistencias.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${escapeLotedomHtml(item.consorcio)}</td>
+                    <td>${escapeLotedomHtml(item.agencia)}</td>
+                    <td>${escapeLotedomHtml(item.usuario)}</td>
+                    <td>${escapeLotedomHtml(item.identificacion)}</td>
+                    <td>${escapeLotedomHtml(item.fecha)}</td>
+                    <td>${escapeLotedomHtml(item.entrada)}</td>
+                    <td>${escapeLotedomHtml(item.salida)}</td>
+                `;
+                tableBody.appendChild(row);
+            });
 
-                        $('#tableRecargas').DataTable({
-                            destroy: true,
-                            responsive: true,
-                            scrollX: true,
-                            columnDefs: [
-                                { targets: [4, 5, 6], visible: $(window).width() > 768 }
-                            ],
-                            dom: 'Bfrtip',
-                            buttons: [
-                                'copy', 'csv', 'excel', 'pdf', 'print'
-                            ]
-                        });
-                    }
-                })
-                .catch(error => console.error('Error fetching data:', error));
+            $('#tableRecargas').DataTable({
+                destroy: true,
+                responsive: true,
+                scrollX: true,
+                columnDefs: [
+                    { targets: [4, 5, 6], visible: $(window).width() > 768 }
+                ],
+                dom: 'Bfrtip',
+                buttons: [
+                    'copy', 'csv', 'excel', 'pdf', 'print'
+                ]
+            });
+
+            Swal.fire({
+                title: asistencias.length > 0 ? "Listo" : "Sin datos",
+                text: asistencias.length > 0
+                    ? `Datos obtenidos correctamente: ${asistencias.length}`
+                    : "La API no devolvió registros para la fecha seleccionada",
+                icon: asistencias.length > 0 ? "success" : "warning"
+            });
         });
 
         const btnGuardarData = document.getElementById('btnGuardarData');
-        btnGuardarData.addEventListener('click', () => {
+        btnGuardarData.addEventListener('click', async () => {
             const fecha = document.getElementById('inputFecha').value;
             if (!fecha) {
                 Swal.fire({
@@ -225,16 +224,12 @@
                 timerProgressBar: true,
                 didOpen: () => Swal.showLoading()
             });
-            fetch(`/save-asistencias-lotedom?fecha=${fecha}`)
-                .then(response => response.json())
-                .then(data => {
-                    Swal.fire({
-                        title: "Listo",
-                        text: data.message,
-                        icon: "success"
-                    });
-                })
-                .catch(error => console.error('Error fetching data:', error));
+            const result = await requestJson(`/save-asistencias-lotedom?fecha=${fecha}`);
+            Swal.fire({
+                title: result.ok ? "Listo" : "Error",
+                text: result.message,
+                icon: result.ok ? "success" : "error"
+            });
         });
 
         const btnEliminarData = document.getElementById('btnEliminarData');

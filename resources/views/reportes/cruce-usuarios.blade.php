@@ -12,7 +12,7 @@
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li class="breadcrumb-item"><a href="{{ route('inicio.index') }}">Inicio</a></li>
-                                    <li class="breadcrumb-item"><a href="{{ route('reportes.index') }}">Reportes</a></li>
+                                    <li class="breadcrumb-item"><a href="{{ route('recursos-humanos.index') }}">Recursos Humanos</a></li>
                                     <li class="breadcrumb-item active">Cruce de Usuarios</li>
                                 </ol>
                             </div>
@@ -228,7 +228,7 @@
             tbody.innerHTML = '<tr><td colspan="2" class="text-center">Cargando...</td></tr>';
 
             $.ajax({
-                url: '/reportes-cruce-usuarios/sin-cedula-fechas',
+                url: @json(route('recursos-humanos.cruce-usuarios.sin-cedula-fechas')),
                 type: 'GET',
                 data: {
                     sistema: sistema,
@@ -304,9 +304,10 @@
                 table.destroy();
             }
 
+            $.fn.dataTable.ext.errMode = 'none';
             table = $('#tableCruceUsuarios').DataTable({
                 ajax: {
-                    url: '/reportes-cruce-usuarios/list',
+                    url: @json(route('recursos-humanos.cruce-usuarios.list')),
                     type: 'GET',
                     data: {
                         sistema: sistema,
@@ -319,8 +320,17 @@
                         renderResumenSinCedula();
                         return json.resultados || [];
                     },
-                    complete: function() {
-                        Swal.close();
+                    error: function(xhr) {
+                        Swal.fire({
+                            title: 'Error al cargar el reporte',
+                            text: xhr.responseJSON?.message || 'No se pudieron obtener los datos del cruce de usuarios.',
+                            icon: 'error'
+                        });
+                    },
+                    complete: function(xhr) {
+                        if (xhr.status < 400) {
+                            Swal.close();
+                        }
                     }
                 },
                 responsive: true,

@@ -3,11 +3,13 @@
 use App\Http\Controllers\AgenciaController;
 use App\Http\Controllers\AgenciaDeltaController;
 use App\Http\Controllers\AgenciaLotedomController;
+use App\Http\Controllers\AgenciaSinActividadController;
 use App\Http\Controllers\Api;
 use App\Http\Controllers\AsistenciaComparativaController;
 use App\Http\Controllers\AsistenciaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AutoProcesoConfigController;
+use App\Http\Controllers\BiLotobetController;
 use App\Http\Controllers\CatalogoJuegoController;
 use App\Http\Controllers\ComercialController;
 use App\Http\Controllers\ContabilidadCuentasCobrarFaltantesController;
@@ -27,7 +29,9 @@ use App\Http\Controllers\InicioController;
 use App\Http\Controllers\KpiLotobetController;
 use App\Http\Controllers\MetaIncentivoController;
 use App\Http\Controllers\ModuleHubController;
+use App\Http\Controllers\MovimientoUsuarioController;
 use App\Http\Controllers\NovedadHorarioController;
+use App\Http\Controllers\NuevoIngresoController;
 use App\Http\Controllers\OperacionesReporteDiarioController;
 use App\Http\Controllers\OperadorRutaController;
 use App\Http\Controllers\PagoAOtraEmpresaController;
@@ -93,6 +97,41 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [ModuleHubController::class, 'dashboard'])->name('dashboard.index');
     Route::get('/dashboard/tickets', [TicketSolicitudController::class, 'dashboard'])->name('dashboard.tickets');
 
+    Route::get('/bi', [ModuleHubController::class, 'bi'])
+        ->middleware('role_or_permission:superadmin|admin|module.bi.view')
+        ->name('bi.index');
+    Route::get('/bi/lotobet-real', [BiLotobetController::class, 'index'])
+        ->middleware('role_or_permission:superadmin|admin|module.bi.item.lotobet_real.view')
+        ->name('bi.lotobet-real');
+    Route::get('/bi/lotobet-real/tablero-ventas', [BiLotobetController::class, 'dashboard'])
+        ->middleware('role_or_permission:superadmin|admin|module.bi.item.lotobet_real.view')
+        ->name('bi.lotobet-real.dashboard');
+    Route::get('/bi/lotobet-real/tablero-ventas/data', [BiLotobetController::class, 'data'])
+        ->middleware('role_or_permission:superadmin|admin|module.bi.item.lotobet_real.view')
+        ->name('bi.lotobet-real.data');
+    Route::get('/bi/lotobet-real/tendencia-mensual', [BiLotobetController::class, 'monthly'])
+        ->middleware('role_or_permission:superadmin|admin|module.bi.item.lotobet_real.view')
+        ->name('bi.lotobet-real.monthly');
+    Route::get('/bi/lotobet-real/tendencia-mensual/data', [BiLotobetController::class, 'monthlyData'])
+        ->middleware('role_or_permission:superadmin|admin|module.bi.item.lotobet_real.view')
+        ->name('bi.lotobet-real.monthly-data');
+    Route::get('/bi/lotobet-real/ventas-raza', [BiLotobetController::class, 'raza'])
+        ->middleware('role_or_permission:superadmin|admin|module.bi.item.lotobet_real.view')
+        ->name('bi.lotobet-real.raza');
+    Route::get('/bi/lotobet-real/ventas-raza/data', [BiLotobetController::class, 'razaData'])
+        ->middleware('role_or_permission:superadmin|admin|module.bi.item.lotobet_real.view')
+        ->name('bi.lotobet-real.raza-data');
+    Route::get('/bi/lotobet-real/por-productos', [BiLotobetController::class, 'productos'])
+        ->middleware('role_or_permission:superadmin|admin|module.bi.item.lotobet_real.view')->name('bi.lotobet-real.productos');
+    Route::get('/bi/lotobet-real/por-productos/data', [BiLotobetController::class, 'productosData'])
+        ->middleware('role_or_permission:superadmin|admin|module.bi.item.lotobet_real.view')->name('bi.lotobet-real.productos-data');
+    Route::view('/bi/lotodom', 'bi.plataforma', ['plataforma' => 'Lotodom'])
+        ->middleware('role_or_permission:superadmin|admin|module.bi.item.lotodom.view')
+        ->name('bi.lotodom');
+    Route::view('/bi/delta', 'bi.plataforma', ['plataforma' => 'Delta'])
+        ->middleware('role_or_permission:superadmin|admin|module.bi.item.delta.view')
+        ->name('bi.delta');
+
     Route::get('/procesos', [ModuleHubController::class, 'procesos'])->name('procesos.index');
     Route::get('/procesos/{departamento}', [ProcesoController::class, 'departamento'])->name('procesos.departamento');
     Route::post('/procesos/protocolo', [ProcesoController::class, 'guardarProtocolo'])->name('procesos.guardarProtocolo');
@@ -121,11 +160,13 @@ Route::middleware('auth')->group(function () {
             Route::delete('/electricidad/averias-dia/{id}', [ContabilidadElectricidadController::class, 'destroyAveriasDia'])->name('electricidad.averias-dia.destroy');
             Route::view('/centro-costo', 'contabilidad.centro-costo')->name('centro-costo');
             Route::view('/movimiento-mayor', 'contabilidad.movimiento-mayor')->name('movimiento-mayor');
-            Route::get('/cuentas-cobrar-faltantes', [ContabilidadCuentasCobrarFaltantesController::class, 'index'])->name('cuentas-cobrar-faltantes');
-            Route::get('/cuentas-cobrar-faltantes/data', [ContabilidadCuentasCobrarFaltantesController::class, 'data'])->name('cuentas-cobrar-faltantes.data');
-            Route::get('/cuentas-cobrar-faltantes/detalle', [ContabilidadCuentasCobrarFaltantesController::class, 'detalle'])->name('cuentas-cobrar-faltantes.detalle');
-            Route::get('/cuentas-cobrar-faltantes/faltantes', [ContabilidadCuentasCobrarFaltantesController::class, 'faltantes'])->name('cuentas-cobrar-faltantes.faltantes');
-            Route::get('/cuentas-cobrar-faltantes/abonos', [ContabilidadCuentasCobrarFaltantesController::class, 'abonos'])->name('cuentas-cobrar-faltantes.abonos');
+            Route::middleware('role_or_permission:superadmin|admin|module.contabilidad.item.cxc_faltantes.view')->group(function () {
+                Route::get('/cuentas-cobrar-faltantes', [ContabilidadCuentasCobrarFaltantesController::class, 'index'])->name('cuentas-cobrar-faltantes');
+                Route::get('/cuentas-cobrar-faltantes/data', [ContabilidadCuentasCobrarFaltantesController::class, 'data'])->name('cuentas-cobrar-faltantes.data');
+                Route::get('/cuentas-cobrar-faltantes/detalle', [ContabilidadCuentasCobrarFaltantesController::class, 'detalle'])->name('cuentas-cobrar-faltantes.detalle');
+                Route::get('/cuentas-cobrar-faltantes/faltantes', [ContabilidadCuentasCobrarFaltantesController::class, 'faltantes'])->name('cuentas-cobrar-faltantes.faltantes');
+                Route::get('/cuentas-cobrar-faltantes/abonos', [ContabilidadCuentasCobrarFaltantesController::class, 'abonos'])->name('cuentas-cobrar-faltantes.abonos');
+            });
             Route::view('/reportes/comisiones', 'contabilidad.reportes.comisiones')->name('reportes.comisiones');
             Route::get('/reportes/estado-resultado', [ContabilidadEstadoResultadoController::class, 'index'])->name('reportes.estado-resultado');
             Route::get('/reportes/estado-resultado/meta', [ContabilidadEstadoResultadoController::class, 'meta'])->name('reportes.estado-resultado.meta');
@@ -181,6 +222,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/ventas-producto-lotobet', [VentasProductosController::class, 'getVentasProductosLotobet']);
         Route::get('/save-ventas-producto-lotobet', [VentasProductosController::class, 'saveVentasProductosLotobet']);
         Route::get('/delete-ventas-producto-lotobet', [VentasProductosController::class, 'deleteVentasProductosLotobet']);
+
+        Route::get('/generar-ds-virtual', [VentasDsVirtualController::class, 'generate'])->name('ventas-ds-virtual.generate');
 
         Route::prefix('ventas-ds-virtual')->name('ventas-ds-virtual.')->controller(VentasDsVirtualController::class)->group(function () {
             Route::get('/', 'index')->name('index');
@@ -272,6 +315,39 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('role_or_permission:superadmin|admin|module.recursos_humanos.view')->group(function () {
         Route::get('/recursos-humanos', [RecursosHumanosController::class, 'index'])->name('recursos-humanos.index');
+        Route::prefix('recursos-humanos/agencias-sin-actividad')->name('recursos-humanos.agencias-sin-actividad.')->controller(AgenciaSinActividadController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/data', 'data')->name('data');
+            Route::get('/opciones', 'options')->name('options');
+            Route::post('/motivo', 'storeReason')->name('motivo.store');
+            Route::get('/configuracion', 'configuration')->name('configuration');
+            Route::put('/configuracion', 'updateConfiguration')->name('configuration.update');
+        });
+        Route::prefix('recursos-humanos/movimiento-usuario')->name('recursos-humanos.movimiento-usuario.')->controller(MovimientoUsuarioController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/empleado', 'employee')->name('employee');
+            Route::get('/listado', 'list')->name('list');
+            Route::post('/', 'store')->name('store');
+        });
+        Route::prefix('recursos-humanos/nuevos-ingresos')->name('recursos-humanos.nuevos-ingresos.')->controller(NuevoIngresoController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/data', 'data')->name('data');
+            Route::get('/configuracion', 'configuration')->name('configuration');
+            Route::put('/configuracion', 'updateConfiguration')->name('configuration.update');
+        });
+        Route::prefix('recursos-humanos/cruce-usuarios')->name('recursos-humanos.cruce-usuarios.')->controller(ReporteController::class)->group(function () {
+            Route::get('/', 'cruceUsuarios')->name('index');
+            Route::get('/list', 'listCruceUsuarios')->name('list');
+            Route::get('/sin-cedula-fechas', 'listCruceUsuariosSinCedulaFechas')->name('sin-cedula-fechas');
+        });
+        Route::prefix('recursos-humanos/faltantes')->name('recursos-humanos.faltantes.')->controller(ReporteController::class)->group(function () {
+            Route::get('/', 'faltantesBet')->name('index');
+            Route::get('/list', 'listFaltantesBet')->name('list');
+            Route::get('/excel', 'excelFaltantesBet')->name('excel');
+            Route::get('/pdf', 'pdfFaltantesBet')->name('pdf');
+            Route::get('/configuracion-alerta', 'configuracionAlertaFaltantes')->name('configuracion-alerta');
+            Route::put('/configuracion-alerta', 'guardarConfiguracionAlertaFaltantes')->name('configuracion-alerta.update');
+        });
         Route::get('/empleados', [EmpleadoController::class, 'index']);
         Route::get('/empleados/list', [EmpleadoController::class, 'list']);
         Route::get('/empleados/dashboard', [EmpleadoController::class, 'dashboard']);
@@ -283,6 +359,12 @@ Route::middleware('auth')->group(function () {
             ->name('recursos-humanos.novedades-horario.index');
         Route::get('/recursos-humanos/novedades-horario/list', [NovedadHorarioController::class, 'list'])
             ->name('recursos-humanos.novedades-horario.list');
+        Route::get('/recursos-humanos/novedades-horario/export', [NovedadHorarioController::class, 'export'])
+            ->name('recursos-humanos.novedades-horario.export');
+        Route::get('/recursos-humanos/novedades-horario/export-pago', [NovedadHorarioController::class, 'exportPago'])
+            ->name('recursos-humanos.novedades-horario.export-pago');
+        Route::get('/recursos-humanos/novedades-horario/detalle', [NovedadHorarioController::class, 'detalle'])
+            ->name('recursos-humanos.novedades-horario.detalle');
 
         Route::prefix('entrevistas-online')->name('entrevistas-online.')->group(function () {
             Route::get('/', [EntrevistaOnlineController::class, 'index'])->name('index');
@@ -301,6 +383,19 @@ Route::middleware('auth')->group(function () {
         Route::resource('registro-empleados', RegistroEmpleadoController::class);
     });
 
+    Route::redirect('/reportes-cruce-usuarios', '/recursos-humanos/cruce-usuarios');
+    Route::redirect('/reportes-cruce-usuarios/list', '/recursos-humanos/cruce-usuarios/list');
+    Route::redirect('/reportes-cruce-usuarios/sin-cedula-fechas', '/recursos-humanos/cruce-usuarios/sin-cedula-fechas');
+    Route::redirect('/reportes-faltantes-lotobet', '/recursos-humanos/faltantes');
+    Route::redirect('/reportes-faltantes-lotobet/list', '/recursos-humanos/faltantes/list');
+    Route::redirect('/reportes-faltantes-lotobet/excel', '/recursos-humanos/faltantes/excel');
+    Route::redirect('/reportes-faltantes-lotobet/pdf', '/recursos-humanos/faltantes/pdf');
+    Route::redirect('/reportes-faltantes-lotobet/configuracion-alerta', '/recursos-humanos/faltantes/configuracion-alerta');
+    Route::redirect('/reportes-faltantes-bet', '/recursos-humanos/faltantes');
+    Route::redirect('/reportes-faltantes-bet/list', '/recursos-humanos/faltantes/list');
+    Route::redirect('/reportes-faltantes-bet/excel', '/recursos-humanos/faltantes/excel');
+    Route::redirect('/reportes-faltantes-bet/pdf', '/recursos-humanos/faltantes/pdf');
+
     Route::middleware('role_or_permission:superadmin|admin|module.reportes.view')->group(function () {
         Route::get('/reportes', [ReporteController::class, 'indexReportes'])->name('reportes.index');
 
@@ -314,16 +409,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/reportes-ventas-usuario-bet/excel', [ReporteController::class, 'excelVentasUsuarioBet']);
         Route::get('/reportes-ventas-usuario-bet/pdf', [ReporteController::class, 'pdfVentasUsuarioBet']);
 
-        Route::get('/reportes-faltantes-lotobet', [ReporteController::class, 'faltantesBet']);
-        Route::get('/reportes-faltantes-lotobet/list', [ReporteController::class, 'listFaltantesBet']);
-        Route::get('/reportes-faltantes-lotobet/excel', [ReporteController::class, 'excelFaltantesBet']);
-        Route::get('/reportes-faltantes-lotobet/pdf', [ReporteController::class, 'pdfFaltantesBet']);
-
-        Route::get('/reportes-faltantes-bet', [ReporteController::class, 'faltantesBet']);
-        Route::get('/reportes-faltantes-bet/list', [ReporteController::class, 'listFaltantesBet']);
-        Route::get('/reportes-faltantes-bet/excel', [ReporteController::class, 'excelFaltantesBet']);
-        Route::get('/reportes-faltantes-bet/pdf', [ReporteController::class, 'pdfFaltantesBet']);
-
         Route::get('/reportes-cuadre-ventas', [ReporteController::class, 'cuadreVentas']);
         Route::get('/reportes-cuadre-ventas/list', [ReporteController::class, 'listCuadreVentas']);
 
@@ -336,10 +421,6 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/reportes-ventas-por-cedula', [ReporteController::class, 'ventasPorCedula']);
         Route::get('/reportes-ventas-por-cedula/list', [ReporteController::class, 'listVentasPorCedula']);
-
-        Route::get('/reportes-cruce-usuarios', [ReporteController::class, 'cruceUsuarios']);
-        Route::get('/reportes-cruce-usuarios/list', [ReporteController::class, 'listCruceUsuarios']);
-        Route::get('/reportes-cruce-usuarios/sin-cedula-fechas', [ReporteController::class, 'listCruceUsuariosSinCedulaFechas']);
 
         Route::get('/reportes-compensacion', [ReporteController::class, 'compensacion']);
         Route::get('/reportes-compensacion/list', [ReporteController::class, 'listCompensacion']);
@@ -603,7 +684,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('agencias-delta', AgenciaDeltaController::class)
             ->except(['show'])
             ->names('agencias-delta')
-            ->parameters(['agencias-delta' => 'agenciaLotedom']);
+            ->parameters(['agencias-delta' => 'agenciaDelta']);
         Route::get('agencias-delta-list', [AgenciaDeltaController::class, 'list'])->name('agencias-delta.list');
         Route::get('agencias-delta-export', [AgenciaDeltaController::class, 'export'])->name('agencias-delta.export');
         Route::post('agencias-delta-import', [AgenciaDeltaController::class, 'import'])->name('agencias-delta.import');

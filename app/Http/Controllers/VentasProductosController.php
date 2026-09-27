@@ -39,7 +39,7 @@ class VentasProductosController extends Controller
         try {
             $ventas = app(LotobetSessionService::class)->getVentasProducto($fecha);
             $contenido = $ventas['Content'] ?? [];
-            if (!is_array($contenido)) {
+            if (! is_array($contenido)) {
                 $contenido = [];
             }
         } catch (\Throwable $e) {
@@ -62,6 +62,7 @@ class VentasProductosController extends Controller
             }
 
             $sinCeros = ltrim($raw, '0');
+
             return $sinCeros === '' ? '0' : $sinCeros;
         };
 
@@ -114,7 +115,7 @@ class VentasProductosController extends Controller
                 'estatus' => (int) ($agencia->estatus ?? 0),
             ];
 
-            if (!isset($agenciasByTerminal[$terminalNormalizada])) {
+            if (! isset($agenciasByTerminal[$terminalNormalizada])) {
                 $agenciasByTerminal[$terminalNormalizada] = $agenciaData;
             }
 
@@ -124,7 +125,7 @@ class VentasProductosController extends Controller
                 continue;
             }
 
-            if (!isset($agenciasActivasByTerminal[$terminalNormalizada])) {
+            if (! isset($agenciasActivasByTerminal[$terminalNormalizada])) {
                 $agenciasActivasByTerminal[$terminalNormalizada] = [
                     'agencia' => trim((string) ($agencia->agencia ?? '')),
                     'nombre_agencia' => trim((string) ($agencia->nombre_agencia ?? '')),
@@ -154,7 +155,7 @@ class VentasProductosController extends Controller
                 continue;
             }
 
-            if (!isset($terminalesNoRegistradasMap[$terminalNormalizada])) {
+            if (! isset($terminalesNoRegistradasMap[$terminalNormalizada])) {
                 $terminalesNoRegistradasMap[$terminalNormalizada] = $terminalRaw;
             }
         }
@@ -281,7 +282,7 @@ class VentasProductosController extends Controller
 
         $apiResult = $this->fetchVentasProductosLotedomApi($fecha);
 
-        if (!$apiResult['ok']) {
+        if (! $apiResult['ok']) {
             return response()->json([
                 'ventas' => [],
                 'code' => 1,
@@ -314,12 +315,12 @@ class VentasProductosController extends Controller
         $existe = VtProductoNet::whereDate('fecha', $fecha)->exists();
 
         if ($existe) {
-            return response()->json(['message' => 'Ya hay data guardada en la fecha: ' . $fecha]);
+            return response()->json(['message' => 'Ya hay data guardada en la fecha: '.$fecha]);
         }
 
         $apiResult = $this->fetchVentasProductosLotedomApi($fecha);
 
-        if (!$apiResult['ok']) {
+        if (! $apiResult['ok']) {
             return response()->json([
                 'error' => $apiResult['message'],
             ], $apiResult['status']);
@@ -330,15 +331,15 @@ class VentasProductosController extends Controller
             $apiResult['data']
         );
 
-        if (!empty($data)) {
+        if (! empty($data)) {
             foreach (array_chunk($data, 5000) as $chunk) {
                 DB::table('ventas_producto_net')->insert($chunk);
             }
         }
 
         return response()->json([
-            'message' => 'Datos guardados correctamente. Total insertados: ' . count($data),
-            'total' => count($data)
+            'message' => 'Datos guardados correctamente. Total insertados: '.count($data),
+            'total' => count($data),
         ]);
     }
 
@@ -346,7 +347,7 @@ class VentasProductosController extends Controller
     {
         $token = Token::find(self::LOTEDOM_TOKEN_ID);
 
-        if (!$token || empty($token->token)) {
+        if (! $token || empty($token->token)) {
             return [
                 'ok' => false,
                 'status' => 404,
@@ -355,7 +356,7 @@ class VentasProductosController extends Controller
             ];
         }
 
-        if (!empty($token->fecha) && now()->greaterThan(Carbon::parse($token->fecha))) {
+        if (! empty($token->fecha) && now()->greaterThan(Carbon::parse($token->fecha))) {
             return [
                 'ok' => false,
                 'status' => 401,
@@ -366,7 +367,7 @@ class VentasProductosController extends Controller
 
         $curl = curl_init();
 
-        curl_setopt_array($curl, array(
+        curl_setopt_array($curl, [
             CURLOPT_URL => "https://lotedom-api.orkapi.net/api/finan/ventas/{$fecha}",
             CURLOPT_PROXY => '',
             CURLOPT_NOPROXY => '*',
@@ -380,12 +381,12 @@ class VentasProductosController extends Controller
             CURLOPT_CUSTOMREQUEST => 'GET',
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_SSL_VERIFYPEER => 0,
-            CURLOPT_HTTPHEADER => array(
-                'token: ' . $token->token,
+            CURLOPT_HTTPHEADER => [
+                'token: '.$token->token,
                 'Content-Type: application/json',
-                'Cookie: _orkapi_session=41Rb84eiSXPUY%2B%2BsGWuZYW7NPs8KCdPfTK2kKFavRpqbz%2B4V6%2F9kIB9sGvSv%2BvxgIh5z09VulnwhGdWrBeeY6gRzgz9hx19936rO4rSzYcx%2Bi7Q2uvcY%2Fxp1yikmFfAhe%2FHPl7EhQhSZtNrrwyAcnJlUSKR2sPzhMqJCnp%2BH1NPoKBce%2BuJsJWrosCAJwBqPj8mJNhA0Kh%2BFeTDDSmRRI7TCMuEzjbKVER49RZ0TItuNypHToFacRQNi%2B8kD0QCOUvZA9Y2E7zFuGV7x7yfw2zTC3%2FQIvuLrC%2FuiuXx5Iw%3D%3D--L7iC0pRfgG8W4Qor--swcVaBH4o3N%2BE7IIf4VF%2BQ%3D%3D',
-            ),
-        ));
+                'Cookie: _orkapi_session=UPuVjD2LH%2BZZ1CpfW2921%2FwHMJLBoFGG9OmHhK2n3OfRsN7c1a87%2FUsSgdDsQ9JmuUaj4EdbqBQ2WQWiGcdyeogJOR9c17SFqXCFyPAa6M%2Fivx48eLNQswNJ9G5FZGMC36Lb7q3mIJ6E8GtDwmri2lwIdfukVz9cEFkjEBRuNbzwkVe7a0HwO0hiGU5wqN%2FlfBwL%2B4s9eiYiwhXtVzcSZ9iPU0wzMsLj0%2BlVJ9ULchP1VFdcFTAl14kII1XM67iTcOAGeNCSnrD65Ga0JPUW5zUxNgc%2Fuy7OmzE1SHyj%2Bg%3D%3D--%2FR4xNVnQBHDNmn0t--QUFBKpOoQas0rF0N73LLIg%3D%3D',
+            ],
+        ]);
 
         $response = curl_exec($curl);
         $curlError = curl_error($curl);
@@ -404,7 +405,7 @@ class VentasProductosController extends Controller
 
         $ventas = json_decode($response, true);
 
-        if (!is_array($ventas)) {
+        if (! is_array($ventas)) {
             return [
                 'ok' => false,
                 'status' => 502,
@@ -428,12 +429,12 @@ class VentasProductosController extends Controller
             ?? data_get($ventas, 'Content')
             ?? [];
 
-        if (!is_array($data)) {
+        if (! is_array($data)) {
             $data = [];
         }
 
         $data = array_map(function ($row) {
-            if (!is_array($row)) {
+            if (! is_array($row)) {
                 return [];
             }
 
@@ -457,6 +458,7 @@ class VentasProductosController extends Controller
             'data' => $data,
         ];
     }
+
     public function deleteVentasProductosLotedom(Request $request)
     {
         header('Content-Type: application/json');

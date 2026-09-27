@@ -458,14 +458,7 @@ class Api extends Controller
         $summary = (clone $query)
             ->selectRaw('COUNT(*) as registros, COALESCE(SUM(debito), 0) as debito, COALESCE(SUM(credito), 0) as credito')
             ->first();
-        $hasNarrowFilter = $validated['cuenta'] !== ''
-            || $validated['centro_costo'] !== ''
-            || $validated['no_asiento'] !== ''
-            || $validated['id_viejo'] !== ''
-            || $buscar !== '';
-        $defaultLimit = $hasNarrowFilter ? 50000 : 5000;
-        $maxLimit = $hasNarrowFilter ? 100000 : 10000;
-        $limit = max(1, min((int) $request->query('limit', $defaultLimit), $maxLimit));
+        $limit = max(1, min((int) $request->query('limit', 500), 500));
 
         $items = $query
             ->orderBy('fecha')
@@ -541,6 +534,7 @@ class Api extends Controller
             return response()->json([
                 'message' => $result['message'],
                 'status' => $result['status'] ?? null,
+                'external_status' => $result['external_status'] ?? null,
                 'error' => $result['error'] ?? null,
             ], $result['status'] ?? 500);
         }
@@ -1516,11 +1510,9 @@ class Api extends Controller
         ];
     }
 
-    private function fetchEntradasDiarioByDate(string $empresa, string $fecha): array
+    protected function fetchEntradasDiarioByDate(string $empresa, string $fecha): array
     {
-        $url = 'https://apisj.azurewebsites.net/ApiSJ/EntradaDiario/Listar?strToken='.urlencode(self::CONTABILIDAD_TOKEN)
-            .'&intIdEmpresa='.urlencode($empresa)
-            .'&dtFecha='.urlencode($fecha);
+        $url = $this->buildEntradasDiarioUrl($empresa, $fecha);
 
         $curl = curl_init();
         curl_setopt_array($curl, [
@@ -1533,7 +1525,7 @@ class Api extends Controller
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'POST',
             CURLOPT_HTTPHEADER => [
-                'Accept: application/text',
+                'Accept: application/json',
             ],
             CURLOPT_PROXY => '',
             CURLOPT_NOPROXY => '*',
@@ -1560,10 +1552,22 @@ class Api extends Controller
         curl_close($curl);
 
         if ($httpCode < 200 || $httpCode >= 300) {
+            $responsePreview = mb_substr(trim((string) $response), 0, 500);
+
+            Log::warning('La API externa de entradas de diario respondio con error.', [
+                'empresa' => $empresa,
+                'fecha' => $fecha,
+                'http_code' => $httpCode,
+                'response_preview' => $responsePreview,
+            ]);
+
             return [
                 'ok' => false,
-                'message' => "La API externa de entradas de diario respondio con error. Empresa {$empresa}, fecha {$fecha}.",
+                'message' => in_array($httpCode, [401, 403], true)
+                    ? 'El token configurado no tiene autorizacion para consultar entradas de diario. Contacta al administrador de ApiSJ.'
+                    : "La API externa de entradas de diario respondio con error. Empresa {$empresa}, fecha {$fecha}.",
                 'status' => 502,
+                'external_status' => $httpCode,
                 'items' => [],
             ];
         }
@@ -1601,6 +1605,15 @@ class Api extends Controller
             'items' => $this->extractExternalEntradasDiario($decoded),
             'status' => 200,
         ];
+    }
+
+    protected function buildEntradasDiarioUrl(string $empresa, string $fecha): string
+    {
+        return 'https://apisj.azurewebsites.net/fe/ApiSJ/api/EntradasDiario?'.http_build_query([
+            'strToken' => self::CONTABILIDAD_TOKEN,
+            'intIdEmpresa' => $empresa,
+            'dtFecha' => $fecha,
+        ]);
     }
 
     private function extractExternalEntradasDiario(array $payload): array

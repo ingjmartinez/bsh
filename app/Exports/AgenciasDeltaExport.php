@@ -2,25 +2,19 @@
 
 namespace App\Exports;
 
-use App\Models\AgenciaLotedom;
+use App\Models\AgenciaDelta;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class AgenciasDeltaExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
+class AgenciasDeltaExport implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithStyles
 {
     public function collection()
     {
-        return AgenciaLotedom::query()
-            ->where(function ($query) {
-                $query
-                    ->whereRaw('LOWER(COALESCE(sistema, "")) LIKE ?', ['%delta%'])
-                    ->orWhereRaw('LOWER(COALESCE(empresa, "")) LIKE ?', ['%delta%']);
-            })
-            ->get();
+        return AgenciaDelta::query()->get();
     }
 
     public function headings(): array
@@ -38,6 +32,10 @@ class AgenciasDeltaExport implements FromCollection, WithHeadings, WithMapping, 
             'Ruta',
             'Operador',
             'Coordinador',
+            'Grupo',
+            'Central',
+            'Gerente de Servicio',
+            'Tipo de Pago',
             'Estatus',
             'Aplica Incentivo',
             'Fecha Creación',
@@ -60,6 +58,10 @@ class AgenciasDeltaExport implements FromCollection, WithHeadings, WithMapping, 
             $agencia->ruta,
             $agencia->operador,
             $agencia->coordinador,
+            $agencia->grupo,
+            $agencia->central,
+            $agencia->gerente_de_servicio,
+            $agencia->tipo_pago,
             (int) ($agencia->estatus ?? 1) === 1 ? 'ACTIVO' : 'INACTIVO',
             $agencia->aplica_incentivo ? 'SI' : 'NO',
             $agencia->created_at ? $agencia->created_at->format('Y-m-d H:i:s') : '',

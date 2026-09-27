@@ -4,13 +4,13 @@ namespace App\Exports;
 
 use App\Models\Agencia;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class AgenciasExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
+class AgenciasExport implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithStyles
 {
     public function collection()
     {
@@ -32,6 +32,10 @@ class AgenciasExport implements FromCollection, WithHeadings, WithMapping, Shoul
             'Ruta',
             'Operador',
             'Coordinador',
+            'Grupo',
+            'Central',
+            'Gerente de Servicio',
+            'Tipo de Pago',
             'Estatus',
             'Aplica Incentivo',
             'Fecha Creación',
@@ -54,6 +58,10 @@ class AgenciasExport implements FromCollection, WithHeadings, WithMapping, Shoul
             $agencia->ruta,
             $agencia->operador,
             $agencia->coordinador,
+            $agencia->grupo,
+            $agencia->central,
+            $agencia->gerente_de_servicio,
+            $agencia->tipo_pago,
             (int) ($agencia->estatus ?? 1) === 1 ? 'ACTIVO' : 'INACTIVO',
             $agencia->aplica_incentivo ? 'SI' : 'NO',
             $agencia->created_at ? $agencia->created_at->format('Y-m-d H:i:s') : '',

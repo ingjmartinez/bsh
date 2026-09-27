@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Token;
 use App\Models\Recarga;
 use App\Models\RecargaNet;
+use App\Models\Token;
 use App\Support\LotedomRowMapper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +18,8 @@ class RecargasController extends Controller
         header('Content-Type: application/json');
 
         $fecha = $request->query('fecha');
-        if (!$this->isValidDate($fecha)) {
+
+        if (! $this->isValidDate($fecha)) {
             return response()->json(['recargas' => [], 'code' => 1, 'message' => 'Fecha invalida'], 422);
         }
 
@@ -38,14 +39,14 @@ class RecargasController extends Controller
         header('Content-Type: application/json');
 
         $fecha = $request->query('fecha');
-        if (!$this->isValidDate($fecha)) {
+        if (! $this->isValidDate($fecha)) {
             return response()->json(['message' => 'Fecha invalida', 'total' => 0], 422);
         }
 
         $existe = Recarga::whereDate('fecha', $fecha)->exists();
 
         if ($existe) {
-            return response()->json(['message' => 'Ya hay data guardada en la fecha: ' . $fecha]);
+            return response()->json(['message' => 'Ya hay data guardada en la fecha: '.$fecha]);
         }
 
         $data = array_map(
@@ -53,15 +54,15 @@ class RecargasController extends Controller
             $this->fetchRecargasLotedom($fecha)
         );
 
-        if (!empty($data)) {
+        if (! empty($data)) {
             foreach (array_chunk($data, 5000) as $chunk) {
                 DB::table('recargas_bet')->insert($chunk);
             }
         }
 
         return response()->json([
-            'message' => 'Datos guardados correctamente. Total insertados: ' . count($data),
-            'total' => count($data)
+            'message' => 'Datos guardados correctamente. Total insertados: '.count($data),
+            'total' => count($data),
         ]);
     }
 
@@ -83,7 +84,7 @@ class RecargasController extends Controller
         $curl = curl_init();
         $headers = $this->lotedomSessionHeaders();
 
-        curl_setopt_array($curl, array(
+        curl_setopt_array($curl, [
             CURLOPT_URL => "https://lotedom-api.orkapi.net/api/finan/ventas_recarga/{$fecha}",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
@@ -98,7 +99,7 @@ class RecargasController extends Controller
             CURLOPT_HTTPHEADER => $headers,
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_SSL_VERIFYPEER => 0,
-        ));
+        ]);
 
         $response = curl_exec($curl);
         $error = curl_error($curl);
@@ -113,7 +114,7 @@ class RecargasController extends Controller
         }
 
         $items = json_decode($response, true);
-        if (!is_array($items)) {
+        if (! is_array($items)) {
             abort(response()->json([
                 'recargas' => [],
                 'code' => 1,
@@ -132,7 +133,7 @@ class RecargasController extends Controller
     {
         $curl = curl_init();
 
-        curl_setopt_array($curl, array(
+        curl_setopt_array($curl, [
             CURLOPT_URL => 'https://lotedom-api.orkapi.net/api/finan/sessions',
             CURLOPT_PROXY => '',
             CURLOPT_NOPROXY => '*',
@@ -153,10 +154,10 @@ class RecargasController extends Controller
                     'password' => 'P4@23498sd$$+',
                 ],
             ]),
-            CURLOPT_HTTPHEADER => array(
+            CURLOPT_HTTPHEADER => [
                 'Content-Type: application/json',
-            ),
-        ));
+            ],
+        ]);
 
         $response = curl_exec($curl);
         $error = curl_error($curl);
@@ -184,11 +185,11 @@ class RecargasController extends Controller
         preg_match_all('/^Set-Cookie:\s*([^;]+)/mi', $rawHeaders, $matches);
         $cookie = implode('; ', $matches[1] ?? []);
 
-        if (!is_string($token) || trim($token) === '' || $cookie === '') {
+        if (! is_string($token) || trim($token) === '' || $cookie === '') {
             abort(response()->json([
                 'recargas' => [],
                 'code' => 1,
-                'message' => 'No se pudo autenticar Lotedom para recargas' . ($httpCode > 0 ? " (HTTP {$httpCode})" : ''),
+                'message' => 'No se pudo autenticar Lotedom para recargas'.($httpCode > 0 ? " (HTTP {$httpCode})" : ''),
             ], $httpCode >= 400 ? $httpCode : 502));
         }
 
@@ -198,8 +199,8 @@ class RecargasController extends Controller
         ]);
 
         return [
-            'token: ' . trim($token),
-            'Cookie: ' . $cookie,
+            'token: '.trim($token),
+            'Cookie: '.$cookie,
         ];
     }
 
@@ -280,10 +281,15 @@ class RecargasController extends Controller
 
         $fecha = $request->query('fecha');
 
-        $curl = curl_init();
+        if (! $this->isValidDate($fecha)) {
+            return response()->json(['recargas' => [], 'code' => 1, 'message' => 'Fecha invalida'], 422);
+        }
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => "http://contable.apploteka.com/api/finan/ventas_recarga/{$fecha}/5",
+        $curl = curl_init();
+        $headers = $this->lotedomSessionHeaders();
+
+        curl_setopt_array($curl, [
+            CURLOPT_URL => "https://lotedom-api.orkapi.net/api/finan/ventas_recarga/{$fecha}",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -291,33 +297,47 @@ class RecargasController extends Controller
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_POSTFIELDS => '{
-            "usuario": {
-                "username": "fcolombo",
-                "password": "RUHTe9t9ZEUzHsyT"
-            }
-            }',
-            CURLOPT_HTTPHEADER => array(
-                'token: ZFozLWdBYyqERusVdTsW',
-                'Content-Type: application/json',
-                'Cookie: _orkapi_session=QkViaFBzMmJPTEU0U3YxWEEyd0k4eVZuR2RkTFV2bktWY0srZ2NyaWc1Y2J1eGhhdTRxZXZ3VDByTG9vT3VFL0ZpTlNvalgzK3dOcG5EZGNHTDAxbE5OMGU3dUFzaHYxYVlkSzhFc241eE52YXpaaHNOcmFtbUVPdnVTSUZ1L1A3UEVoSDhtV3QvUVZJUy9USU45WUU4OU03SUUxZ0JjQXNVUFBRY2Z6VlFRPS0tc1ZQNDA1NExkWldOTDluU2lLVzhLdz09--384f330e993c1c076f324f7ed51ee9439ccf2a85'
-            ),
-        ));
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_SSL_VERIFYPEER => 0,
+            CURLOPT_HTTPHEADER => $headers,
+        ]);
 
         $response = curl_exec($curl);
+        $curlError = curl_error($curl);
+        $httpCode = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
         curl_close($curl);
 
+        if ($response === false || $curlError !== '') {
+            return response()->json([
+                'recargas' => [],
+                'code' => 1,
+                'message' => $curlError !== '' ? $curlError : 'No se pudo consultar recargas Lotedom.',
+            ], 502);
+        }
+
         $items = json_decode($response, true);
+
+        if (! is_array($items)) {
+            return response()->json([
+                'recargas' => [],
+                'code' => 1,
+                'message' => "La API de recargas Lotedom devolvio una respuesta invalida (HTTP {$httpCode}).",
+            ], 502);
+        }
 
         $data = $items['data']['result'] ?? [];
 
         foreach ($data as &$v) {
-            $v['identificacion'] = str_replace('-', '', $v['identificacion']);
+            $v['identificacion'] = str_replace('-', '', (string) ($v['identificacion'] ?? ''));
         }
         unset($v); // 🔹 Importante: liberar la referencia
 
-        return response()->json(['recargas' => $data, 'code' => $items['code'], 'message' => '']);
+        return response()->json([
+            'recargas' => $data,
+            'code' => (int) ($items['code'] ?? 0),
+            'message' => (string) ($items['message'] ?? ''),
+        ]);
     }
 
     public function saveRecargasLotedom(Request $request)
@@ -331,14 +351,20 @@ class RecargasController extends Controller
 
         $fecha = $request->query('fecha');
 
+        if (! $this->isValidDate($fecha)) {
+            return response()->json(['message' => 'Fecha invalida', 'total' => 0], 422);
+        }
+
+        $headers = $this->lotedomSessionHeaders();
+
         $existe = RecargaNet::whereDate('fecha', $fecha)->exists();
 
         if ($existe) {
-            return response()->json(['message' => 'Ya hay data guardada en la fecha: ' . $fecha]);
+            return response()->json(['message' => 'Ya hay data guardada en la fecha: '.$fecha]);
         }
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => "http://contable.apploteka.com/api/finan/ventas_recarga/{$fecha}/5",
+        curl_setopt_array($curl, [
+            CURLOPT_URL => "https://lotedom-api.orkapi.net/api/finan/ventas_recarga/{$fecha}",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -346,39 +372,47 @@ class RecargasController extends Controller
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_POSTFIELDS => '{
-            "usuario": {
-                "username": "fcolombo",
-                "password": "RUHTe9t9ZEUzHsyT"
-            }
-            }',
-            CURLOPT_HTTPHEADER => array(
-                'token: ZFozLWdBYyqERusVdTsW',
-                'Content-Type: application/json',
-                'Cookie: _orkapi_session=QkViaFBzMmJPTEU0U3YxWEEyd0k4eVZuR2RkTFV2bktWY0srZ2NyaWc1Y2J1eGhhdTRxZXZ3VDByTG9vT3VFL0ZpTlNvalgzK3dOcG5EZGNHTDAxbE5OMGU3dUFzaHYxYVlkSzhFc241eE52YXpaaHNOcmFtbUVPdnVTSUZ1L1A3UEVoSDhtV3QvUVZJUy9USU45WUU4OU03SUUxZ0JjQXNVUFBRY2Z6VlFRPS0tc1ZQNDA1NExkWldOTDluU2lLVzhLdz09--384f330e993c1c076f324f7ed51ee9439ccf2a85'
-            ),
-        ));
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_SSL_VERIFYPEER => 0,
+            CURLOPT_HTTPHEADER => $headers,
+        ]);
 
         $response = curl_exec($curl);
+        $curlError = curl_error($curl);
+        $httpCode = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
         curl_close($curl);
 
+        if ($response === false || $curlError !== '') {
+            return response()->json([
+                'message' => $curlError !== '' ? $curlError : 'No se pudo consultar recargas Lotedom.',
+                'total' => 0,
+            ], 502);
+        }
+
         $items = json_decode($response, true);
+
+        if (! is_array($items)) {
+            return response()->json([
+                'message' => "La API de recargas Lotedom devolvio una respuesta invalida (HTTP {$httpCode}).",
+                'total' => 0,
+            ], 502);
+        }
 
         $data = array_map(
             fn (array $row): array => LotedomRowMapper::recarga($row, $fecha),
             $items['data']['result'] ?? []
         );
 
-        if (!empty($data)) {
+        if (! empty($data)) {
             foreach (array_chunk($data, 5000) as $chunk) {
                 DB::table('recargas_net')->insert($chunk);
             }
         }
 
         return response()->json([
-            'message' => 'Datos guardados correctamente. Total insertados: ' . count($data),
-            'total' => count($data)
+            'message' => 'Datos guardados correctamente. Total insertados: '.count($data),
+            'total' => count($data),
         ]);
     }
 

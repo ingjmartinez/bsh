@@ -15,6 +15,11 @@ class VentasDsVirtualController extends Controller
 
     public function index(): View
     {
+        return view('lotobet.ventas-ds-virtual-listado');
+    }
+
+    public function generate(): View
+    {
         return view('lotobet.ventas-ds-virtual');
     }
 

@@ -2,42 +2,39 @@
 
 namespace App\Imports;
 
-use App\Models\AgenciaLotedom;
+use App\Models\AgenciaDelta;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
 
-class AgenciasDeltaImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyRows
+class AgenciasDeltaImport implements SkipsEmptyRows, ToModel, WithHeadingRow, WithValidation
 {
     public int $importadas = 0;
+
     public int $omitidasExistentes = 0;
+
     public int $omitidasDuplicadasArchivo = 0;
+
     public int $omitidasSinTerminal = 0;
 
     private array $terminalesExistentes = [];
+
     private array $terminalesArchivo = [];
 
     public function __construct()
     {
-        $this->terminalesExistentes = AgenciaLotedom::query()
-            ->where(function ($query) {
-                $query
-                    ->whereRaw('LOWER(COALESCE(sistema, "")) LIKE ?', ['%delta%'])
-                    ->orWhereRaw('LOWER(COALESCE(empresa, "")) LIKE ?', ['%delta%']);
-            })
+        $this->terminalesExistentes = AgenciaDelta::query()
             ->whereNotNull('terminal')
             ->pluck('terminal')
-            ->map(fn($terminal) => $this->normalizarTerminal((string) $terminal))
-            ->filter(fn($terminal) => $terminal !== '0')
+            ->map(fn ($terminal) => $this->normalizarTerminal((string) $terminal))
+            ->filter(fn ($terminal) => $terminal !== '0')
             ->unique()
             ->flip()
             ->all();
     }
 
     /**
-     * @param array $row
-     *
      * @return \Illuminate\Database\Eloquent\Model|null
      */
     public function model(array $row)
@@ -47,16 +44,19 @@ class AgenciasDeltaImport implements ToModel, WithHeadingRow, WithValidation, Sk
 
         if ($terminalKey === '0') {
             $this->omitidasSinTerminal++;
+
             return null;
         }
 
         if (isset($this->terminalesExistentes[$terminalKey])) {
             $this->omitidasExistentes++;
+
             return null;
         }
 
         if (isset($this->terminalesArchivo[$terminalKey])) {
             $this->omitidasDuplicadasArchivo++;
+
             return null;
         }
 
@@ -64,7 +64,7 @@ class AgenciasDeltaImport implements ToModel, WithHeadingRow, WithValidation, Sk
         $this->terminalesExistentes[$terminalKey] = true;
         $this->importadas++;
 
-        return new AgenciaLotedom([
+        return new AgenciaDelta([
             'agencia' => $this->valorTexto($row, ['agencia']),
             'codigo' => $this->valorTexto($row, ['agencia']),
             'nombre' => $this->valorTexto($row, ['nombre_agencia', 'nombre agencia']),
@@ -78,6 +78,10 @@ class AgenciasDeltaImport implements ToModel, WithHeadingRow, WithValidation, Sk
             'ruta' => $this->valorTexto($row, ['ruta']),
             'operador' => $this->valorTexto($row, ['operador']),
             'coordinador' => $this->valorTexto($row, ['coordinador']),
+            'grupo' => $this->valorTexto($row, ['grupo']),
+            'central' => $this->valorTexto($row, ['central']),
+            'gerente_de_servicio' => $this->valorTexto($row, ['gerente_de_servicio', 'gerente de servicio']),
+            'tipo_pago' => $this->valorTexto($row, ['tipo_pago', 'tipo pago']),
             'estatus' => $this->parseEstatus($this->valorColumna($row, ['estatus']) ?? 1),
             'aplica_incentivo' => $this->parseAplicaIncentivo($this->valorColumna($row, ['aplica_incentivo', 'aplica incentivo']) ?? 1),
         ]);
@@ -97,6 +101,10 @@ class AgenciasDeltaImport implements ToModel, WithHeadingRow, WithValidation, Sk
             'ruta' => 'nullable',
             'operador' => 'nullable',
             'coordinador' => 'nullable',
+            'grupo' => 'nullable',
+            'central' => 'nullable',
+            'gerente_de_servicio' => 'nullable',
+            'tipo_pago' => 'nullable',
             'estatus' => 'nullable',
             'aplica_incentivo' => 'nullable',
         ];
@@ -115,6 +123,7 @@ class AgenciasDeltaImport implements ToModel, WithHeadingRow, WithValidation, Sk
         }
 
         $texto = trim((string) $valor);
+
         return $texto === '' ? null : $texto;
     }
 
@@ -138,11 +147,12 @@ class AgenciasDeltaImport implements ToModel, WithHeadingRow, WithValidation, Sk
 
     private function normalizarTerminal(?string $terminal): string
     {
-        if (!$terminal) {
+        if (! $terminal) {
             return '0';
         }
 
         $valor = ltrim(trim($terminal), '0');
+
         return $valor === '' ? '0' : $valor;
     }
 

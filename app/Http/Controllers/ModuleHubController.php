@@ -14,6 +14,11 @@ class ModuleHubController extends Controller
         return $this->show('dashboard');
     }
 
+    public function bi(): View
+    {
+        return $this->show('bi');
+    }
+
     public function comercial(): View
     {
         return $this->show('comercial');

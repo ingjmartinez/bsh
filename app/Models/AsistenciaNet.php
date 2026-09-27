@@ -7,13 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 class AsistenciaNet extends Model
 {
     protected $table = 'asistencias_net';
+
     public $timestamps = false;
-    protected $primaryKey = 'asistencia_id';
+
+    protected $primaryKey = 'id';
+
     protected $fillable = [
-        'consorcio_id',
-        'agencia_id',
+        'consorcio',
+        'agencia',
         'fecha',
-        'cedula',
         'usuario',
         'entrada',
         'salida',

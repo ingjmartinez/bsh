@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -76,7 +77,7 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
         }
 
         if ($buscar !== '') {
-            $like = '%' . $buscar . '%';
+            $like = '%'.$buscar.'%';
             $rows->where(function ($query) use ($like) {
                 $query
                     ->where('faltantes.id_cc_empleado', 'like', $like)
@@ -147,7 +148,7 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
             ->leftJoinSub($abonos, 'abonos', function ($join) {
                 $join->on('faltantes.agencia_id', '=', 'abonos.agencia_id');
             })
-            ->selectRaw("
+            ->selectRaw('
                 faltantes.agencia_id,
                 faltantes.id_cc_empleado,
                 faltantes.companyid,
@@ -163,7 +164,7 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
                 COALESCE(abonos.total_abonos, 0) AS total_abonos,
                 abonos.ultima_fecha_abono,
                 (faltantes.total_faltantes - COALESCE(abonos.total_credito, 0)) AS balance_pendiente
-            ")
+            ')
             ->orderByDesc('balance_pendiente')
             ->orderBy('faltantes.agencia_id')
             ->get()
@@ -295,34 +296,37 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
 
     private function divisionOptions()
     {
-        $desdeEntradas = DB::table('entradas_diario')
-            ->selectRaw('TRIM(id_division) as id_division, MAX(NULLIF(TRIM(division), "")) as division')
-            ->whereNotNull('id_division')
-            ->whereRaw('TRIM(id_division) <> ""')
-            ->groupBy(DB::raw('TRIM(id_division)'))
-            ->get();
+        return Cache::remember('contabilidad.cxc_faltantes.divisiones.v2', now()->addHour(), function () {
+            $desdeEntradas = DB::table('entradas_diario')
+                ->selectRaw('TRIM(id_division) as id_division, MAX(NULLIF(TRIM(division), "")) as division')
+                ->where('cuenta', self::CUENTA_FALTANTES)
+                ->whereNotNull('id_division')
+                ->where('id_division', '!=', '')
+                ->groupBy('id_division')
+                ->get();
 
-        $idsDesdeCentros = DB::table('centros_de_costo')
-            ->whereNotNull('id_division')
-            ->whereRaw('TRIM(id_division) <> ""')
-            ->distinct()
-            ->pluck('id_division')
-            ->map(fn ($id) => trim((string) $id));
+            $idsDesdeCentros = DB::table('centros_de_costo')
+                ->whereNotNull('id_division')
+                ->where('id_division', '!=', '')
+                ->distinct()
+                ->pluck('id_division')
+                ->map(fn ($id) => trim((string) $id));
 
-        return $idsDesdeCentros
-            ->merge($desdeEntradas->pluck('id_division')->map(fn ($id) => trim((string) $id)))
-            ->filter()
-            ->unique()
-            ->map(function ($id) use ($desdeEntradas) {
-                $nombre = optional($desdeEntradas->firstWhere('id_division', $id))->division;
+            return $idsDesdeCentros
+                ->merge($desdeEntradas->pluck('id_division')->map(fn ($id) => trim((string) $id)))
+                ->filter()
+                ->unique()
+                ->map(function ($id) use ($desdeEntradas) {
+                    $nombre = optional($desdeEntradas->firstWhere('id_division', $id))->division;
 
-                return [
-                    'id' => $id,
-                    'nombre' => trim((string) $nombre),
-                ];
-            })
-            ->sortBy(fn ($division) => str_pad((string) $division['id'], 8, '0', STR_PAD_LEFT))
-            ->values();
+                    return [
+                        'id' => $id,
+                        'nombre' => trim((string) $nombre),
+                    ];
+                })
+                ->sortBy(fn ($division) => str_pad((string) $division['id'], 8, '0', STR_PAD_LEFT))
+                ->values();
+        });
     }
 
     private function faltantesPorCentroCostoQuery(Carbon $fechaInicio, Carbon $fechaFin)
@@ -330,9 +334,9 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
         $base = $this->faltantesSourceQuery()
             ->whereBetween('f.fecha', [$fechaInicio->toDateString(), $fechaFin->toDateString()]);
 
-        $empresaExpr = "COALESCE(emp_cc.companyid, emp_ced.companyid)";
-        $empleadoExpr = "COALESCE(emp_cc.empleadoid, emp_ced.empleadoid)";
-        $idCcEmpleadoExpr = "COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto)";
+        $empresaExpr = 'COALESCE(emp_cc.companyid, emp_ced.companyid)';
+        $empleadoExpr = 'COALESCE(emp_cc.empleadoid, emp_ced.empleadoid)';
+        $idCcEmpleadoExpr = 'COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto)';
         $nombreExpr = "TRIM(CONCAT(COALESCE(emp_cc.nombres, emp_ced.nombres, ''), ' ', COALESCE(emp_cc.apellidos, emp_ced.apellidos, '')))";
 
         return DB::query()
@@ -369,9 +373,9 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
         $base = $this->faltantesSourceQuery()
             ->whereBetween('f.fecha', [$fechaInicio->toDateString(), $fechaFin->toDateString()]);
 
-        $empresaExpr = "COALESCE(emp_cc.companyid, emp_ced.companyid)";
-        $empleadoExpr = "COALESCE(emp_cc.empleadoid, emp_ced.empleadoid)";
-        $idCcEmpleadoExpr = "COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto)";
+        $empresaExpr = 'COALESCE(emp_cc.companyid, emp_ced.companyid)';
+        $empleadoExpr = 'COALESCE(emp_cc.empleadoid, emp_ced.empleadoid)';
+        $idCcEmpleadoExpr = 'COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto)';
         $nombreExpr = "TRIM(CONCAT(COALESCE(emp_cc.nombres, emp_ced.nombres, ''), ' ', COALESCE(emp_cc.apellidos, emp_ced.apellidos, '')))";
 
         return DB::query()
@@ -413,9 +417,9 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
             ->where('f.agencia_id', $agenciaId)
             ->whereBetween('f.fecha', [$fechaInicio->toDateString(), $fechaFin->toDateString()]);
 
-        $empresaExpr = "COALESCE(emp_cc.companyid, emp_ced.companyid)";
-        $empleadoExpr = "COALESCE(emp_cc.empleadoid, emp_ced.empleadoid)";
-        $idCcEmpleadoExpr = "COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto)";
+        $empresaExpr = 'COALESCE(emp_cc.companyid, emp_ced.companyid)';
+        $empleadoExpr = 'COALESCE(emp_cc.empleadoid, emp_ced.empleadoid)';
+        $idCcEmpleadoExpr = 'COALESCE(emp_cc.idcentrocosto, emp_ced.idcentrocosto)';
         $nombreExpr = "TRIM(CONCAT(COALESCE(emp_cc.nombres, emp_ced.nombres, ''), ' ', COALESCE(emp_cc.apellidos, emp_ced.apellidos, '')))";
 
         return DB::query()
@@ -577,14 +581,14 @@ class ContabilidadCuentasCobrarFaltantesController extends Controller
             ->where('cuenta', self::CUENTA_FALTANTES)
             ->where('id_centro_costo', $idCcEmpleado)
             ->whereBetween('fecha', [$fechaInicio->toDateString(), $fechaFin->toDateString()])
-            ->selectRaw("
+            ->selectRaw('
                 id_viejo AS agencia_id,
                 COUNT(*) AS cantidad_abonos,
                 SUM(credito) AS total_credito,
                 SUM(debito) AS total_debito,
                 SUM(credito - debito) AS total_abonos,
                 MAX(fecha) AS ultima_fecha_abono
-            ")
+            ')
             ->whereNotNull('id_viejo')
             ->where('id_viejo', '!=', '')
             ->groupBy('id_viejo');

@@ -6,8 +6,8 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolePermissionSeeder extends Seeder
 {
@@ -48,12 +48,13 @@ class RolePermissionSeeder extends Seeder
 
         $adminPermissions = array_values(array_filter(
             $permissions,
-            static fn(string $permission): bool => !str_ends_with($permission, '.delete')
+            static fn (string $permission): bool => ! str_ends_with($permission, '.delete')
         ));
 
         $roles = [
             'superadmin' => $permissions,
             'admin' => $adminPermissions,
+            'admin2' => $adminPermissions,
             'contabilidad' => $modulePermissions['contabilidad'],
             'rh' => $modulePermissions['recursos_humanos'],
             'comercial' => $modulePermissions['comercial'],
@@ -71,7 +72,7 @@ class RolePermissionSeeder extends Seeder
         ];
 
         foreach ($modulePermissions as $module => $moduleRolePermissions) {
-            $roles['modulo_' . $module] = $moduleRolePermissions;
+            $roles['modulo_'.$module] = $moduleRolePermissions;
         }
 
         foreach ($roles as $roleName => $rolePermissions) {
@@ -184,7 +185,7 @@ class RolePermissionSeeder extends Seeder
         $permissions = [];
 
         foreach ($items as $item) {
-            if (!is_array($item)) {
+            if (! is_array($item)) {
                 continue;
             }
 
@@ -196,7 +197,7 @@ class RolePermissionSeeder extends Seeder
             $itemName = trim((string) ($item['nombre'] ?? 'item'));
             $slug = Str::slug($itemName, '_');
             if ($slug === '') {
-                $slug = 'item_' . substr(md5($module . '|' . $itemName . '|' . ($item['url'] ?? '')), 0, 8);
+                $slug = 'item_'.substr(md5($module.'|'.$itemName.'|'.($item['url'] ?? '')), 0, 8);
             }
 
             $permissions[] = "module.{$module}.item.{$slug}.view";

@@ -20,7 +20,10 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                            <h4 class="mb-sm-0">Procesar Ventas DS Virtual</h4>
+                            <h4 class="mb-sm-0">Generar DS Virtual</h4>
+                            <a href="{{ route('ventas-ds-virtual.index') }}" class="btn btn-light">
+                                <i class="ri-arrow-left-line align-bottom me-1"></i> Volver a Ventas DS Virtual
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -34,7 +37,9 @@
                             <div class="card-body">
                                 <div class="row g-2 mb-3 acciones-ds-virtual align-items-end">
                                     <div class="col-12 col-lg-2 d-grid">
-                                        <button id="btnGenerarToken" class="btn btn-secondary">Generar Token</button>
+                                        <button id="btnGenerarToken" class="btn btn-secondary">
+                                            <i class="ri-key-line me-1"></i> Generar Token DS Virtual
+                                        </button>
                                     </div>
 
                                     <div class="col-12 col-md-4 col-lg-2">
@@ -90,6 +95,7 @@
                                         </div>
                                     </div>
                                 </div>
+
                             </div>
                         </div>
                     </div>

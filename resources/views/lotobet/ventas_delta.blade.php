@@ -75,8 +75,8 @@
                                             <th>Venta Loteria</th>
                                             <th>Premios Pagado</th>
                                             <th>Venta Recarga</th>
-                                            <th>Ventas No Trad.</th>
-                                            <th>Premios No Trad.</th>
+                                            <th>Ventas Virtual</th>
+                                            <th>Premios Virtual.</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>

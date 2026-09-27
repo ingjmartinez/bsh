@@ -6,8 +6,8 @@ use App\Http\Controllers\WhatsAppWebhookController;
 use App\Models\ChatbotSession;
 use App\Models\TicketSolicitud;
 use App\Services\WhatsAppChatbotService;
-use Illuminate\Support\Carbon;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -67,6 +67,16 @@ class WhatsAppChatbotServiceTest extends TestCase
             $table->timestamps();
         });
 
+        Schema::dropIfExists('agencias_delta');
+        Schema::create('agencias_delta', function (Blueprint $table): void {
+            $table->id();
+            $table->string('terminal', 25)->nullable();
+            $table->string('sistema', 55)->nullable();
+            $table->string('empresa', 60)->nullable();
+            $table->unsignedTinyInteger('estatus')->default(1);
+            $table->timestamps();
+        });
+
         DB::table('agencias')->insert([
             [
                 'terminal' => '07068888',
@@ -113,6 +123,9 @@ class WhatsAppChatbotServiceTest extends TestCase
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+        ]);
+
+        DB::table('agencias_delta')->insert([
             [
                 'terminal' => '09006666',
                 'sistema' => 'delta',
@@ -144,6 +157,7 @@ class WhatsAppChatbotServiceTest extends TestCase
     {
         Carbon::setTestNow();
 
+        Schema::dropIfExists('agencias_delta');
         Schema::dropIfExists('agencias_lotedom');
         Schema::dropIfExists('agencias');
         Schema::dropIfExists('chatbot_sessions');
@@ -154,7 +168,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_hola_muestra_selector_de_sistema_completo_y_luego_menu_actual(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $greeting = $service->handleIncoming('+1 (809) 555-0101', 'hola');
 
@@ -176,7 +190,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_permite_seleccionar_delta_y_muestra_menu_actual(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550191', 'hola');
         $menu = $service->handleIncoming('8095550191', '2');
@@ -192,7 +206,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_permite_seleccionar_lotedom_y_muestra_menu_actual(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550192', 'hola');
         $menu = $service->handleIncoming('8095550192', '3');
@@ -208,7 +222,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_opcion_invalida_de_sistema_repite_selector(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550102', 'hola');
         $reply = $service->handleIncoming('8095550102', '9');
@@ -219,7 +233,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_consulta_horario_muestra_hasta_las_diez_de_la_noche(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550122', 'hola');
         $service->handleIncoming('8095550122', '1');
@@ -234,7 +248,7 @@ class WhatsAppChatbotServiceTest extends TestCase
     {
         Carbon::setTestNow(Carbon::parse('2026-06-12 22:01:00'));
 
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550123', 'hola');
         $service->handleIncoming('8095550123', '1');
@@ -252,7 +266,7 @@ class WhatsAppChatbotServiceTest extends TestCase
         Carbon::setTestNow(Carbon::parse('2026-06-12 22:01:00'));
         config()->set('services.whatsapp.chatbot_test_phones', ['+1 (809) 555-0199']);
 
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('18095550199', 'hola');
         $service->handleIncoming('18095550199', '1');
@@ -266,7 +280,7 @@ class WhatsAppChatbotServiceTest extends TestCase
     {
         Carbon::setTestNow(Carbon::parse('2026-06-12 06:59:00'));
 
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550124', 'hola');
         $service->handleIncoming('8095550124', '1');
@@ -280,7 +294,7 @@ class WhatsAppChatbotServiceTest extends TestCase
     {
         Carbon::setTestNow(Carbon::parse('2026-06-12 21:59:30'));
 
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550125', 'hola');
         $service->handleIncoming('8095550125', '1');
@@ -312,7 +326,7 @@ class WhatsAppChatbotServiceTest extends TestCase
             'mensaje_original' => 'Pagar ticket: 07068888',
         ]);
 
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550110', 'hola');
         $menu = $service->handleIncoming('8095550110', '1');
@@ -329,7 +343,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_hola_en_sesion_abierta_pide_confirmar_cierre_y_puede_continuar(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550106', 'hola');
         $service->handleIncoming('8095550106', '1');
@@ -352,7 +366,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_hola_en_sesion_abierta_retoma_ticket_pidiendo_imagen_del_terminal_actual(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550108', 'hola');
         $service->handleIncoming('8095550108', '1');
@@ -371,7 +385,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_real_rechaza_terminal_inexistente_en_ticket_y_mantiene_el_paso(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550111', 'hola');
         $service->handleIncoming('8095550111', '1');
@@ -386,7 +400,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_lotedom_rechaza_terminal_inexistente_en_ticket_y_mantiene_el_paso(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550131', 'hola');
         $service->handleIncoming('8095550131', '3');
@@ -402,7 +416,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_lotedom_acepta_terminal_existente_en_su_catalogo_para_ticket(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550132', 'hola');
         $service->handleIncoming('8095550132', '3');
@@ -418,7 +432,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_delta_rechaza_terminal_de_real_o_lotedom_en_ticket_y_mantiene_el_paso(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550137', 'hola');
         $service->handleIncoming('8095550137', '2');
@@ -438,7 +452,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_delta_acepta_terminal_existente_en_agencias_delta_para_ticket(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550138', 'hola');
         $service->handleIncoming('8095550138', '2');
@@ -454,7 +468,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_mismo_codigo_repetido_se_valida_por_el_catalogo_del_sistema_seleccionado(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550140', 'hola');
         $service->handleIncoming('8095550140', '1');
@@ -483,7 +497,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_real_rechaza_terminal_inexistente_en_anular_ticket_y_mantiene_el_paso(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550113', 'hola');
         $service->handleIncoming('8095550113', '1');
@@ -499,7 +513,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_lotedom_rechaza_terminal_inexistente_en_anular_ticket_y_mantiene_el_paso(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550133', 'hola');
         $service->handleIncoming('8095550133', '3');
@@ -516,7 +530,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_lotedom_acepta_terminal_existente_en_su_catalogo_para_anular_ticket(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550134', 'hola');
         $service->handleIncoming('8095550134', '3');
@@ -533,7 +547,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_real_rechaza_terminal_inexistente_en_averia_y_mantiene_el_paso(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550112', 'hola');
         $service->handleIncoming('8095550112', '1');
@@ -549,7 +563,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_lotedom_rechaza_terminal_inexistente_en_averia_y_mantiene_el_paso(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550135', 'hola');
         $service->handleIncoming('8095550135', '3');
@@ -566,7 +580,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_lotedom_acepta_terminal_existente_en_su_catalogo_para_averia(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550136', 'hola');
         $service->handleIncoming('8095550136', '3');
@@ -583,7 +597,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_delta_acepta_terminal_existente_en_agencias_delta_para_averia(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550139', 'hola');
         $service->handleIncoming('8095550139', '2');
@@ -600,7 +614,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_hola_en_sesion_abierta_puede_cerrar_sesion(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550107', 'hola');
         $service->handleIncoming('8095550107', '1');
@@ -616,7 +630,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_pagar_ticket_no_registra_solicitud_sin_imagen_y_mantiene_el_paso(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550114', 'hola');
         $service->handleIncoming('8095550114', '1');
@@ -632,7 +646,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_anular_ticket_no_registra_solicitud_sin_imagen_y_mantiene_el_paso(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550115', 'hola');
         $service->handleIncoming('8095550115', '1');
@@ -650,7 +664,7 @@ class WhatsAppChatbotServiceTest extends TestCase
     {
         Carbon::setTestNow(Carbon::parse('2026-06-12 10:00:00'));
 
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550103', 'hola');
         $service->handleIncoming('8095550103', '1');
@@ -670,7 +684,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_rechaza_archivo_no_permitido_y_mantiene_paso_de_imagen(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550116', 'hola');
         $service->handleIncoming('8095550116', '1');
@@ -696,7 +710,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_rechaza_imagen_fuera_de_formatos_permitidos(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550117', 'hola');
         $service->handleIncoming('8095550117', '1');
@@ -722,7 +736,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_acepta_formato_heic_de_iphone(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550118', 'hola');
         $service->handleIncoming('8095550118', '1');
@@ -745,7 +759,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_acepta_jpg_con_url_sin_extension_y_mime_generico_del_proveedor(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550128', 'hola');
         $service->handleIncoming('8095550128', '1');
@@ -765,7 +779,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_acepta_adjunto_opaco_resuelto_por_wamundo_sin_metadatos(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550131', 'hola');
         $service->handleIncoming('8095550131', '1');
@@ -784,7 +798,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_acepta_imagen_wamundo_con_extension_interna_no_estandar(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550132', 'hola');
         $service->handleIncoming('8095550132', '1');
@@ -804,7 +818,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_acepta_foto_de_iphone_con_extension_opaca_y_mime_jpeg(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550129', 'hola');
         $service->handleIncoming('8095550129', '1');
@@ -824,7 +838,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_acepta_mime_heic_sequence_de_iphone(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550130', 'hola');
         $service->handleIncoming('8095550130', '1');
@@ -843,7 +857,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_webhook_conserva_extension_jpg_enviada_como_valor_simple(): void
     {
-        $controller = new WhatsAppWebhookController();
+        $controller = new WhatsAppWebhookController;
         $method = new \ReflectionMethod($controller, 'extractAttachmentMetadata');
 
         $metadata = $method->invoke($controller, [
@@ -862,7 +876,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_webhook_no_confunde_tipo_de_evento_wamundo_con_tipo_de_archivo(): void
     {
-        $controller = new WhatsAppWebhookController();
+        $controller = new WhatsAppWebhookController;
         $method = new \ReflectionMethod($controller, 'extractAttachmentMetadata');
 
         $metadata = $method->invoke($controller, [
@@ -890,7 +904,7 @@ class WhatsAppChatbotServiceTest extends TestCase
             'mensaje_original' => 'Anular ticket: 07068888',
         ]);
 
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550119', 'hola');
         $service->handleIncoming('8095550119', '1');
@@ -905,7 +919,7 @@ class WhatsAppChatbotServiceTest extends TestCase
 
     public function test_no_registra_ticket_si_aparece_otro_abierto_antes_de_enviar_imagen(): void
     {
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550120', 'hola');
         $service->handleIncoming('8095550120', '1');
@@ -945,7 +959,7 @@ class WhatsAppChatbotServiceTest extends TestCase
             'mensaje_original' => 'Anular ticket: 07068888',
         ]);
 
-        $service = new WhatsAppChatbotService();
+        $service = new WhatsAppChatbotService;
 
         $service->handleIncoming('8095550121', 'hola');
         $service->handleIncoming('8095550121', '1');
@@ -975,7 +989,7 @@ class WhatsAppChatbotServiceTest extends TestCase
             'mensaje_original' => 'Pagar ticket: 07068888',
         ]);
 
-        $reply = (new WhatsAppChatbotService())->handleIncoming('8095550104', '1');
+        $reply = (new WhatsAppChatbotService)->handleIncoming('8095550104', '1');
 
         $ticket->refresh();
 
@@ -1007,7 +1021,7 @@ class WhatsAppChatbotServiceTest extends TestCase
             'mensaje_original' => 'Pagar ticket: 07068888',
         ]);
 
-        $reply = (new WhatsAppChatbotService())->handleIncoming('8095550109', '1');
+        $reply = (new WhatsAppChatbotService)->handleIncoming('8095550109', '1');
 
         $ticket->refresh();
 
@@ -1031,7 +1045,7 @@ class WhatsAppChatbotServiceTest extends TestCase
             'procesado_at' => now(),
         ]);
 
-        $reply = (new WhatsAppChatbotService())->handleIncoming('8095550105', '2');
+        $reply = (new WhatsAppChatbotService)->handleIncoming('8095550105', '2');
 
         $ticket->refresh();
 

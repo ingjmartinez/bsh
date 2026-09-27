@@ -135,6 +135,11 @@
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
 
+        const formatMoney = (value) => Number(value || 0).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+
         const showLoading = (title, html = null) => {
             Swal.fire({
                 title,
@@ -230,8 +235,8 @@
                             <td>${escapeHtml(item.FecInclusion)}</td>
                             <td>${escapeHtml(item.UsrInclusion)}</td>
                             <td>${escapeHtml(item.IdCuenta)}</td>
-                            <td>${escapeHtml(item.Debito)}</td>
-                            <td>${escapeHtml(item.Credito)}</td>
+                            <td class="text-end">${formatMoney(item.Debito)}</td>
+                            <td class="text-end">${formatMoney(item.Credito)}</td>
                             <td>${escapeHtml(item.Numero)}</td>
                             <td>${escapeHtml(item.NombreCuenta)}</td>
                         `;

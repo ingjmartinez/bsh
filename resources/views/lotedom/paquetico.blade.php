@@ -66,17 +66,23 @@
                                     <thead>
                                         <tr>
                                             <th>Fecha</th>
-                                            <th>Consorcio</th>
-                                            <th>Agencia</th>
-                                            <th>Identificación</th>
-                                            <th>Monto</th>
+                                            <th>Consorcio ID</th>
+                                            <th>Consorcio Código</th>
+                                            <th>Consorcio Nombre</th>
+                                            <th>Banca ID</th>
+                                            <th>Banca Nombre</th>
+                                            <th>Producto ID</th>
+                                            <th>Producto Nombre</th>
                                             <th>Descripción</th>
-                                            <th>Cargo Servicio</th>
-                                            <th>Cantidad</th>
-                                            <th>Proveedor Nombre</th>
-                                            <th>Proveedor</th>
-                                            <th>Distribuidora</th>
+                                            <th>Monto</th>
+                                            <th>Pago</th>
+                                            <th>Terminal Código</th>
+                                            <th>Agencia ID</th>
+                                            <th>Terminal Nombre</th>
+                                            <th>Distribuidora ID</th>
                                             <th>Distribuidora Nombre</th>
+                                            <th>Proveedor ID</th>
+                                            <th>Proveedor Nombre</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -184,18 +190,24 @@
                         data.paquetico.forEach(item => {
                             const row = document.createElement('tr');
                             row.innerHTML = `
-                                <td>${fecha}</td>
-                                <td>${item.consorcio_id}</td>
-                                <td>${item.agencia_id}</td>
-                                <td>${item.identificacion}</td>
-                                <td>${item.monto_pagado}</td>
-                                <td>${item.descripcion}</td>
-                                <td>${item.cargo_servicio}</td>
-                                <td>${item.cantidad}</td>
-                                <td>${item.proveedor_id}</td>
-                                <td>${item.proveedor_nombre}</td>
-                                <td>${item.distribuidora_id}</td>
-                                <td>${item.distribuidora_nombre}</td>
+                                <td>${item.fecha ?? fecha}</td>
+                                <td>${item.consorcio_id ?? ''}</td>
+                                <td>${item.consorcio_codigo ?? ''}</td>
+                                <td>${item.consorcio_nombre ?? ''}</td>
+                                <td>${item.banca_id ?? ''}</td>
+                                <td>${item.banca_nombre ?? ''}</td>
+                                <td>${item.producto_id ?? ''}</td>
+                                <td>${item.producto_nombre ?? ''}</td>
+                                <td>${item.descripcion ?? ''}</td>
+                                <td>${item.monto ?? ''}</td>
+                                <td>${item.pago ?? ''}</td>
+                                <td>${item.terminal_codigo ?? ''}</td>
+                                <td>${item.agencia_id ?? ''}</td>
+                                <td>${item.terminal_nombre ?? ''}</td>
+                                <td>${item.distribuidora_id ?? ''}</td>
+                                <td>${item.distribuidora_nombre ?? ''}</td>
+                                <td>${item.proveedor_id ?? ''}</td>
+                                <td>${item.proveedor_nombre ?? ''}</td>
                             `;
                             tableBody.appendChild(row);
                         });

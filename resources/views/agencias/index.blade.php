@@ -117,6 +117,10 @@
                                                 <th style="min-width: 100px;">Ruta</th>
                                                 <th style="min-width: 100px;">Operador</th>
                                                 <th style="min-width: 100px;">Coordinador</th>
+                                                <th style="min-width: 100px;">Grupo</th>
+                                                <th style="min-width: 100px;">Central</th>
+                                                <th style="min-width: 150px;">Gerente de servicio</th>
+                                                <th style="min-width: 110px;">Tipo de pago</th>
                                                 <th style="min-width: 90px;">Estatus</th>
                                                 <th style="min-width: 80px;">Incentivo</th>
                                                 <th class="text-center" style="min-width: 80px;">Acciones</th>
@@ -1253,6 +1257,10 @@
                 { data: 'ruta', name: 'ruta', defaultContent: '-' },
                 { data: 'operador', name: 'operador', defaultContent: '-' },
                 { data: 'coordinador', name: 'coordinador', defaultContent: '-' },
+                { data: 'grupo', name: 'grupo', defaultContent: '-' },
+                { data: 'central', name: 'central', defaultContent: '-' },
+                { data: 'gerente_de_servicio', name: 'gerente_de_servicio', defaultContent: '-' },
+                { data: 'tipo_pago', name: 'tipo_pago', defaultContent: '-' },
                 {
                     data: 'estatus',
                     name: 'estatus',

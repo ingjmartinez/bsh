@@ -27,6 +27,10 @@ class AgenciaLotedom extends Model
         'ruta',
         'operador',
         'coordinador',
+        'grupo',
+        'central',
+        'gerente_de_servicio',
+        'tipo_pago',
         'estatus',
         'aplica_incentivo',
     ];

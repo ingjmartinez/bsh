@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
 use App\Models\Token;
-use App\Models\VtUsuarioBet;
 use App\Models\VtUsuarioNet;
 use App\Support\InicioVentasCache;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -41,7 +40,7 @@ class VentasController extends Controller
         $fecha = $request->query('fecha');
         $apiResult = $this->fetchVentasUsuariosLotobetApi($fecha);
 
-        if (!$apiResult['ok']) {
+        if (! $apiResult['ok']) {
             return response()->json([
                 'ventas' => [],
                 'code' => 1,
@@ -81,7 +80,7 @@ class VentasController extends Controller
 
             return response()->json([
                 'code' => 1,
-                'message' => 'No se pudo guardar la data: ' . $e->getMessage(),
+                'message' => 'No se pudo guardar la data: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -119,7 +118,7 @@ class VentasController extends Controller
         InicioVentasCache::bust();
 
         return response()->json([
-            'message' => 'Datos eliminados correctamente. Total eliminados: ' . $deleted,
+            'message' => 'Datos eliminados correctamente. Total eliminados: '.$deleted,
             'total' => $deleted,
             'table' => 'ventas_usuarios_bet',
             'fecha_inicio' => $fechaInicio,
@@ -134,7 +133,7 @@ class VentasController extends Controller
         $fecha = $request->query('fecha');
         $apiResult = $this->fetchVentasUsuariosLotedomApi($fecha);
 
-        if (!$apiResult['ok']) {
+        if (! $apiResult['ok']) {
             return response()->json([
                 'ventas' => [],
                 'code' => 1,
@@ -148,15 +147,15 @@ class VentasController extends Controller
             $tipo = strtolower((string) ($v['tipo'] ?? ''));
 
             $data[] = [
-                'consorcio_id'  => $v['consorcio_id'] ?? null,
+                'consorcio_id' => $v['consorcio_id'] ?? null,
                 'consorcio_codigo' => $v['consorcio_codigo'] ?? null,
-                'agencia_id'    => $v['agencia_id'] ?? null,
-                'producto_id'   => $tipo === 'recarga' ? -1 : ($v['producto_id'] ?? null),
-                'cedula'        => str_replace('-', '', (string) ($v['cedula'] ?? '')),
-                'descripcion'   => $tipo === 'recarga' ? 'RECARGAS' : ($v['descripcion'] ?? null),
-                'tipo'          => $v['tipo'] ?? null,
-                'monto'         => $v['monto'] ?? 0,
-                'fecha'         => $fecha,
+                'agencia_id' => $v['agencia_id'] ?? null,
+                'producto_id' => $tipo === 'recarga' ? -1 : ($v['producto_id'] ?? null),
+                'cedula' => str_replace('-', '', (string) ($v['cedula'] ?? '')),
+                'descripcion' => $tipo === 'recarga' ? 'RECARGAS' : ($v['descripcion'] ?? null),
+                'tipo' => $v['tipo'] ?? null,
+                'monto' => $v['monto'] ?? 0,
+                'fecha' => $fecha,
             ];
         }
 
@@ -179,12 +178,12 @@ class VentasController extends Controller
         $existe = VtUsuarioNet::whereDate('fecha', $fecha)->exists();
 
         if ($existe) {
-            return response()->json(['message' => 'Ya hay data guardada en la fecha: ' . $fecha]);
+            return response()->json(['message' => 'Ya hay data guardada en la fecha: '.$fecha]);
         }
 
         $apiResult = $this->fetchVentasUsuariosLotedomApi($fecha);
 
-        if (!$apiResult['ok']) {
+        if (! $apiResult['ok']) {
             return response()->json([
                 'code' => 1,
                 'message' => $apiResult['message'],
@@ -197,20 +196,20 @@ class VentasController extends Controller
             $tipo = strtolower((string) ($v['tipo'] ?? ''));
 
             $data[] = [
-                'consorcio_id'  => $v['consorcio_id'] ?? null,
-                'agencia_id'    => $v['agencia_id'] ?? null,
-                'cedula'        => $this->normalizeCedula($v['cedula'] ?? null),
-                'producto_id'   => $tipo === 'recarga' ? -1 : ($v['producto_id'] ?? null),
-                'descripcion'   => $tipo === 'recarga' ? 'RECARGAS' : ($v['descripcion'] ?? null),
-                'tipo'          => $v['tipo'] ?? null,
-                'monto'         => $v['monto'] ?? 0,
-                'fecha'         => $fecha,
-                'created_at'    => now(),
-                'updated_at'    => now(),
+                'consorcio_id' => $v['consorcio_id'] ?? null,
+                'agencia_id' => $v['agencia_id'] ?? null,
+                'cedula' => $this->normalizeCedula($v['cedula'] ?? null),
+                'producto_id' => $tipo === 'recarga' ? -1 : ($v['producto_id'] ?? null),
+                'descripcion' => $tipo === 'recarga' ? 'RECARGAS' : ($v['descripcion'] ?? null),
+                'tipo' => $v['tipo'] ?? null,
+                'monto' => $v['monto'] ?? 0,
+                'fecha' => $fecha,
+                'created_at' => now(),
+                'updated_at' => now(),
             ];
         }
 
-        if (!empty($data)) {
+        if (! empty($data)) {
             foreach (array_chunk($data, 5000) as $chunk) {
                 DB::table('ventas_usuarios_net')->insert($chunk);
             }
@@ -219,7 +218,7 @@ class VentasController extends Controller
         }
 
         return response()->json([
-            'message' => 'Datos guardados correctamente. Total insertados: ' . count($data),
+            'message' => 'Datos guardados correctamente. Total insertados: '.count($data),
             'total' => count($data),
         ]);
     }
@@ -253,7 +252,7 @@ class VentasController extends Controller
 
         $token = Token::find(1);
 
-        if (!$token || empty($token->token)) {
+        if (! $token || empty($token->token)) {
             return [
                 'ok' => false,
                 'status' => 404,
@@ -273,7 +272,7 @@ class VentasController extends Controller
 
         $curl = curl_init();
 
-        curl_setopt_array($curl, array(
+        curl_setopt_array($curl, [
             CURLOPT_URL => "https://apiadmin.prodrl.lotvirtual.com/api/V1/EQsEpamN7MuKb0Y7/{$token->token}/{$fecha}/07",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
@@ -283,13 +282,13 @@ class VentasController extends Controller
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_HTTPHEADER => array(
+            CURLOPT_HTTPHEADER => [
                 'AhfCC: yB0tt5KW3wVVCYYtCpen',
-                'AhfVB: xSzdgtOKbGRhUhtv1ois'
-            ),
+                'AhfVB: xSzdgtOKbGRhUhtv1ois',
+            ],
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_SSL_VERIFYPEER => 0,
-        ));
+        ]);
 
         $response = curl_exec($curl);
         $curlError = curl_error($curl);
@@ -308,7 +307,7 @@ class VentasController extends Controller
 
         $ventas = json_decode($response, true);
 
-        if (!is_array($ventas)) {
+        if (! is_array($ventas)) {
             return [
                 'ok' => false,
                 'status' => 502,
@@ -325,12 +324,12 @@ class VentasController extends Controller
             return [
                 'ok' => false,
                 'status' => $httpCode,
-                'message' => $message !== '' ? $message : ('La API de Lotobet Real respondio con HTTP ' . $httpCode . '.'),
+                'message' => $message !== '' ? $message : ('La API de Lotobet Real respondio con HTTP '.$httpCode.'.'),
                 'rows' => [],
             ];
         }
 
-        if (!is_array($rows)) {
+        if (! is_array($rows)) {
             return [
                 'ok' => false,
                 'status' => 502,
@@ -371,7 +370,7 @@ class VentasController extends Controller
 
         $curl = curl_init();
 
-        curl_setopt_array($curl, array(
+        curl_setopt_array($curl, [
             CURLOPT_URL => "https://lotedom-api.orkapi.net/api/finan/ventas_por_usuario/{$fecha}",
             CURLOPT_PROXY => '',
             CURLOPT_NOPROXY => '*',
@@ -384,11 +383,11 @@ class VentasController extends Controller
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_HTTPHEADER => array(
+            CURLOPT_HTTPHEADER => [
                 'token: qVd-u1WoDk2_-bHPoEQv',
-                'Cookie: _orkapi_session=%2Bh8hVZGckwqJvUMEtnqw20R03ew%2Bs75uDx%2FGQ95fm94iUpM5hXWHNSR1Rm%2BqGAaEz%2FJWXNq%2BN5OTuZVJFxTO44VIMhrYq4UR37%2Bt%2BZ9QOgknyJVZAKoryDofCAc39LyiLD9wvNwv07ZQU6vSsr7ByZTnQa9%2FOYXLI1Dnv0FaR3Fq4XQDye3JMdK%2BuCCiqMuhEQgI6MHaUk5b36MWKfcwxLcRz7EA7avYVFFOcQGZW1DG3julV%2B8LL24AHO%2B2yW8PWzkot%2Bj9isQn4Q8%2F5HDFFfHiBDqWH4Mr%2F4PYSQW%2Bzw%3D%3D--OAkKsKD1FysuXUdd--lo%2BNmOXstOC7zphBeFRYrw%3D%3D'
-            ),
-        ));
+                'Cookie: _orkapi_session=KT8dYzPteLAaWvhCxOLMWu0HcamhnBE153CL6OhgB0q7TnhfeBqvU2fo4KsAjfDJrrMGGE92Uv5dmeL0R3C4jolFNvvIJzKZJRb4SP%2F1eBcaeVqWmGTQLWA7g7vo9vEYFeVLEO8waA96mvlyTvB3agUKC4IQ%2FMf6I5qFhFMd1aw2gXjD0Gm8ADJVnpK3je7yC%2Fk65rX1goq7DcDvdLwIkOseS5dQtmiMTggQUbvSvN1g%2FJdTP8APUyT1kJc45nbWEvVz8ltfIX2PrgONX09kWwC2zyNIlts%2F5K7ofMUbwQ%3D%3D--0gxY1dPcqKR%2BsAcz--Mw9TbvzOeo6rmKHac6aLUg%3D%3D',
+            ],
+        ]);
 
         $response = curl_exec($curl);
         $curlError = curl_error($curl);
@@ -407,7 +406,7 @@ class VentasController extends Controller
 
         $ventas = json_decode($response, true);
 
-        if (!is_array($ventas)) {
+        if (! is_array($ventas)) {
             return [
                 'ok' => false,
                 'status' => 502,
@@ -424,12 +423,12 @@ class VentasController extends Controller
             return [
                 'ok' => false,
                 'status' => $httpCode,
-                'message' => $message !== '' ? $message : ('La API de Lotedom respondio con HTTP ' . $httpCode . '.'),
+                'message' => $message !== '' ? $message : ('La API de Lotedom respondio con HTTP '.$httpCode.'.'),
                 'rows' => [],
             ];
         }
 
-        if (!is_array($rows)) {
+        if (! is_array($rows)) {
             return [
                 'ok' => false,
                 'status' => 502,
@@ -457,7 +456,7 @@ class VentasController extends Controller
 
     private function syncAgenciasLotedomFromVentasUsuariosRows(array $rows): void
     {
-        if (!Schema::hasTable('agencias_lotedom')) {
+        if (! Schema::hasTable('agencias_lotedom')) {
             return;
         }
 
@@ -481,7 +480,7 @@ class VentasController extends Controller
                 'updated_at' => $timestamp,
             ];
 
-            if (!isset($catalogo[$agenciaId]['created_at'])) {
+            if (! isset($catalogo[$agenciaId]['created_at'])) {
                 $catalogo[$agenciaId]['created_at'] = $timestamp;
             }
         }
@@ -497,7 +496,7 @@ class VentasController extends Controller
 
     private function syncAgenciasLotedomFromVentasUsuariosNetByFecha(string $fecha): void
     {
-        if (!Schema::hasTable('ventas_usuarios_net')) {
+        if (! Schema::hasTable('ventas_usuarios_net')) {
             return;
         }
 

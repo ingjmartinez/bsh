@@ -66,11 +66,11 @@
                                     <thead>
                                         <tr>
                                             <th>Consorcio</th>
+                                            <th>Código Consorcio</th>
                                             <th>Agencia</th>
                                             <th>Identificación</th>
                                             <th>Monto</th>
                                             <th>Fecha</th>
-                                            <th>Descripción</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -133,7 +133,7 @@
         });
 
         const btnGenerarData = document.getElementById('btnGenerarData');
-        btnGenerarData.addEventListener('click', () => {
+        btnGenerarData.addEventListener('click', async () => {
             const fecha = document.getElementById('inputFecha').value;
             if (!fecha) {
                 Swal.fire({
@@ -153,61 +153,53 @@
                 didOpen: () => Swal.showLoading()
             });
 
-            $('#tableFaltantes').DataTable().destroy();
+            if ($.fn.DataTable.isDataTable('#tableFaltantes')) {
+                $('#tableFaltantes').DataTable().destroy();
+            }
             const tableBody = document.querySelector('#tableFaltantes tbody');
             tableBody.innerHTML = '';
-            
-            fetch(`/get-faltantes-lotedom?fecha=${fecha}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.code != 0) {
-                        Swal.fire({
-                            title: "Error",
-                            text: data.message,
-                            icon: "error"
-                        });
-                    } else {
-                        Swal.fire({
-                            title: "Listo",
-                            text: "Datos obtenidos correctamente",
-                            icon: "success"
-                        });
 
-                        tableBody.innerHTML = ''; // Clear existing rows
+            const result = await requestJson(`/get-faltantes-lotedom?fecha=${fecha}`);
+            if (!result.ok) {
+                Swal.fire({ title: "Error", text: result.message, icon: "error" });
+                return;
+            }
 
-                        data.faltantes.forEach(item => {
-                            const row = document.createElement('tr');
-                            const consorcioId = item.consorcio_id ?? '';
-                            const agenciaId = item.agencia_id ?? '';
-                            const identificacion = item.identificacion ?? '';
-                            const monto = item.monto ?? '';
-                            const descripcion = item.descripcion ?? item.observacion ?? item.motivo ?? '';
-                            row.innerHTML = `
-                                <td>${escapeLotedomHtml(consorcioId)}</td>
-                                <td>${escapeLotedomHtml(agenciaId)}</td>
-                                <td>${escapeLotedomHtml(identificacion)}</td>
-                                <td>${escapeLotedomHtml(monto)}</td>
-                                <td>${escapeLotedomHtml(fecha)}</td>
-                                <td>${escapeLotedomHtml(descripcion)}</td>
-                            `;
-                            tableBody.appendChild(row);
-                        });
+            const faltantes = Array.isArray(result.payload?.faltantes) ? result.payload.faltantes : [];
 
-                        $('#tableFaltantes').DataTable({
-                            destroy: true,
-                            responsive: true,
-                            scrollX: true,
-                            columnDefs: [
-                                { targets: [3, 4], visible: $(window).width() > 768 }
-                            ],
-                            dom: 'Bfrtip',
-                            buttons: [
-                                'copy', 'csv', 'excel', 'pdf', 'print'
-                            ]
-                        });
-                    }
-                })
-                .catch(error => console.error('Error fetching data:', error));
+            faltantes.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${escapeLotedomHtml(item.consorcio_id)}</td>
+                    <td>${escapeLotedomHtml(item.consorcio_codigo)}</td>
+                    <td>${escapeLotedomHtml(item.codigo)}</td>
+                    <td>${escapeLotedomHtml(item.identificacion)}</td>
+                    <td>${escapeLotedomHtml(item.monto)}</td>
+                    <td>${escapeLotedomHtml(item.fecha ?? fecha)}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            $('#tableFaltantes').DataTable({
+                destroy: true,
+                responsive: true,
+                scrollX: true,
+                columnDefs: [
+                    { targets: [3, 4], visible: $(window).width() > 768 }
+                ],
+                dom: 'Bfrtip',
+                buttons: [
+                    'copy', 'csv', 'excel', 'pdf', 'print'
+                ]
+            });
+
+            Swal.fire({
+                title: faltantes.length > 0 ? "Listo" : "Sin datos",
+                text: faltantes.length > 0
+                    ? `Datos obtenidos correctamente: ${faltantes.length}`
+                    : "La API no devolvió registros para la fecha seleccionada",
+                icon: faltantes.length > 0 ? "success" : "warning"
+            });
         });
 
         const btnGuardarData = document.getElementById('btnGuardarData');

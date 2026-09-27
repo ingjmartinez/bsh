@@ -89,6 +89,6 @@ final class ModuleHubAccess
 
     private function isAdministrator(User $user): bool
     {
-        return $user->hasAnyRole(['superadmin', 'admin']);
+        return $user->hasAnyRole(['superadmin', 'admin', 'admin2']);
     }
 }

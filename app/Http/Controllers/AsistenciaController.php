@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Token;
-use Illuminate\Http\Request;
 use App\Models\Asistencia;
 use App\Models\AsistenciaNet;
+use App\Models\Token;
+use App\Support\LotedomRowMapper;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class AsistenciaController extends Controller
@@ -20,7 +21,7 @@ class AsistenciaController extends Controller
 
         $token = Token::find(1);
 
-        if (!$token) {
+        if (! $token) {
             return response()->json(['error' => 'Genere un token'], 404);
         }
 
@@ -29,7 +30,7 @@ class AsistenciaController extends Controller
             return response()->json(['error' => 'El token ha expirado, genere uno nuevo'], 401);
         }
 
-        curl_setopt_array($curl, array(
+        curl_setopt_array($curl, [
             CURLOPT_URL => "https://apiadmin.prodrl.lotvirtual.com/api/V1/var4XZ3ojQiPZq5BpI/{$token->token}/{$fecha}/07",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
@@ -38,13 +39,13 @@ class AsistenciaController extends Controller
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_HTTPHEADER => array(
+            CURLOPT_HTTPHEADER => [
                 'AhfCC: yB0tt5KW3wVVCYYtCpen',
-                'AhfVB: xSzdgtOKbGRhUhtv1ois'
-            ),
+                'AhfVB: xSzdgtOKbGRhUhtv1ois',
+            ],
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_SSL_VERIFYPEER => 0,
-        ));
+        ]);
 
         $response = curl_exec($curl);
 
@@ -68,7 +69,7 @@ class AsistenciaController extends Controller
 
         $token = Token::find(1);
 
-        if (!$token) {
+        if (! $token) {
             return response()->json(['error' => 'Genere un token'], 404);
         }
 
@@ -80,10 +81,10 @@ class AsistenciaController extends Controller
         $existe = Asistencia::whereDate('fecha', $fecha)->exists();
 
         if ($existe) {
-            return response()->json(['message' => 'Ya hay data guardada en la fecha: ' . $fecha]);
+            return response()->json(['message' => 'Ya hay data guardada en la fecha: '.$fecha]);
         }
 
-        curl_setopt_array($curl, array(
+        curl_setopt_array($curl, [
             CURLOPT_URL => "https://apiadmin.prodrl.lotvirtual.com/api/V1/var4XZ3ojQiPZq5BpI/{$token->token}/{$fecha}/07",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
@@ -92,13 +93,13 @@ class AsistenciaController extends Controller
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_HTTPHEADER => array(
+            CURLOPT_HTTPHEADER => [
                 'AhfCC: yB0tt5KW3wVVCYYtCpen',
-                'AhfVB: xSzdgtOKbGRhUhtv1ois'
-            ),
+                'AhfVB: xSzdgtOKbGRhUhtv1ois',
+            ],
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_SSL_VERIFYPEER => 0,
-        ));
+        ]);
 
         $response = curl_exec($curl);
 
@@ -108,29 +109,29 @@ class AsistenciaController extends Controller
 
         $data = [];
 
-        if (!empty($ventas['Content'])) {
+        if (! empty($ventas['Content'])) {
             foreach ($ventas['Content'] as $v) {
                 $data[] = [
-                    'consorcio_id'  => $v['consorcio'] ?? null,
-                    'agencia_id'    => $v['agencia'] ?? null,
-                    'usuario'       => $v['usuario'] ?? null,
-                    'cedula'        => $v['cedula'] ?? null,
-                    'fecha'         => $v['fecha'] ?? null,
-                    'primer_login'  => $v['primer_login'] ?? null,
+                    'consorcio_id' => $v['consorcio'] ?? null,
+                    'agencia_id' => $v['agencia'] ?? null,
+                    'usuario' => $v['usuario'] ?? null,
+                    'cedula' => $v['cedula'] ?? null,
+                    'fecha' => $v['fecha'] ?? null,
+                    'primer_login' => $v['primer_login'] ?? null,
                     'ultimo_login' => $v['ultimo_logout'] ?? null,
                 ];
             }
         }
 
-        if (!empty($data)) {
+        if (! empty($data)) {
             foreach (array_chunk($data, 5000) as $chunk) {
                 DB::table('asistencias_bet')->insert($chunk);
             }
         }
 
         return response()->json([
-            'message' => 'Datos guardados correctamente. Total insertados: ' . count($data),
-            'total' => count($data)
+            'message' => 'Datos guardados correctamente. Total insertados: '.count($data),
+            'total' => count($data),
         ]);
     }
 
@@ -155,10 +156,8 @@ class AsistenciaController extends Controller
 
         $fecha = $request->query('fecha');
 
-        $curl = curl_init();
-
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => "http://contable.apploteka.com//api/finan/asistencia_usuarios/{$fecha}/5",
+        curl_setopt_array($curl, [
+            CURLOPT_URL => "https://lotedom-api.orkapi.net/api/finan/asistencia_usuarios/{$fecha}",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -166,28 +165,50 @@ class AsistenciaController extends Controller
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_POSTFIELDS => '{
-                "usuario": {
-                    "username": "fjoselito",
-                    "password": "mnXd5pSyF3HXjCC4"
-                }
-            }',
-            CURLOPT_HTTPHEADER => array(
+            CURLOPT_HTTPHEADER => [
                 'token: ZFozLWdBYyqERusVdTsW',
-                'Content-Type: application/json',
-                'Cookie: _orkapi_session=RkZLWFpIMnM1UTdUdjRXVzNuMFRmZFZnQ2U5N0JoV0JaSzBheUFlZ21TSVoyUEhWWFc2Y2R4Nzd2SmVhQXJKOGtsSktHWnNmelgzWGsxcmJESEVkcXRlWW5tdGpzU1ZZcXRBZFNva2lqL3pGMFppZFZnZUxPUXBscWxLYVdVcUwzdURYb1V5bGJwanZkeDdJTGUzZndkV3FxNmtiMjdvNkxpU0ZQK2RWRU1nPS0tbkVwL215TXpYTXpLS1lYYXJTR3Y2UT09--7e272c2a327d71d9feb7996870d828122936b682'
-            ),
-        ));
+                'Cookie: _orkapi_session=pOlvwaeBapzBuOeprHO383uE04gMCWtYJZdQSy1rZyw989340KoFtCGmOvlw%2BFZP6qu30myqfhh4uFWAvEH%2FYGEuH3Ex7s3cIZ0AFE%2F%2FiwQGeu%2FlveYjYGojxJ9p9F3rYuRRoGXQgsU2ASNvNlOtZrBUdQFG%2BXsJvZAl9wNTS%2Bzr470PpsqLDCO9WuhCm6%2FbVv8CAN%2FRFRsaF2Kj%2BfyH%2BpvHYOZE9VQmk3PR0qZZ2Xew5mbL%2FDD5iUQClG2Yq4a5r10ZQDm9i9l%2FY2ssiIAsn911vR4b%2FHhWVlWEfqff%2BA%3D%3D--sLXbUXCyprfh3hK5--i8FViCpBoxoJKnwl3D%2Bv7g%3D%3D',
+            ],
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_SSL_VERIFYPEER => 0,
+        ]);
 
         $response = curl_exec($curl);
+        $curlError = curl_error($curl);
+        $httpCode = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
         curl_close($curl);
 
+        if ($response === false || $httpCode >= 400) {
+            return response()->json([
+                'error' => $curlError !== '' ? $curlError : 'La API de Lotedom respondio con HTTP '.$httpCode.'.',
+                'message' => 'No fue posible obtener las asistencias de Lotedom.',
+            ], $httpCode >= 400 ? $httpCode : 502);
+        }
+
         $ventas = json_decode($response, true);
 
-        $data = $ventas['data']['result'] ?? [];
+        if (! is_array($ventas)) {
+            return response()->json([
+                'error' => 'La API de Lotedom devolvio una respuesta invalida.',
+                'message' => 'No fue posible obtener las asistencias de Lotedom.',
+            ], 502);
+        }
 
-        return response()->json(['asistencias' => $data, 'code' => $ventas['code'], 'message' => '']);
+        $code = (string) ($ventas['code'] ?? '');
+        if ($code !== '00' && $code !== '0') {
+            return response()->json([
+                'error' => $ventas['error'] ?? $ventas['message'] ?? 'La API de Lotedom devolvio un error.',
+                'message' => $ventas['error'] ?? $ventas['message'] ?? 'La API de Lotedom devolvio un error.',
+            ], 502);
+        }
+
+        $data = array_map(
+            fn (array $row): array => LotedomRowMapper::asistenciaParaConsulta($row, $fecha),
+            is_array($ventas['data']['result'] ?? null) ? $ventas['data']['result'] : []
+        );
+
+        return response()->json(['asistencias' => $data, 'code' => $code, 'message' => '']);
     }
 
     public function saveAsistenciasLotedom(Request $request)
@@ -212,11 +233,11 @@ class AsistenciaController extends Controller
             ->exists();
 
         if ($existe) {
-            return response()->json(['message' => 'Ya hay data guardada en la fecha: ' . $fecha]);
+            return response()->json(['message' => 'Ya hay data guardada en la fecha: '.$fecha]);
         }
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => "http://contable.apploteka.com//api/finan/asistencia_usuarios/{$fecha}/5",
+        curl_setopt_array($curl, [
+            CURLOPT_URL => "https://lotedom-api.orkapi.net/api/finan/asistencia_usuarios/{$fecha}",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -224,36 +245,58 @@ class AsistenciaController extends Controller
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_POSTFIELDS => '{
-                "usuario": {
-                    "username": "fjoselito",
-                    "password": "mnXd5pSyF3HXjCC4"
-                }
-            }',
-            CURLOPT_HTTPHEADER => array(
+            CURLOPT_HTTPHEADER => [
                 'token: ZFozLWdBYyqERusVdTsW',
-                'Content-Type: application/json',
-                'Cookie: _orkapi_session=RkZLWFpIMnM1UTdUdjRXVzNuMFRmZFZnQ2U5N0JoV0JaSzBheUFlZ21TSVoyUEhWWFc2Y2R4Nzd2SmVhQXJKOGtsSktHWnNmelgzWGsxcmJESEVkcXRlWW5tdGpzU1ZZcXRBZFNva2lqL3pGMFppZFZnZUxPUXBscWxLYVdVcUwzdURYb1V5bGJwanZkeDdJTGUzZndkV3FxNmtiMjdvNkxpU0ZQK2RWRU1nPS0tbkVwL215TXpYTXpLS1lYYXJTR3Y2UT09--7e272c2a327d71d9feb7996870d828122936b682'
-            ),
-        ));
+                'Cookie: _orkapi_session=pOlvwaeBapzBuOeprHO383uE04gMCWtYJZdQSy1rZyw989340KoFtCGmOvlw%2BFZP6qu30myqfhh4uFWAvEH%2FYGEuH3Ex7s3cIZ0AFE%2F%2FiwQGeu%2FlveYjYGojxJ9p9F3rYuRRoGXQgsU2ASNvNlOtZrBUdQFG%2BXsJvZAl9wNTS%2Bzr470PpsqLDCO9WuhCm6%2FbVv8CAN%2FRFRsaF2Kj%2BfyH%2BpvHYOZE9VQmk3PR0qZZ2Xew5mbL%2FDD5iUQClG2Yq4a5r10ZQDm9i9l%2FY2ssiIAsn911vR4b%2FHhWVlWEfqff%2BA%3D%3D--sLXbUXCyprfh3hK5--i8FViCpBoxoJKnwl3D%2Bv7g%3D%3D',
+            ],
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_SSL_VERIFYPEER => 0,
+        ]);
 
         $response = curl_exec($curl);
+        $curlError = curl_error($curl);
+        $httpCode = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
         curl_close($curl);
 
+        if ($response === false || $httpCode >= 400) {
+            return response()->json([
+                'error' => $curlError !== '' ? $curlError : 'La API de Lotedom respondio con HTTP '.$httpCode.'.',
+                'message' => 'No fue posible guardar las asistencias de Lotedom.',
+            ], $httpCode >= 400 ? $httpCode : 502);
+        }
+
         $ventas = json_decode($response, true);
 
-        $data = $ventas['data']['result'] ?? [];
+        if (! is_array($ventas)) {
+            return response()->json([
+                'error' => 'La API de Lotedom devolvio una respuesta invalida.',
+                'message' => 'No fue posible guardar las asistencias de Lotedom.',
+            ], 502);
+        }
 
-        if (!empty($data)) {
+        $code = (string) ($ventas['code'] ?? '');
+        if ($code !== '00' && $code !== '0') {
+            return response()->json([
+                'error' => $ventas['error'] ?? $ventas['message'] ?? 'La API de Lotedom devolvio un error.',
+                'message' => $ventas['error'] ?? $ventas['message'] ?? 'La API de Lotedom devolvio un error.',
+            ], 502);
+        }
+
+        $data = array_map(
+            fn (array $row): array => LotedomRowMapper::asistencia($row, $fecha),
+            is_array($ventas['data']['result'] ?? null) ? $ventas['data']['result'] : []
+        );
+
+        if (! empty($data)) {
             foreach (array_chunk($data, 5000) as $chunk) {
                 DB::table('asistencias_net')->insert($chunk);
             }
         }
 
         return response()->json([
-            'message' => 'Datos guardados correctamente. Total insertados: ' . count($data),
-            'total' => count($data)
+            'message' => 'Datos guardados correctamente. Total insertados: '.count($data),
+            'total' => count($data),
         ]);
     }
 

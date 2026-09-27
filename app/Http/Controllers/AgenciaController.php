@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\AgenciasExport;
+use App\Imports\AgenciasActualizacionMasivaImport;
+use App\Imports\AgenciasImport;
 use App\Mail\IncumplimientoHorarioReportMail;
 use App\Models\Agencia;
 use App\Models\CoordinadorOperador;
@@ -16,9 +19,6 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\AgenciasExport;
-use App\Imports\AgenciasActualizacionMasivaImport;
-use App\Imports\AgenciasImport;
 
 class AgenciaController extends Controller
 {
@@ -69,6 +69,10 @@ class AgenciaController extends Controller
             'empresa' => 'nullable|string|max:60',
             'operador' => ['nullable', 'string', 'max:55', Rule::in($operadores)],
             'coordinador' => ['nullable', 'string', 'max:55', Rule::in($coordinadores)],
+            'grupo' => 'nullable|string|max:75',
+            'central' => 'nullable|string|max:75',
+            'gerente_de_servicio' => 'nullable|string|max:75',
+            'tipo_pago' => 'nullable|string|max:75',
             'estatus' => 'required|integer|in:0,1',
             'aplica_incentivo' => 'required|boolean',
         ], [
@@ -133,6 +137,10 @@ class AgenciaController extends Controller
             'ruta' => 'nullable|string|max:255',
             'operador' => ['nullable', 'string', 'max:255', Rule::in($operadores)],
             'coordinador' => ['nullable', 'string', 'max:255', Rule::in($coordinadores)],
+            'grupo' => 'nullable|string|max:75',
+            'central' => 'nullable|string|max:75',
+            'gerente_de_servicio' => 'nullable|string|max:75',
+            'tipo_pago' => 'nullable|string|max:75',
             'estatus' => 'required|integer|in:0,1',
             'aplica_incentivo' => 'required|boolean',
         ], [
@@ -162,17 +170,17 @@ class AgenciaController extends Controller
         $columns = array_flip(Schema::getColumnListing('agencias'));
         $payload = $validated;
 
-        if (!isset($columns['agencia']) && isset($columns['codigo'])) {
+        if (! isset($columns['agencia']) && isset($columns['codigo'])) {
             $payload['codigo'] = $validated['agencia'] ?? null;
             unset($payload['agencia']);
         }
 
-        if (!isset($columns['nombre_agencia']) && isset($columns['nombre'])) {
+        if (! isset($columns['nombre_agencia']) && isset($columns['nombre'])) {
             $payload['nombre'] = $validated['nombre_agencia'] ?? null;
             unset($payload['nombre_agencia']);
         }
 
-        if (!isset($columns['ciudad']) && isset($columns['ciudad_id'])) {
+        if (! isset($columns['ciudad']) && isset($columns['ciudad_id'])) {
             $payload['ciudad_id'] = $this->resolverCiudadId($validated['ciudad'] ?? null);
             unset($payload['ciudad']);
         }
@@ -184,7 +192,7 @@ class AgenciaController extends Controller
     {
         $ciudad = trim((string) $ciudad);
 
-        if ($ciudad === '' || !Schema::hasTable('ciudades')) {
+        if ($ciudad === '' || ! Schema::hasTable('ciudades')) {
             return null;
         }
 
@@ -205,14 +213,14 @@ class AgenciaController extends Controller
             ->where('agencia_id', $agenciaId)
             ->whereIn('coordinador_operador_id', $idsPuesto)
             ->pluck('coordinador_operador_id')
-            ->map(fn($id) => (int) $id);
+            ->map(fn ($id) => (int) $id);
 
         $nombreCompleto = trim($nombreCompleto);
         $nuevoResponsable = $nombreCompleto === ''
             ? null
-            : $personas->first(fn(CoordinadorOperador $persona) => mb_strtolower(trim($persona->nombre . ' ' . $persona->apellido)) === mb_strtolower($nombreCompleto));
+            : $personas->first(fn (CoordinadorOperador $persona) => mb_strtolower(trim($persona->nombre.' '.$persona->apellido)) === mb_strtolower($nombreCompleto));
 
-        if ($nombreCompleto !== '' && !$nuevoResponsable) {
+        if ($nombreCompleto !== '' && ! $nuevoResponsable) {
             return;
         }
 
@@ -240,7 +248,7 @@ class AgenciaController extends Controller
         if (Schema::hasTable('coordinador_operador_agencia_historial')) {
             $nombresAnteriores = $personas
                 ->whereIn('id', $idsAnteriores)
-                ->map(fn(CoordinadorOperador $persona) => trim($persona->nombre . ' ' . $persona->apellido))
+                ->map(fn (CoordinadorOperador $persona) => trim($persona->nombre.' '.$persona->apellido))
                 ->filter()
                 ->implode(', ');
             $terminal = DB::table('agencias')->where('id', $agenciaId)->value('terminal');
@@ -250,7 +258,7 @@ class AgenciaController extends Controller
                 'responsable_anterior_id' => $idsAnteriores->count() === 1 ? $idsAnteriores->first() : null,
                 'responsable_anterior_nombre' => $nombresAnteriores ?: null,
                 'responsable_nuevo_id' => $nuevoId,
-                'responsable_nuevo_nombre' => $nuevoResponsable ? trim($nuevoResponsable->nombre . ' ' . $nuevoResponsable->apellido) : null,
+                'responsable_nuevo_nombre' => $nuevoResponsable ? trim($nuevoResponsable->nombre.' '.$nuevoResponsable->apellido) : null,
                 'user_id' => auth()->id(),
                 'motivo' => 'Actualización realizada desde el catálogo de agencias.',
                 'metadata' => ['terminal' => $terminal, 'origen' => 'catalogo_agencias'],
@@ -285,7 +293,7 @@ class AgenciaController extends Controller
             ->whereRaw("{$nombreOperadorSql} = ?", [$nombreCompleto])
             ->value('id');
 
-        if (!$operadorRutaId) {
+        if (! $operadorRutaId) {
             return;
         }
 
@@ -311,7 +319,7 @@ class AgenciaController extends Controller
 
         $operadores = $registrosOperadorRuta
             ->where('puesto', 'operador')
-            ->map(fn($item) => trim($item->nombre . ' ' . $item->apellido))
+            ->map(fn ($item) => trim($item->nombre.' '.$item->apellido))
             ->filter()
             ->unique()
             ->values()
@@ -319,7 +327,7 @@ class AgenciaController extends Controller
 
         $coordinadores = $registrosCoordinador
             ->where('puesto', 'coordinador')
-            ->map(fn($item) => trim($item->nombre . ' ' . $item->apellido))
+            ->map(fn ($item) => trim($item->nombre.' '.$item->apellido))
             ->filter()
             ->unique()
             ->values()
@@ -370,20 +378,24 @@ class AgenciaController extends Controller
         // Si hay búsqueda
         if ($request->has('search') && $request->search['value']) {
             $search = $request->search['value'];
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('agencia', 'like', "%{$search}%")
-                  ->orWhere('nombre_agencia', 'like', "%{$search}%")
-                  ->orWhere('terminal', 'like', "%{$search}%")
-                                    ->orWhere('horario_am', 'like', "%{$search}%")
-                                    ->orWhere('horario_pm', 'like', "%{$search}%")
-                  ->orWhere('sistema', 'like', "%{$search}%")
-                                      ->orWhere('empresa', 'like', "%{$search}%")
-                  ->orWhere('ciudad', 'like', "%{$search}%")
-                  ->orWhere('ruta', 'like', "%{$search}%")
-                  ->orWhere('operador', 'like', "%{$search}%")
-                                    ->orWhere('coordinador', 'like', "%{$search}%")
-                                    ->orWhere('estatus', 'like', "%{$search}%")
-                                    ->orWhere('aplica_incentivo', 'like', "%{$search}%");
+                    ->orWhere('nombre_agencia', 'like', "%{$search}%")
+                    ->orWhere('terminal', 'like', "%{$search}%")
+                    ->orWhere('horario_am', 'like', "%{$search}%")
+                    ->orWhere('horario_pm', 'like', "%{$search}%")
+                    ->orWhere('sistema', 'like', "%{$search}%")
+                    ->orWhere('empresa', 'like', "%{$search}%")
+                    ->orWhere('ciudad', 'like', "%{$search}%")
+                    ->orWhere('ruta', 'like', "%{$search}%")
+                    ->orWhere('operador', 'like', "%{$search}%")
+                    ->orWhere('coordinador', 'like', "%{$search}%")
+                    ->orWhere('grupo', 'like', "%{$search}%")
+                    ->orWhere('central', 'like', "%{$search}%")
+                    ->orWhere('gerente_de_servicio', 'like', "%{$search}%")
+                    ->orWhere('tipo_pago', 'like', "%{$search}%")
+                    ->orWhere('estatus', 'like', "%{$search}%")
+                    ->orWhere('aplica_incentivo', 'like', "%{$search}%");
             });
         }
 
@@ -396,9 +408,9 @@ class AgenciaController extends Controller
         $length = $request->input('length', 10);
 
         $agencias = $query->orderBy('created_at', 'desc')
-                          ->skip($start)
-                          ->take($length)
-                          ->get();
+            ->skip($start)
+            ->take($length)
+            ->get();
 
         $totalActivas = Agencia::query()->where('estatus', 1)->count();
         $totalInactivas = Agencia::query()->where('estatus', 0)->count();
@@ -428,7 +440,7 @@ class AgenciaController extends Controller
     {
         $columns = array_flip(Schema::getColumnListing('agencias'));
         $usaCiudadRelacion = isset($columns['ciudad_id'])
-            && !isset($columns['ciudad'])
+            && ! isset($columns['ciudad'])
             && Schema::hasTable('ciudades');
 
         $query = Agencia::query()->from('agencias');
@@ -449,6 +461,10 @@ class AgenciaController extends Controller
             'ruta' => isset($columns['ruta']) ? 'agencias.ruta' : "''",
             'operador' => isset($columns['operador']) ? 'agencias.operador' : "''",
             'coordinador' => isset($columns['coordinador']) ? 'agencias.coordinador' : "''",
+            'grupo' => isset($columns['grupo']) ? 'agencias.grupo' : "''",
+            'central' => isset($columns['central']) ? 'agencias.central' : "''",
+            'gerente_de_servicio' => isset($columns['gerente_de_servicio']) ? 'agencias.gerente_de_servicio' : "''",
+            'tipo_pago' => isset($columns['tipo_pago']) ? 'agencias.tipo_pago' : "''",
             'estatus' => isset($columns['estatus']) ? 'agencias.estatus' : '1',
             'aplica_incentivo' => isset($columns['aplica_incentivo']) ? 'agencias.aplica_incentivo' : '0',
         ];
@@ -611,6 +627,10 @@ class AgenciaController extends Controller
             'ruta' => 'Ruta',
             'operador' => 'Operador',
             'coordinador' => 'Coordinador',
+            'grupo' => 'Grupo',
+            'central' => 'Central',
+            'gerente_de_servicio' => 'Gerente de servicio',
+            'tipo_pago' => 'Tipo de pago',
             'estatus' => 'Estatus',
             'aplica_incentivo' => 'Incentivo',
         ];
@@ -847,8 +867,8 @@ class AgenciaController extends Controller
         $terminalesExistentes = Agencia::query()
             ->whereNotNull('terminal')
             ->pluck('terminal')
-            ->map(fn($terminal) => $this->normalizarTerminal((string) $terminal))
-            ->filter(fn($terminal) => $terminal !== '0')
+            ->map(fn ($terminal) => $this->normalizarTerminal((string) $terminal))
+            ->filter(fn ($terminal) => $terminal !== '0')
             ->unique()
             ->flip();
 
@@ -858,6 +878,7 @@ class AgenciaController extends Controller
         foreach ($terminalesPorClave as $terminalKey => $terminalOriginal) {
             if ($terminalesExistentes->has($terminalKey)) {
                 $omitidas++;
+
                 continue;
             }
 
@@ -888,7 +909,7 @@ class AgenciaController extends Controller
         try {
             return Agencia::query()->create($payloadBase);
         } catch (QueryException $e) {
-            if (!$this->esErrorPorNuloNoPermitido($e)) {
+            if (! $this->esErrorPorNuloNoPermitido($e)) {
                 throw $e;
             }
         }
@@ -922,7 +943,7 @@ class AgenciaController extends Controller
         }
 
         foreach (['horario_am', 'horario_pm', 'empresa', 'ciudad', 'ruta', 'operador', 'coordinador'] as $column) {
-            if ($fallbackCompleto && isset($columns[$column]) && !array_key_exists($column, $payload)) {
+            if ($fallbackCompleto && isset($columns[$column]) && ! array_key_exists($column, $payload)) {
                 $payload[$column] = '';
             }
         }
@@ -960,9 +981,9 @@ class AgenciaController extends Controller
             ->filter(function (Agencia $agencia) use ($ventasPorTerminal) {
                 $terminalKey = $this->normalizarTerminal((string) $agencia->terminal);
 
-                return $terminalKey !== '0' && !$ventasPorTerminal->has($terminalKey);
+                return $terminalKey !== '0' && ! $ventasPorTerminal->has($terminalKey);
             })
-            ->map(fn(Agencia $agencia) => $this->formatearAgenciaModal($agencia))
+            ->map(fn (Agencia $agencia) => $this->formatearAgenciaModal($agencia))
             ->values()
             ->all();
 
@@ -980,7 +1001,7 @@ class AgenciaController extends Controller
             ->where('estatus', 0)
             ->orderBy('terminal')
             ->get()
-            ->map(fn(Agencia $agencia) => $this->formatearAgenciaModal($agencia))
+            ->map(fn (Agencia $agencia) => $this->formatearAgenciaModal($agencia))
             ->values()
             ->all();
     }
@@ -1002,7 +1023,7 @@ class AgenciaController extends Controller
 
                 return $terminalKey !== '0' && $ventasPorTerminal->has($terminalKey);
             })
-            ->map(fn(Agencia $agencia) => $this->formatearAgenciaModal($agencia))
+            ->map(fn (Agencia $agencia) => $this->formatearAgenciaModal($agencia))
             ->values()
             ->all();
 
@@ -1021,14 +1042,14 @@ class AgenciaController extends Controller
         $terminalesRegistradas = Agencia::query()
             ->whereNotNull('terminal')
             ->pluck('terminal')
-            ->map(fn($terminal) => $this->normalizarTerminal((string) $terminal))
-            ->filter(fn($terminal) => $terminal !== '0')
+            ->map(fn ($terminal) => $this->normalizarTerminal((string) $terminal))
+            ->filter(fn ($terminal) => $terminal !== '0')
             ->unique()
             ->flip();
 
         $ventas = DB::table(self::FUENTE_VENTAS_USUARIOS)
             ->selectRaw("COALESCE(NULLIF(TRIM(LEADING '0' FROM TRIM(CAST(agencia_id AS CHAR))), ''), '0') AS terminal_key")
-            ->selectRaw("TRIM(CAST(agencia_id AS CHAR)) AS terminal_original")
+            ->selectRaw('TRIM(CAST(agencia_id AS CHAR)) AS terminal_original')
             ->selectRaw('COALESCE(monto, 0) AS monto')
             ->selectRaw('fecha AS fecha')
             ->whereNotNull('agencia_id')
@@ -1048,7 +1069,7 @@ class AgenciaController extends Controller
             ->orderByDesc('total_venta')
             ->get()
             ->filter(function ($row) use ($terminalesRegistradas) {
-                return !$terminalesRegistradas->has((string) ($row->terminal_key ?? '0'));
+                return ! $terminalesRegistradas->has((string) ($row->terminal_key ?? '0'));
             })
             ->map(function ($row) {
                 $terminalOriginal = trim((string) ($row->terminal_original ?? ''));
@@ -1095,7 +1116,7 @@ class AgenciaController extends Controller
             ->whereRaw('terminal_key <> ?', ['0'])
             ->distinct()
             ->pluck('terminal_key')
-            ->map(fn($terminal) => (string) $terminal)
+            ->map(fn ($terminal) => (string) $terminal)
             ->flip();
     }
 
@@ -1136,7 +1157,7 @@ class AgenciaController extends Controller
             ->whereNotNull('terminal')
             ->where(function ($q) {
                 $q->whereNotNull('horario_am')
-                  ->orWhereNotNull('horario_pm');
+                    ->orWhereNotNull('horario_pm');
             })
             ->get();
 
@@ -1171,7 +1192,7 @@ class AgenciaController extends Controller
 
             // Compatibilidad: se mantiene entrada_real como primera entrada y salida_real como última salida.
             $entradaReal = $entradasReales[0] ?? null;
-            $salidaReal = !empty($salidasReales) ? $salidasReales[array_key_last($salidasReales)] : null;
+            $salidaReal = ! empty($salidasReales) ? $salidasReales[array_key_last($salidasReales)] : null;
 
             // Nuevas columnas: salida AM real y entrada PM real.
             $salidaAmReal = $this->seleccionarHoraCercana(
@@ -1200,7 +1221,7 @@ class AgenciaController extends Controller
                     $minutosTarde = $entradaProgramadaDateTime->diffInMinutes($entradaReal);
                     $observaciones[] = 'Entrada tardía';
                 }
-            } elseif ($entradaProgramadaDateTime && !$entradaReal) {
+            } elseif ($entradaProgramadaDateTime && ! $entradaReal) {
                 $incumpleEntrada = true;
                 $observaciones[] = 'Sin registro de entrada';
             }
@@ -1211,14 +1232,14 @@ class AgenciaController extends Controller
                     $minutosSalidaAntes = $salidaReal->diffInMinutes($salidaProgramadaDateTime);
                     $observaciones[] = 'Salida anticipada';
                 }
-            } elseif ($salidaProgramadaDateTime && !$salidaReal) {
+            } elseif ($salidaProgramadaDateTime && ! $salidaReal) {
                 $incumpleSalida = true;
                 $observaciones[] = 'Sin registro de salida';
             }
 
             $incumplida = $incumpleEntrada || $incumpleSalida;
 
-            if ($soloIncumplidas && !$incumplida) {
+            if ($soloIncumplidas && ! $incumplida) {
                 continue;
             }
 
@@ -1334,14 +1355,14 @@ class AgenciaController extends Controller
             ->selectRaw('salida')
             ->where(function ($q) use ($fecha) {
                 $q->whereDate('entrada', $fecha)
-                  ->orWhereDate('salida', $fecha);
+                    ->orWhereDate('salida', $fecha);
             })
             ->get();
 
         $map = [];
 
         foreach ($bet as $row) {
-            if (!isset($map[$row->terminal_key])) {
+            if (! isset($map[$row->terminal_key])) {
                 $map[$row->terminal_key] = [
                     'entrada' => null,
                     'salida' => null,
@@ -1355,14 +1376,14 @@ class AgenciaController extends Controller
 
             if ($row->entrada) {
                 $map[$row->terminal_key]['entradas'][] = $row->entrada;
-                if (!$map[$row->terminal_key]['entrada'] || Carbon::parse($row->entrada)->lessThan(Carbon::parse($map[$row->terminal_key]['entrada']))) {
+                if (! $map[$row->terminal_key]['entrada'] || Carbon::parse($row->entrada)->lessThan(Carbon::parse($map[$row->terminal_key]['entrada']))) {
                     $map[$row->terminal_key]['entrada'] = $row->entrada;
                 }
             }
 
             if ($row->salida) {
                 $map[$row->terminal_key]['salidas'][] = $row->salida;
-                if (!$map[$row->terminal_key]['salida'] || Carbon::parse($row->salida)->greaterThan(Carbon::parse($map[$row->terminal_key]['salida']))) {
+                if (! $map[$row->terminal_key]['salida'] || Carbon::parse($row->salida)->greaterThan(Carbon::parse($map[$row->terminal_key]['salida']))) {
                     $map[$row->terminal_key]['salida'] = $row->salida;
                 }
             }
@@ -1371,7 +1392,7 @@ class AgenciaController extends Controller
         }
 
         foreach ($net as $row) {
-            if (!isset($map[$row->terminal_key])) {
+            if (! isset($map[$row->terminal_key])) {
                 $map[$row->terminal_key] = [
                     'entrada' => null,
                     'salida' => null,
@@ -1385,14 +1406,14 @@ class AgenciaController extends Controller
 
             if ($row->entrada) {
                 $map[$row->terminal_key]['entradas'][] = $row->entrada;
-                if (!$map[$row->terminal_key]['entrada'] || Carbon::parse($row->entrada)->lessThan(Carbon::parse($map[$row->terminal_key]['entrada']))) {
+                if (! $map[$row->terminal_key]['entrada'] || Carbon::parse($row->entrada)->lessThan(Carbon::parse($map[$row->terminal_key]['entrada']))) {
                     $map[$row->terminal_key]['entrada'] = $row->entrada;
                 }
             }
 
             if ($row->salida) {
                 $map[$row->terminal_key]['salidas'][] = $row->salida;
-                if (!$map[$row->terminal_key]['salida'] || Carbon::parse($row->salida)->greaterThan(Carbon::parse($map[$row->terminal_key]['salida']))) {
+                if (! $map[$row->terminal_key]['salida'] || Carbon::parse($row->salida)->greaterThan(Carbon::parse($map[$row->terminal_key]['salida']))) {
                     $map[$row->terminal_key]['salida'] = $row->salida;
                 }
             }
@@ -1411,42 +1432,45 @@ class AgenciaController extends Controller
 
     private function normalizarTerminal(?string $terminal): string
     {
-        if (!$terminal) {
+        if (! $terminal) {
             return '0';
         }
 
         $valor = ltrim(trim($terminal), '0');
+
         return $valor === '' ? '0' : $valor;
     }
 
     private function extraerHoraInicio(?string $horario): ?string
     {
-        if (!$horario || !str_contains($horario, '/')) {
+        if (! $horario || ! str_contains($horario, '/')) {
             return null;
         }
 
         $partes = explode('/', $horario);
+
         return isset($partes[0]) ? trim($partes[0]) : null;
     }
 
     private function extraerHoraFin(?string $horario): ?string
     {
-        if (!$horario || !str_contains($horario, '/')) {
+        if (! $horario || ! str_contains($horario, '/')) {
             return null;
         }
 
         $partes = explode('/', $horario);
+
         return isset($partes[1]) ? trim($partes[1]) : null;
     }
 
     private function parseFechaHora(string $fecha, ?string $hora): ?Carbon
     {
-        if (!$hora) {
+        if (! $hora) {
             return null;
         }
 
         try {
-            return Carbon::createFromFormat('Y-m-d g:i A', $fecha . ' ' . strtoupper($hora));
+            return Carbon::createFromFormat('Y-m-d g:i A', $fecha.' '.strtoupper($hora));
         } catch (\Throwable $e) {
             return null;
         }
@@ -1457,7 +1481,7 @@ class AgenciaController extends Controller
         $parsed = [];
 
         foreach ($horas as $hora) {
-            if (!$hora) {
+            if (! $hora) {
                 continue;
             }
 
@@ -1491,7 +1515,7 @@ class AgenciaController extends Controller
             return null;
         }
 
-        if (!$objetivo) {
+        if (! $objetivo) {
             return $filtradas[0];
         }
 
@@ -1511,8 +1535,8 @@ class AgenciaController extends Controller
         $terminalesRegistradas = Agencia::query()
             ->whereNotNull('terminal')
             ->pluck('terminal')
-            ->map(fn($terminal) => $this->normalizarTerminal((string) $terminal))
-            ->filter(fn($terminal) => $terminal !== '0')
+            ->map(fn ($terminal) => $this->normalizarTerminal((string) $terminal))
+            ->filter(fn ($terminal) => $terminal !== '0')
             ->unique()
             ->values()
             ->flip();
@@ -1521,7 +1545,7 @@ class AgenciaController extends Controller
 
         $ventas = DB::table(self::FUENTE_VENTAS_USUARIOS)
             ->selectRaw("COALESCE(NULLIF(TRIM(LEADING '0' FROM TRIM(CAST(agencia_id AS CHAR))), ''), '0') AS terminal_key")
-            ->selectRaw("TRIM(CAST(agencia_id AS CHAR)) AS terminal_original")
+            ->selectRaw('TRIM(CAST(agencia_id AS CHAR)) AS terminal_original')
             ->selectRaw('COALESCE(monto, 0) AS monto')
             ->selectRaw('fecha AS fecha')
             ->whereNotNull('agencia_id')
@@ -1531,6 +1555,7 @@ class AgenciaController extends Controller
                 foreach ($tiposVentaFija as $index => $tipo) {
                     if ($index === 0) {
                         $query->whereRaw('LOWER(TRIM(COALESCE(tipo, ""))) = ?', [$tipo]);
+
                         continue;
                     }
 
@@ -1552,7 +1577,8 @@ class AgenciaController extends Controller
         $terminalesNoRegistradas = $ventasConsolidadas
             ->filter(function ($row) use ($terminalesRegistradas) {
                 $terminal = (string) ($row->terminal_key ?? '0');
-                return !$terminalesRegistradas->has($terminal);
+
+                return ! $terminalesRegistradas->has($terminal);
             })
             ->map(function ($row) {
                 $terminalOriginal = trim((string) ($row->terminal_original ?? ''));
@@ -1579,7 +1605,7 @@ class AgenciaController extends Controller
      */
     public function export()
     {
-        return Excel::download(new AgenciasExport, 'agencias_' . date('Y-m-d_His') . '.xlsx');
+        return Excel::download(new AgenciasExport, 'agencias_'.date('Y-m-d_His').'.xlsx');
     }
 
     /**
@@ -1592,7 +1618,7 @@ class AgenciaController extends Controller
         ]);
 
         try {
-            $import = new AgenciasImport();
+            $import = new AgenciasImport;
             Excel::import($import, $request->file('file'));
 
             $resultado = [
@@ -1610,7 +1636,7 @@ class AgenciaController extends Controller
                 ->with('import_result', $resultado);
         } catch (\Exception $e) {
             return redirect()->route('agencias.index')
-                ->with('error', 'Error al importar: ' . $e->getMessage());
+                ->with('error', 'Error al importar: '.$e->getMessage());
         }
     }
 
@@ -1625,7 +1651,7 @@ class AgenciaController extends Controller
         ]);
 
         try {
-            $import = new AgenciasActualizacionMasivaImport();
+            $import = new AgenciasActualizacionMasivaImport;
             Excel::import($import, $request->file('file'));
 
             $rows = $import->rows ?? collect();
@@ -1649,25 +1675,29 @@ class AgenciaController extends Controller
                 $row = collect($rowCollection)->toArray();
 
                 $agencia = $this->buscarAgenciaParaActualizacion($row);
-                if (!$agencia) {
+                if (! $agencia) {
                     $noEncontradas++;
+
                     continue;
                 }
 
                 $updates = $this->extraerCamposParaActualizacionMasiva($row);
 
-                if (array_key_exists('operador', $updates) && $updates['operador'] !== '' && !$operadoresSet->has($updates['operador'])) {
+                if (array_key_exists('operador', $updates) && $updates['operador'] !== '' && ! $operadoresSet->has($updates['operador'])) {
                     $filasInvalidas++;
+
                     continue;
                 }
 
-                if (array_key_exists('coordinador', $updates) && $updates['coordinador'] !== '' && !$coordinadoresSet->has($updates['coordinador'])) {
+                if (array_key_exists('coordinador', $updates) && $updates['coordinador'] !== '' && ! $coordinadoresSet->has($updates['coordinador'])) {
                     $filasInvalidas++;
+
                     continue;
                 }
 
                 if (empty($updates)) {
                     $sinCambios++;
+
                     continue;
                 }
 
@@ -1676,6 +1706,7 @@ class AgenciaController extends Controller
                     && $this->terminalExisteEnOtraAgencia((string) $updates['terminal'], (int) $agencia->id)
                 ) {
                     $filasInvalidas++;
+
                     continue;
                 }
 
@@ -1706,7 +1737,7 @@ class AgenciaController extends Controller
                 ->with('mass_update_result', $resultado);
         } catch (\Exception $e) {
             return redirect()->route('agencias.index')
-                ->with('error', 'Error en actualizacion masiva: ' . $e->getMessage());
+                ->with('error', 'Error en actualizacion masiva: '.$e->getMessage());
         }
     }
 
@@ -1720,7 +1751,7 @@ class AgenciaController extends Controller
         ]);
 
         try {
-            $import = new AgenciasActualizacionMasivaImport();
+            $import = new AgenciasActualizacionMasivaImport;
             Excel::import($import, $request->file('file'));
 
             $rows = $import->rows ?? collect();
@@ -1735,9 +1766,10 @@ class AgenciaController extends Controller
                 ->map(function ($rowCollection) {
                     $row = collect($rowCollection)->toArray();
                     $terminal = $this->valorColumna($row, ['terminal']);
+
                     return trim((string) ($terminal ?? ''));
                 })
-                ->filter(fn($terminal) => $terminal !== '')
+                ->filter(fn ($terminal) => $terminal !== '')
                 ->values();
 
             $terminalesUnicos = $terminales->unique()->values();
@@ -1745,8 +1777,8 @@ class AgenciaController extends Controller
             $terminalesEncontradas = Agencia::query()
                 ->whereIn('terminal', $terminalesUnicos)
                 ->pluck('terminal')
-                ->map(fn($terminal) => trim((string) $terminal))
-                ->filter(fn($terminal) => $terminal !== '')
+                ->map(fn ($terminal) => trim((string) $terminal))
+                ->filter(fn ($terminal) => $terminal !== '')
                 ->unique()
                 ->values();
 
@@ -1766,7 +1798,7 @@ class AgenciaController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'ok' => false,
-                'message' => 'Error al reconocer terminales: ' . $e->getMessage(),
+                'message' => 'Error al reconocer terminales: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1807,6 +1839,10 @@ class AgenciaController extends Controller
             'ruta' => ['ruta'],
             'operador' => ['operador'],
             'coordinador' => ['coordinador'],
+            'grupo' => ['grupo'],
+            'central' => ['central'],
+            'gerente_de_servicio' => ['gerente_de_servicio', 'gerente de servicio'],
+            'tipo_pago' => ['tipo_pago', 'tipo pago'],
             'estatus' => ['estatus'],
             'aplica_incentivo' => ['aplica_incentivo', 'aplica incentivo'],
         ];
@@ -1820,11 +1856,23 @@ class AgenciaController extends Controller
 
             if ($campo === 'estatus') {
                 $updates[$campo] = $this->parseEstatus((string) $valor);
+
+                continue;
+            }
+
+            if ($campo === 'sistema') {
+                $sistema = $this->normalizarSistemaActualizacionMasiva((string) $valor);
+
+                if ($sistema !== null) {
+                    $updates[$campo] = $sistema;
+                }
+
                 continue;
             }
 
             if ($campo === 'aplica_incentivo') {
                 $updates[$campo] = $this->parseAplicaIncentivo((string) $valor);
+
                 continue;
             }
 
@@ -1832,6 +1880,16 @@ class AgenciaController extends Controller
         }
 
         return $updates;
+    }
+
+    private function normalizarSistemaActualizacionMasiva(string $value): ?string
+    {
+        return match (strtolower(trim($value))) {
+            'lotobet', 'lotobet real', 'real' => 'lotobet',
+            'lotonet' => 'lotonet',
+            'ambos' => 'ambos',
+            default => null,
+        };
     }
 
     private function valorColumna(array $row, array $aliases): mixed
@@ -1907,21 +1965,22 @@ class AgenciaController extends Controller
             'Ruta',
             'Operador',
             'Coordinador',
+            'Grupo',
+            'Central',
+            'Gerente de Servicio',
+            'Tipo de Pago',
             'Estatus',
             'Aplica Incentivo',
         ];
 
         $data = [
             $headers,
-            ['20907', '5546', '7:00 AM / 2:00 PM', '2:00 PM / 9:00 PM', 'Agencia Ejemplo', 'Lotobet', 'Grupo A', 'San Pedro', 'Ruta 0501', 'Jose Ruby', 'Aramis', '1', 'SI'],
+            ['20907', '5546', '7:00 AM / 2:00 PM', '2:00 PM / 9:00 PM', 'Agencia Ejemplo', 'Lotobet', 'Empresa A', 'San Pedro', 'Ruta 0501', 'Jose Ruby', 'Aramis', 'Grupo A', 'Central 1', 'Gerente Uno', 'Semanal', '1', 'SI'],
         ];
 
         $filename = 'plantilla_agencias.xlsx';
 
-        return Excel::download(new class($data) implements 
-            \Maatwebsite\Excel\Concerns\FromArray,
-            \Maatwebsite\Excel\Concerns\WithStyles,
-            \Maatwebsite\Excel\Concerns\ShouldAutoSize
+        return Excel::download(new class($data) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithStyles
         {
             protected $data;
 
@@ -1962,6 +2021,10 @@ class AgenciaController extends Controller
             'Horario AM',
             'Horario PM',
             'Sistema',
+            'Grupo',
+            'Central',
+            'Gerente de Servicio',
+            'Tipo de Pago',
             'Estatus',
             'Aplica Incentivo',
         ];
@@ -1972,10 +2035,7 @@ class AgenciaController extends Controller
 
         $filename = 'plantilla_actualizacion_masiva_agencias.xlsx';
 
-        return Excel::download(new class($data) implements
-            \Maatwebsite\Excel\Concerns\FromArray,
-            \Maatwebsite\Excel\Concerns\WithStyles,
-            \Maatwebsite\Excel\Concerns\ShouldAutoSize
+        return Excel::download(new class($data) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithStyles
         {
             protected $data;
 
