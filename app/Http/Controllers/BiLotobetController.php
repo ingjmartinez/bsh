@@ -323,7 +323,7 @@ class BiLotobetController extends Controller
     /** @return array<int, string> */
     private function opcionesAgencia(string $column): array
     {
-        return DB::table('agencias')->whereNull('deleted_at')->whereNotNull($column)
+        return DB::table('agencias')->whereNotNull($column)
             ->whereRaw("TRIM({$column}) <> ''")->distinct()->orderBy($column)->pluck($column)->all();
     }
 
@@ -331,7 +331,7 @@ class BiLotobetController extends Controller
     private function agenciasQuery(array $filters): Builder
     {
         return $this->applyAgencyFilters(
-            DB::table('agencias as a')->whereNull('a.deleted_at'),
+            DB::table('agencias as a'),
             $filters
         );
     }

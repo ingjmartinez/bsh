@@ -40,6 +40,15 @@ class BiLotobetDashboardTest extends TestCase
         $this->assertStringContainsString("typeof ApexCharts === 'undefined'", $view);
     }
 
+    public function test_dashboard_does_not_require_non_migrated_agencias_deleted_at_column(): void
+    {
+        $controller = file_get_contents(app_path('Http/Controllers/BiLotobetController.php'));
+
+        $this->assertStringNotContainsString("whereNull('deleted_at')", $controller);
+        $this->assertStringNotContainsString("whereNull('a.deleted_at')", $controller);
+        $this->assertStringContainsString("where('a.estatus', 1)", $controller);
+    }
+
     public function test_lotobet_platform_page_exposes_dashboard_as_a_report_card(): void
     {
         $view = file_get_contents(resource_path('views/bi/lotobet-real-index.blade.php'));
