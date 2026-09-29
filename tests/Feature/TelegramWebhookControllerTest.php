@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\ChatbotSession;
 use App\Services\TelegramService;
+use App\Services\WhatsAppChatbotService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Mockery;
 use Tests\TestCase;
 
 class TelegramWebhookControllerTest extends TestCase
@@ -176,6 +178,125 @@ class TelegramWebhookControllerTest extends TestCase
 
         $storagePath = ltrim((string) parse_url($file['url'], PHP_URL_PATH), '/');
         Storage::disk('public')->assertExists(substr($storagePath, strlen('storage/')));
+    }
+
+    public function test_no_acepta_una_imagen_si_el_disco_no_puede_guardarla(): void
+    {
+        Http::fake(function ($request) {
+            if (str_ends_with($request->url(), '/getFile')) {
+                return Http::response([
+                    'ok' => true,
+                    'result' => ['file_path' => 'photos/comprobante.jpg'],
+                ]);
+            }
+
+            return Http::response('imagen-binaria', 200, ['Content-Type' => 'image/jpeg']);
+        });
+
+        $disk = Mockery::mock(\Illuminate\Filesystem\FilesystemAdapter::class);
+        $disk->shouldReceive('put')->once()->andReturn(false);
+        Storage::shouldReceive('disk')->with('public')->once()->andReturn($disk);
+
+        $this->assertNull(app(TelegramService::class)->downloadFile('telegram-file-id', 'comprobante.jpg', 'image/jpeg'));
+    }
+
+    public function test_no_guarda_una_descarga_vacia(): void
+    {
+        Storage::fake('public');
+        Http::fake(function ($request) {
+            if (str_ends_with($request->url(), '/getFile')) {
+                return Http::response([
+                    'ok' => true,
+                    'result' => ['file_path' => 'photos/comprobante.jpg'],
+                ]);
+            }
+
+            return Http::response('', 200, ['Content-Type' => 'image/jpeg']);
+        });
+
+        $this->assertNull(app(TelegramService::class)->downloadFile('telegram-file-id', 'comprobante.jpg', 'image/jpeg'));
+        Storage::disk('public')->assertDirectoryEmpty('chatbot/telegram');
+    }
+
+    public function test_informa_si_telegram_no_puede_descargar_la_foto(): void
+    {
+        Http::fake([
+            'https://api.telegram.org/bottest-token/getFile' => Http::response([
+                'ok' => false,
+                'description' => 'file not found',
+            ], 400),
+            'https://api.telegram.org/bottest-token/sendMessage' => Http::response([
+                'ok' => true,
+                'result' => ['message_id' => 1],
+            ]),
+        ]);
+
+        ChatbotSession::query()->create([
+            'account' => 'telegram:bsh_test_bot',
+            'phone' => '18095550150',
+            'channel' => 'telegram',
+            'channel_recipient' => '900100200',
+            'step' => 'ticket_imagen',
+            'context' => ['ticket_numero' => '710529'],
+            'last_interaction_at' => now(),
+        ]);
+
+        $this->withHeader('X-Telegram-Bot-Api-Secret-Token', 'test-secret')
+            ->postJson('/api/telegram/webhook', $this->messageUpdate(205, [
+                'photo' => [['file_id' => 'telegram-file-id', 'width' => 800, 'height' => 600]],
+            ]))
+            ->assertOk()
+            ->assertJson(['status' => 'image_processing_failed']);
+
+        Http::assertSent(fn ($request): bool => str_ends_with($request->url(), '/sendMessage')
+            && str_contains((string) ($request->data()['text'] ?? ''), 'enviala nuevamente'));
+        $this->assertSame('ticket_imagen', ChatbotSession::firstOrFail()->step);
+    }
+
+    public function test_entrega_una_foto_descargada_al_chatbot(): void
+    {
+        Storage::fake('public');
+        Http::fake(function ($request) {
+            if (str_ends_with($request->url(), '/getFile')) {
+                return Http::response([
+                    'ok' => true,
+                    'result' => ['file_path' => 'photos/comprobante.jpg'],
+                ]);
+            }
+
+            if (str_contains($request->url(), '/file/bot')) {
+                return Http::response('imagen-binaria', 200, ['Content-Type' => 'image/jpeg']);
+            }
+
+            return Http::response(['ok' => true, 'result' => ['message_id' => 1]]);
+        });
+
+        ChatbotSession::query()->create([
+            'account' => 'telegram:bsh_test_bot',
+            'phone' => '18095550150',
+            'channel' => 'telegram',
+            'channel_recipient' => '900100200',
+            'step' => 'ticket_imagen',
+            'context' => ['ticket_numero' => '710529'],
+            'last_interaction_at' => now(),
+        ]);
+
+        $chatbot = Mockery::mock(WhatsAppChatbotService::class);
+        $chatbot->shouldReceive('handleIncoming')->once()
+            ->withArgs(fn ($phone, $text, $account, $incoming): bool => $phone === '18095550150'
+                && $text === ''
+                && $account === 'telegram:bsh_test_bot'
+                && ($incoming['attachment_extension'] ?? null) === 'jpg'
+                && str_contains((string) ($incoming['attachment_url'] ?? ''), '/storage/chatbot/telegram/'))
+            ->andReturn(['reply' => 'Imagen recibida']);
+        $this->app->instance(WhatsAppChatbotService::class, $chatbot);
+
+        $this->withHeader('X-Telegram-Bot-Api-Secret-Token', 'test-secret')
+            ->postJson('/api/telegram/webhook', $this->messageUpdate(206, [
+                'photo' => [['file_id' => 'telegram-file-id', 'width' => 800, 'height' => 600]],
+            ]))
+            ->assertOk()
+            ->assertJson(['status' => 'ok']);
     }
 
     public function test_telegram_valida_delta_exclusivamente_con_agencias_delta(): void
