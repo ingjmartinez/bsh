@@ -65,12 +65,6 @@ class TelegramService
         $filePath = $file['provider_response']['result']['file_path'] ?? null;
 
         if (! ($file['success'] ?? false) || ! is_string($filePath) || $filePath === '') {
-            if (($file['success'] ?? false) && (! is_string($filePath) || $filePath === '')) {
-                Log::warning('Telegram getFile no devolvio ruta de archivo', [
-                    'file_id' => $fileId,
-                ]);
-            }
-
             return null;
         }
 
@@ -95,24 +89,7 @@ class TelegramService
                 return null;
             }
 
-            $contents = $response->body();
-
-            if ($contents === '') {
-                Log::warning('Telegram devolvio archivo vacio', [
-                    'file_id' => $fileId,
-                ]);
-
-                return null;
-            }
-
-            if (! Storage::disk('public')->put($storagePath, $contents)) {
-                Log::error('Telegram no pudo guardar archivo', [
-                    'file_id' => $fileId,
-                    'storage_path' => $storagePath,
-                ]);
-
-                return null;
-            }
+            Storage::disk('public')->put($storagePath, $response->body());
 
             return [
                 'url' => url('/storage/'.ltrim($storagePath, '/')),

@@ -124,14 +124,9 @@ class TelegramWebhookController extends Controller
         }
 
         if ($text === '' && empty($incoming['attachment_url'])) {
-            $telegram->sendText(
-                $chatId,
-                $file !== null
-                    ? 'No pude procesar la imagen en este momento. Por favor, enviala nuevamente.'
-                    : 'Envia un mensaje de texto o una imagen valida.'
-            );
+            $telegram->sendText($chatId, 'Envia un mensaje de texto o una imagen valida.');
 
-            return response()->json(['status' => $file !== null ? 'image_processing_failed' : 'unsupported_message']);
+            return response()->json(['status' => 'unsupported_message']);
         }
 
         try {
