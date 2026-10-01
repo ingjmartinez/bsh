@@ -118,9 +118,28 @@ class BiLotobetDashboardTest extends TestCase
         $this->assertStringContainsString('Tradicional', $view);
         $this->assertStringContainsString('No tradicional', $view);
         $this->assertStringContainsString('prodDailyChart', $view);
-        $this->assertStringContainsString('prodPieChart', $view);
+        $this->assertStringContainsString('prodProductsChart', $view);
+        $this->assertStringContainsString("type:'bar'", $view);
+        $this->assertStringContainsString('horizontal:true', $view);
+        $this->assertStringContainsString('d.productos.map(x=>x.producto)', $view);
+        $this->assertStringNotContainsString("type:'donut'", $view);
         $this->assertContains('in:tradicional,no_tradicional', $rules['categoria']);
         $this->assertNotNull(Route::getRoutes()->getByName('bi.lotobet-real.productos'));
         $this->assertNotNull(Route::getRoutes()->getByName('bi.lotobet-real.productos-data'));
+    }
+
+    public function test_productos_report_uses_sales_category_and_indexed_date_totals(): void
+    {
+        $controller = file_get_contents(app_path('Http/Controllers/BiLotobetController.php'));
+        $migration = file_get_contents(database_path('migrations/2026_10_01_001404_add_product_report_covering_index_to_ventas_usuarios_bet.php'));
+        $agencyMigration = file_get_contents(database_path('migrations/2026_10_01_001616_add_terminal_index_to_agencias_for_product_report.php'));
+
+        $this->assertStringContainsString("->where('v.tipo', \$tipo)", $controller);
+        $this->assertStringContainsString('if ($requireAgency || $hasAgencyFilters)', $controller);
+        $this->assertStringContainsString("->leftJoin('agencias as a', 'a.terminal', '=', 'v.agencia_id')", $controller);
+        $this->assertStringContainsString("\$build(\$mesInicio, \$hasta)->sum('v.monto')", $controller);
+        $this->assertStringContainsString("\$build(\$mesAnteriorInicio, \$mesAnteriorFin)->sum('v.monto')", $controller);
+        $this->assertStringContainsString("['tipo', 'fecha', 'monto']", $migration);
+        $this->assertStringContainsString("->index('terminal', 'agencias_terminal_idx')", $agencyMigration);
     }
 }

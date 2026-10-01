@@ -169,25 +169,34 @@ class BiLotobetController extends Controller
         $desde = CarbonImmutable::parse($filters['fecha_desde']);
         $hasta = CarbonImmutable::parse($filters['fecha_hasta']);
         $tipo = $filters['categoria'] === 'tradicional' ? 'Tradicional' : 'No Tradicional';
+        $hasAgencyFilters = collect(['grupo', 'central', 'gerente', 'terminal'])
+            ->contains(fn (string $key): bool => ! empty($filters[$key]));
 
-        $build = function (CarbonImmutable $inicio, CarbonImmutable $fin) use ($filters, $tipo): Builder {
-            return $this->ventasQuery($filters, $inicio, $fin)
-                ->leftJoin('catalogo_juegos as c', 'c.producto_id', '=', 'v.producto_id')
-                ->whereRaw("LOWER(COALESCE(NULLIF(TRIM(c.tipo), ''), NULLIF(TRIM(v.tipo), ''))) = ?", [strtolower($tipo)]);
+        $build = function (CarbonImmutable $inicio, CarbonImmutable $fin, bool $requireAgency = false) use ($filters, $tipo, $hasAgencyFilters): Builder {
+            $query = DB::table('ventas_usuarios_bet as v')
+                ->whereBetween('v.fecha', [$inicio->toDateString(), $fin->toDateString()])
+                ->where('v.tipo', $tipo);
+
+            if ($requireAgency || $hasAgencyFilters) {
+                $query->leftJoin('agencias as a', 'a.terminal', '=', 'v.agencia_id');
+                $this->applyAgencyFilters($query, $filters);
+            }
+
+            return $query;
         };
 
         $ventas = (float) $build($desde, $hasta)->sum('v.monto');
         $terminalesActivas = $this->agenciasQuery($filters)->where('a.estatus', 1)->count();
-        $terminalesVendieron = $build($desde, $hasta)
+        $terminalesVendieron = $build($desde, $hasta, true)
             ->where('a.estatus', 1)
             ->where('v.monto', '>', 0)
             ->distinct()
             ->count('v.agencia_id');
         $mesInicio = $hasta->startOfMonth();
-        $ventaMes = (float) $build($mesInicio, $hasta)->sum('v.monto');
         $mesAnteriorInicio = $mesInicio->subMonth();
         $diaComparableAnterior = min($hasta->day, $mesAnteriorInicio->daysInMonth);
         $mesAnteriorFin = $mesAnteriorInicio->addDays($diaComparableAnterior - 1);
+        $ventaMes = (float) $build($mesInicio, $hasta)->sum('v.monto');
         $ventaMesAnterior = (float) $build($mesAnteriorInicio, $mesAnteriorFin)->sum('v.monto');
 
         $graficoInicio = $hasta->subDays(6);
@@ -201,6 +210,7 @@ class BiLotobetController extends Controller
             return ['dia' => ucfirst($fecha->locale('es')->dayName), 'total' => $actual, 'variacion' => $this->variacion($actual, $anterior) ?? 0];
         });
         $productos = $build($desde, $hasta)
+            ->leftJoin('catalogo_juegos as c', 'c.producto_id', '=', 'v.producto_id')
             ->selectRaw("COALESCE(NULLIF(TRIM(c.descripcion), ''), NULLIF(TRIM(v.descripcion), ''), CONCAT('Producto ', v.producto_id)) AS producto, SUM(v.monto) AS total")
             ->groupByRaw("COALESCE(NULLIF(TRIM(c.descripcion), ''), NULLIF(TRIM(v.descripcion), ''), CONCAT('Producto ', v.producto_id))")
             ->orderByDesc('total')->limit(10)->get();
