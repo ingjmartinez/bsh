@@ -81,7 +81,7 @@
                                                 <th>Tradicional</th>
                                                 <th>No Tradicional</th>
                                                 <th>Recargas</th>
-                                                <th>Paquetico</th>
+                                                <th>Raza</th>
                                                 <th>Total</th>
                                             </tr>
                                         </thead>
@@ -156,7 +156,7 @@
                     { data: 'tradicional', className: 'text-end' },
                     { data: 'no_tradicional', className: 'text-end' },
                     { data: 'recargas', className: 'text-end' },
-                    { data: 'paquetico', className: 'text-end' },
+                    { data: 'raza', className: 'text-end' },
                     { data: 'total', className: 'text-end' }
                 ],
                 autoWidth: false,

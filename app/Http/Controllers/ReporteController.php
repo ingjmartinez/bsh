@@ -877,6 +877,22 @@ class ReporteController extends Controller
             ? "DATE_FORMAT(v.fecha, '%Y-%m')"
             : "DATE_FORMAT(v.fecha, '%Y-%m-%d')";
 
+        $selectPeriodoDs = $periodo === 'mes'
+            ? "DATE_FORMAT(fecha, '%Y-%m')"
+            : "DATE_FORMAT(fecha, '%Y-%m-%d')";
+        $dsJoin = $sistema === 'Lotobet'
+            ? "LEFT JOIN (
+                SELECT agencia_id, {$selectPeriodoDs} AS periodo, SUM(ventas) AS ventas
+                FROM ventas_ds_virtual
+                WHERE fecha BETWEEN ? AND ?
+                GROUP BY agencia_id, {$selectPeriodoDs}
+            ) ds ON ds.agencia_id = v.agencia_id AND ds.periodo = {$selectPeriodo}"
+            : '';
+        $raza = $sistema === 'Lotobet' ? 'COALESCE(MAX(ds.ventas), 0)' : '0';
+        $bindings = $sistema === 'Lotobet'
+            ? [$fechaInicio, $fechaFin, $fechaInicio, $fechaFin]
+            : [$fechaInicio, $fechaFin];
+
         $resultados = DB::select("
             SELECT
                 v.agencia_id AS agencia_id,
@@ -884,11 +900,12 @@ class ReporteController extends Controller
                 FORMAT(SUM(CASE WHEN {$tipoProductoSql} = 'tradicional'     THEN v.monto ELSE 0 END), 2, 'en_US') AS tradicional,
                 FORMAT(SUM(CASE WHEN {$tipoProductoSql} = 'no tradicional'  THEN v.monto ELSE 0 END), 2, 'en_US') AS no_tradicional,
                 FORMAT(SUM(CASE WHEN {$tipoProductoSql} = 'recarga'         THEN v.monto ELSE 0 END), 2, 'en_US') AS recargas,
-                FORMAT(SUM(CASE WHEN {$tipoProductoSql} = 'paquetico'       THEN v.monto ELSE 0 END), 2, 'en_US') AS paquetico,
-                FORMAT(SUM(v.monto), 2, 'en_US') AS total
+                FORMAT({$raza}, 2, 'en_US') AS raza,
+                FORMAT(SUM(CASE WHEN {$tipoProductoSql} = 'paquetico' THEN 0 ELSE v.monto END) + {$raza}, 2, 'en_US') AS total
             FROM {$tabla} v
             LEFT JOIN catalogo_juegos c
                 ON v.producto_id = c.producto_id
+            {$dsJoin}
             WHERE v.fecha BETWEEN ? AND ?
             GROUP BY
                 v.agencia_id,
@@ -896,7 +913,7 @@ class ReporteController extends Controller
             ORDER BY
                 v.agencia_id,
                 periodo
-        ", [$fechaInicio, $fechaFin]);
+        ", $bindings);
 
         return response()->json($resultados);
     }

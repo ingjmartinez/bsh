@@ -7,6 +7,15 @@ use Tests\TestCase;
 
 class ReporteVentasAgenciaLotobetTest extends TestCase
 {
+    public function test_ventas_agencia_periodo_displays_raza_column(): void
+    {
+        $view = file_get_contents(resource_path('views/reportes/ventas-agencia-periodo.blade.php'));
+
+        $this->assertStringContainsString('<th>Raza</th>', $view);
+        $this->assertStringContainsString("{ data: 'raza', className: 'text-end' }", $view);
+        $this->assertStringNotContainsString('<th>Paquetico</th>', $view);
+    }
+
     public function test_ventas_agencia_periodo_lotobet_uses_ventas_usuarios_bet(): void
     {
         DB::shouldReceive('select')
@@ -14,7 +23,10 @@ class ReporteVentasAgenciaLotobetTest extends TestCase
             ->withArgs(function (string $query, array $bindings): bool {
                 return str_contains($query, 'FROM ventas_usuarios_bet v')
                     && ! str_contains($query, 'ventas_producto_bet')
-                    && $bindings === ['2026-09-01', '2026-09-25'];
+                    && str_contains($query, 'FROM ventas_ds_virtual')
+                    && str_contains($query, 'AS raza')
+                    && ! str_contains($query, 'AS paquetico')
+                    && $bindings === ['2026-09-01', '2026-09-25', '2026-09-01', '2026-09-25'];
             })
             ->andReturn([]);
 
@@ -32,7 +44,10 @@ class ReporteVentasAgenciaLotobetTest extends TestCase
     {
         DB::shouldReceive('select')
             ->once()
-            ->withArgs(fn (string $query): bool => str_contains($query, 'FROM ventas_producto_net v'))
+            ->withArgs(fn (string $query, array $bindings): bool => str_contains($query, 'FROM ventas_producto_net v')
+                && ! str_contains($query, 'FROM ventas_ds_virtual')
+                && str_contains($query, 'AS raza')
+                && $bindings === ['2026-09-01', '2026-09-25'])
             ->andReturn([]);
 
         $this->withoutMiddleware()

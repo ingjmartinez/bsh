@@ -40,6 +40,7 @@ use App\Http\Controllers\PagoPorOtraEmpresaController;
 use App\Http\Controllers\PaqueticoController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PremioController;
+use App\Http\Controllers\PremiosPagadosProductoController;
 use App\Http\Controllers\ProcesoController;
 use App\Http\Controllers\RecargasController;
 use App\Http\Controllers\RecursosHumanosController;
@@ -398,6 +399,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('role_or_permission:superadmin|admin|module.reportes.view')->group(function () {
         Route::get('/reportes', [ReporteController::class, 'indexReportes'])->name('reportes.index');
+        Route::get('/reportes/premios-pagados-productos', [PremiosPagadosProductoController::class, 'index'])->name('reportes.premios-pagados-productos');
 
         Route::get('/reportes-ventas-usuario-lotobet', [ReporteController::class, 'ventasUsuarioBet']);
         Route::get('/reportes-ventas-usuario-lotobet/list', [ReporteController::class, 'listVentasUsuarioBet']);

@@ -2,6 +2,15 @@
 
 return [
     [
+        'nombre' => 'Premios pagados por productos',
+        'descripcion' => 'Pagos de terminales Real, agrupados por tipo de producto y empresa.',
+        'url' => '/reportes/premios-pagados-productos',
+        'icono' => 'ri-trophy-line',
+        'categoria' => 'Finanza',
+        'tags' => ['premios', 'pagos', 'productos', 'real', 'tradicional', 'no tradicional'],
+        'activo' => true,
+    ],
+    [
         'nombre' => 'Ventas por Usuario Lotobet Real',
         'descripcion' => 'Consulta ventas por usuario en un mes seleccionado.',
         'url' => '/reportes-ventas-usuario-lotobet',
