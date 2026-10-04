@@ -34,10 +34,10 @@ class RunAutoProcesoProgramado extends Command
 
         foreach ($configs as $config) {
             $alreadyRanToday = $config->last_run_at && $config->last_run_at->setTimezone(config('app.timezone'))->isSameDay($now);
-            $isDueMinute = substr((string) $config->hora, 0, 5) === $currentTime;
+            $isDue = substr((string) $config->hora, 0, 5) <= $currentTime;
 
             if (! $this->option('force')) {
-                if (! $isDueMinute || $alreadyRanToday) {
+                if (! $isDue || $alreadyRanToday) {
                     continue;
                 }
             }

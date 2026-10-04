@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\Schema;
 
 class PremiosPagadosProductoService
 {
-    /** @return array{grupos: array, resumen: array, fuentes_sin_producto: array, disponibilidad: array} */
-    public function report(string $fechaInicio, string $fechaFin): array
+    /** @return array{grupos: array, resumen: array, fuentes_sin_producto: array, disponibilidad: array, terminales_totales: array} */
+    public function report(string $fechaInicio, string $fechaFin, ?string $grupo = null): array
     {
         $catalogo = CatalogoJuego::query()->orderBy('descripcion')->get()->keyBy('producto_id');
         $grupos = [];
@@ -22,6 +22,7 @@ class PremiosPagadosProductoService
 
         $fuentesSinProducto = [];
         $registrosIncluidos = 0;
+        $terminalesTotales = [];
         foreach (['misma_empresa' => PagoMismaEmpresa::class, 'otra_empresa' => PagoAOtraEmpresa::class] as $fuente => $modelo) {
             $tieneProducto = Schema::hasColumn((new $modelo)->getTable(), 'producto_id');
             if (! $tieneProducto) {
@@ -30,11 +31,13 @@ class PremiosPagadosProductoService
 
             $pagos = $modelo::query()
                 ->whereBetween('fecha', [$fechaInicio, $fechaFin])
-                ->where(function (Builder $query): void {
-                    $query->whereIn('agencia_id', Agencia::query()->select('terminal')->whereNotNull('terminal')->where('terminal', '<>', ''))
+                ->where(function (Builder $query) use ($grupo): void {
+                    $query->whereIn('agencia_id', Agencia::query()->select('terminal')->whereNotNull('terminal')->where('terminal', '<>', '')
+                        ->when($grupo !== null, fn (Builder $agencias): Builder => $agencias->where('grupo', $grupo)))
                         ->orWhereIn(
                             $query->getQuery()->raw('CAST(agencia_id AS DECIMAL(20, 0))'),
                             Agencia::query()->selectRaw('CAST(terminal AS DECIMAL(20, 0))')->whereRaw('CAST(terminal AS DECIMAL(20, 0)) > 0')
+                                ->when($grupo !== null, fn (Builder $agencias): Builder => $agencias->where('grupo', $grupo))
                         );
                 })
                 ->selectRaw('SUM(monto) AS total, COUNT(*) AS registros')
@@ -73,6 +76,7 @@ class PremiosPagadosProductoService
                 if (ctype_digit($terminal)) {
                     $terminal = ltrim($terminal, '0') ?: '0';
                 }
+                $terminalesTotales[$terminal] = round(($terminalesTotales[$terminal] ?? 0) + $monto, 2);
                 $grupos[$tipo]['productos'][$clave]['terminales'][$terminal] ??= [
                     'terminal' => $terminal,
                     'misma_empresa' => 0,
@@ -168,6 +172,64 @@ class PremiosPagadosProductoService
             'resumen' => $resumen,
             'fuentes_sin_producto' => $fuentesSinProducto,
             'disponibilidad' => $disponibilidad,
+            'terminales_totales' => $terminalesTotales,
+        ];
+    }
+
+    /** @return array{filas: array, sin_clasificar: float, clasificacion_disponible: bool, disponibilidad: array} */
+    public function summary(string $fechaInicio, string $fechaFin, ?string $grupo, string $vista, string $categoria): array
+    {
+        $reporte = $this->report($fechaInicio, $fechaFin, $grupo);
+        $clasificacionDisponible = $reporte['fuentes_sin_producto'] === [];
+        $montosPorTerminal = [];
+
+        foreach (['tradicional', 'no_tradicional'] as $index => $tipo) {
+            foreach ($reporte['grupos'][$index]['productos'] as $producto) {
+                foreach ($producto['terminales'] as $terminal) {
+                    $codigo = $terminal['terminal'];
+                    $montosPorTerminal[$codigo][$tipo] = round(
+                        ($montosPorTerminal[$codigo][$tipo] ?? 0) + ($terminal['total'] ?? 0),
+                        2
+                    );
+                }
+            }
+        }
+
+        $totales = [
+            'tradicional' => round(array_sum(array_column($montosPorTerminal, 'tradicional')), 2),
+            'no_tradicional' => round(array_sum(array_column($montosPorTerminal, 'no_tradicional')), 2),
+        ];
+        $sinClasificar = round($reporte['resumen']['total'] - array_sum($totales), 2);
+        $filas = [];
+
+        if ($vista === 'consolidado') {
+            $filas[] = [
+                'nombre' => $grupo ?? 'Todos los grupos',
+                'tradicional' => $clasificacionDisponible ? $totales['tradicional'] : null,
+                'no_tradicional' => $clasificacionDisponible ? $totales['no_tradicional'] : null,
+                'total' => $categoria === 'todos' ? $reporte['resumen']['total'] : ($clasificacionDisponible ? $totales[$categoria] : null),
+            ];
+        } else {
+            foreach ($reporte['terminales_totales'] as $terminal => $total) {
+                $montos = $montosPorTerminal[$terminal] ?? [];
+                if ($categoria !== 'todos' && ($montos[$categoria] ?? 0) == 0) {
+                    continue;
+                }
+                $filas[] = [
+                    'nombre' => (string) $terminal,
+                    'tradicional' => $clasificacionDisponible ? ($montos['tradicional'] ?? 0) : null,
+                    'no_tradicional' => $clasificacionDisponible ? ($montos['no_tradicional'] ?? 0) : null,
+                    'total' => $categoria === 'todos' ? $total : ($clasificacionDisponible ? ($montos[$categoria] ?? 0) : null),
+                ];
+            }
+            usort($filas, fn (array $left, array $right): int => strnatcmp($left['nombre'], $right['nombre']));
+        }
+
+        return [
+            'filas' => $filas,
+            'sin_clasificar' => $sinClasificar,
+            'clasificacion_disponible' => $clasificacionDisponible,
+            'disponibilidad' => $reporte['disponibilidad'],
         ];
     }
 }

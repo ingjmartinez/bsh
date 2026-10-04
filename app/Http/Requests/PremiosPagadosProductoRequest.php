@@ -24,6 +24,9 @@ class PremiosPagadosProductoRequest extends FormRequest
         return [
             'fecha_inicio' => ['nullable', 'required_with:fecha_fin', 'date_format:Y-m-d'],
             'fecha_fin' => ['nullable', 'required_with:fecha_inicio', 'date_format:Y-m-d', 'after_or_equal:fecha_inicio'],
+            'grupo' => ['nullable', 'string', 'max:100', 'exists:agencias,grupo'],
+            'vista' => ['nullable', 'in:consolidado,terminal'],
+            'categoria' => ['nullable', 'in:todos,tradicional,no_tradicional'],
         ];
     }
 
@@ -35,6 +38,9 @@ class PremiosPagadosProductoRequest extends FormRequest
             'fecha_inicio.date_format' => 'La fecha de inicio debe tener el formato año-mes-día.',
             'fecha_fin.date_format' => 'La fecha final debe tener el formato año-mes-día.',
             'fecha_fin.after_or_equal' => 'La fecha final debe ser igual o posterior a la fecha de inicio.',
+            'grupo.exists' => 'Seleccione un grupo válido.',
+            'vista.in' => 'Seleccione una vista válida.',
+            'categoria.in' => 'Seleccione una categoría válida.',
         ];
     }
 }

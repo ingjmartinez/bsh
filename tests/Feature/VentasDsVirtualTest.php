@@ -208,6 +208,24 @@ class VentasDsVirtualTest extends TestCase
             ->assertJsonValidationErrors('fecha');
     }
 
+    public function test_automatic_process_reports_empty_api_data_as_unsuccessful(): void
+    {
+        $this->mock(LotobetSessionService::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('generateToken')->once()->andReturn(new Token([
+                'id' => 1,
+                'token' => 'test-token',
+                'fecha' => now()->addHour(),
+            ]));
+            $mock->shouldReceive('getVentasDsVirtual')->once()->with('2026-09-09')->andReturn(['Content' => []]);
+        });
+
+        $result = app(AutoProcesoService::class)->execute('ds_virtual', '2026-09-09');
+
+        $this->assertFalse($result['ok']);
+        $this->assertSame(1, $result['no_data_count']);
+        $this->assertSame(0, $result['error_count']);
+    }
+
     public function test_saved_records_can_be_deleted_by_date(): void
     {
         VentaDsVirtual::factory()->create(['fecha' => '2026-09-09']);

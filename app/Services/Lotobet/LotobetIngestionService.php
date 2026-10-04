@@ -18,14 +18,12 @@ class LotobetIngestionService
         'ventas_usuarios' => ['endpoint' => 'EQsEpamN7MuKb0Y7', 'table' => 'ventas_usuarios_bet'],
     ];
 
-    public function __construct(private LotobetSessionService $session)
-    {
-    }
+    public function __construct(private LotobetSessionService $session) {}
 
     public function save(string $module, string $fecha): array
     {
         $config = self::MODULES[$module] ?? null;
-        if (!$config) {
+        if (! $config) {
             throw new InvalidArgumentException("Modulo Lotobet no soportado: {$module}");
         }
 
@@ -33,7 +31,7 @@ class LotobetIngestionService
 
         if (DB::table($table)->whereDate('fecha', $fecha)->exists()) {
             return [
-                'message' => 'Ya hay data guardada en la fecha: ' . $fecha,
+                'message' => 'Ya hay data guardada en la fecha: '.$fecha,
                 'total' => 0,
                 'table' => $table,
                 'fecha' => $fecha,
@@ -43,13 +41,13 @@ class LotobetIngestionService
         $payload = $this->session->getReport($config['endpoint'], $fecha);
         $rows = $payload['Content'] ?? [];
 
-        if (!is_array($rows)) {
+        if (! is_array($rows)) {
             throw new \RuntimeException('Lotobet no devolvio el listado esperado.');
         }
 
         $data = [];
         foreach ($rows as $row) {
-            if (!is_array($row)) {
+            if (! is_array($row)) {
                 continue;
             }
 
@@ -68,11 +66,72 @@ class LotobetIngestionService
         InicioVentasCache::bust();
 
         return [
-            'message' => 'Datos guardados correctamente. Total insertados: ' . count($data),
+            'message' => 'Datos guardados correctamente. Total insertados: '.count($data),
             'total' => count($data),
             'table' => $table,
             'fecha' => $fecha,
         ];
+    }
+
+    /** @return array{matched: int, updated: int} */
+    public function backfillPaymentProducts(string $module, string $fecha): array
+    {
+        if (! in_array($module, ['pagos_misma_empresa', 'pagos_aotra_empresa'], true)) {
+            throw new InvalidArgumentException("Modulo de pagos no soportado: {$module}");
+        }
+
+        $config = self::MODULES[$module];
+        $rows = $this->session->getReport($config['endpoint'], $fecha)['Content'] ?? [];
+        if (! is_array($rows)) {
+            throw new \RuntimeException('La API no devolvió un listado de pagos válido.');
+        }
+
+        $saved = DB::table($config['table'])->whereDate('fecha', $fecha)->orderBy('id')->get();
+        if ($saved->count() !== count($rows)) {
+            throw new \RuntimeException("Cantidad de pagos diferente en {$module} para {$fecha}.");
+        }
+
+        $updates = [];
+        foreach ($saved as $index => $payment) {
+            if (! is_array($rows[$index])) {
+                throw new \RuntimeException("Registro inválido en {$module} para {$fecha}.");
+            }
+
+            $source = $this->mapRow($module, $rows[$index], $fecha);
+            if ($source === null
+                || trim((string) $payment->agencia_id) !== $source['agencia_id']
+                || (string) $payment->fecha !== (string) $source['fecha']
+                || round((float) $payment->monto, 2) !== round((float) $source['monto'], 2)
+                || ($payment->producto_id !== null && (int) $payment->producto_id !== $source['producto_id'])) {
+                throw new \RuntimeException("Los pagos guardados no coinciden con la API en {$module} para {$fecha}, fila ".($index + 1).'.');
+            }
+
+            if ($payment->producto_id === null && $source['producto_id'] !== null) {
+                $updates[] = ['id' => $payment->id, 'producto_id' => $source['producto_id']];
+            }
+        }
+
+        DB::transaction(function () use ($config, $updates): void {
+            foreach (array_chunk($updates, 200) as $chunk) {
+                $cases = [];
+                $bindings = [];
+                $ids = [];
+                foreach ($chunk as $update) {
+                    $cases[] = 'WHEN ? THEN ?';
+                    $bindings[] = $update['id'];
+                    $bindings[] = $update['producto_id'];
+                    $ids[] = $update['id'];
+                }
+
+                $placeholders = implode(', ', array_fill(0, count($ids), '?'));
+                DB::update(
+                    "UPDATE {$config['table']} SET producto_id = CASE id ".implode(' ', $cases)." ELSE producto_id END WHERE id IN ({$placeholders}) AND producto_id IS NULL",
+                    [...$bindings, ...$ids]
+                );
+            }
+        });
+
+        return ['matched' => $saved->count(), 'updated' => count($updates)];
     }
 
     private function mapRow(string $module, array $row, string $fecha): ?array
@@ -119,6 +178,9 @@ class LotobetIngestionService
             ],
             'pagos_aotra_empresa', 'pagos_misma_empresa', 'pagos_porotra_empresa' => [
                 'agencia_id' => $this->stringValue($row['agencia_id'] ?? $row['agencia'] ?? null),
+                ...($module === 'pagos_porotra_empresa' ? [] : [
+                    'producto_id' => $this->intValue($this->rowValue($row, ['producto_id', 'id_producto', 'ProductoId', 'ProductoID', 'producto', 'Producto'])),
+                ]),
                 'monto' => $this->decimalValue($row['monto'] ?? $row['importe'] ?? 0),
                 'fecha' => $row['fecha'] ?? $fecha,
                 'cedula' => $this->normalizeCedula($row['cedula'] ?? $row['identificacion'] ?? null),
@@ -143,6 +205,7 @@ class LotobetIngestionService
     private function stringValue(mixed $value): ?string
     {
         $value = trim((string) $value);
+
         return $value === '' ? null : $value;
     }
 

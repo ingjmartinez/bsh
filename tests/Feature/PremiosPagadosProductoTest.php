@@ -8,6 +8,7 @@ use App\Models\PagoAOtraEmpresa;
 use App\Models\PagoMismaEmpresa;
 use App\Services\PremiosPagadosProductoService;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ViewErrorBag;
@@ -23,6 +24,7 @@ class PremiosPagadosProductoTest extends TestCase
         Schema::create('agencias', function (Blueprint $table): void {
             $table->id();
             $table->string('terminal')->nullable();
+            $table->string('grupo')->nullable();
         });
         Schema::create('catalogo_juegos', function (Blueprint $table): void {
             $table->id();
@@ -88,6 +90,78 @@ class PremiosPagadosProductoTest extends TestCase
         $this->assertSame([], $reporte['fuentes_sin_producto']);
     }
 
+    public function test_group_filter_limits_both_payment_sources_and_keeps_selected_group(): void
+    {
+        DB::table('agencias')->whereIn('terminal', ['101', '00101'])->update(['grupo' => 'Norte']);
+        Agencia::query()->insert(['terminal' => '102', 'grupo' => 'Sur']);
+        PagoMismaEmpresa::query()->insert([
+            ['agencia_id' => '00101', 'fecha' => '2026-09-01', 'monto' => 100],
+            ['agencia_id' => '102', 'fecha' => '2026-09-01', 'monto' => 200],
+        ]);
+        PagoAOtraEmpresa::query()->insert([
+            ['agencia_id' => '101', 'fecha' => '2026-09-01', 'monto' => 25],
+            ['agencia_id' => '102', 'fecha' => '2026-09-01', 'monto' => 50],
+        ]);
+
+        $reporte = app(PremiosPagadosProductoService::class)->report('2026-09-01', '2026-09-30', 'Norte');
+        $this->assertSame(['misma_empresa' => 100.0, 'otra_empresa' => 25.0, 'total' => 125.0], $reporte['resumen']);
+        $this->assertSame('101', $reporte['grupos'][2]['productos'][0]['terminales'][0]['terminal']);
+
+        View::share('errors', new ViewErrorBag);
+        $this->withoutMiddleware()->get(route('reportes.premios-pagados-productos', [
+            'fecha_inicio' => '2026-09-01', 'fecha_fin' => '2026-09-30', 'grupo' => 'Norte',
+        ]))->assertOk()->assertSee('name="grupo"', false)
+            ->assertSee('value="Norte" selected', false)
+            ->assertSee('RD$ 125.00')->assertDontSee('RD$ 250.00');
+    }
+
+    public function test_unknown_group_is_rejected(): void
+    {
+        $this->withoutMiddleware()->getJson(route('reportes.premios-pagados-productos', [
+            'grupo' => 'Inexistente',
+        ]))->assertUnprocessable()->assertJsonValidationErrors('grupo');
+    }
+
+    public function test_consolidated_and_terminal_views_classify_payments_by_product(): void
+    {
+        $this->addProductColumn('pagos_misma_empresa_bet');
+        $this->addProductColumn('pagos_aotra_empresa_bet');
+        DB::table('agencias')->whereIn('terminal', ['101', '00101'])->update(['grupo' => 'Norte']);
+        Agencia::query()->insert(['terminal' => '102', 'grupo' => 'Sur']);
+        PagoMismaEmpresa::query()->insert([
+            ['agencia_id' => '101', 'fecha' => '2026-09-01', 'monto' => 100, 'producto_id' => 7],
+            ['agencia_id' => '00101', 'fecha' => '2026-09-02', 'monto' => 200, 'producto_id' => 400],
+            ['agencia_id' => '101', 'fecha' => '2026-09-02', 'monto' => 10, 'producto_id' => null],
+            ['agencia_id' => '102', 'fecha' => '2026-09-02', 'monto' => 500, 'producto_id' => 7],
+        ]);
+        PagoAOtraEmpresa::query()->insert(['agencia_id' => '101', 'fecha' => '2026-09-01', 'monto' => 50, 'producto_id' => 7]);
+
+        $service = app(PremiosPagadosProductoService::class);
+        $consolidado = $service->summary('2026-09-01', '2026-09-30', 'Norte', 'consolidado', 'todos');
+        $this->assertSame([[
+            'nombre' => 'Norte', 'tradicional' => 150.0, 'no_tradicional' => 200.0, 'total' => 360.0,
+        ]], $consolidado['filas']);
+        $this->assertSame(10.0, $consolidado['sin_clasificar']);
+
+        $terminales = $service->summary('2026-09-01', '2026-09-30', 'Norte', 'terminal', 'tradicional');
+        $this->assertSame([[
+            'nombre' => '101', 'tradicional' => 150.0, 'no_tradicional' => 200.0, 'total' => 150.0,
+        ]], $terminales['filas']);
+
+        View::share('errors', new ViewErrorBag);
+        $this->withoutMiddleware()->get(route('reportes.premios-pagados-productos', [
+            'fecha_inicio' => '2026-09-01', 'fecha_fin' => '2026-09-30',
+            'grupo' => 'Norte', 'vista' => 'consolidado', 'categoria' => 'todos',
+        ]))->assertOk()->assertSee('RD$ 150.00')->assertSee('RD$ 200.00')->assertSee('RD$ 360.00');
+    }
+
+    public function test_invalid_view_and_category_are_rejected(): void
+    {
+        $this->withoutMiddleware()->getJson(route('reportes.premios-pagados-productos', [
+            'vista' => 'otra', 'categoria' => 'otra',
+        ]))->assertUnprocessable()->assertJsonValidationErrors(['vista', 'categoria']);
+    }
+
     public function test_partial_availability_keeps_all_payments_in_summary(): void
     {
         $this->addProductColumn('pagos_misma_empresa_bet');
@@ -127,13 +201,13 @@ class PremiosPagadosProductoTest extends TestCase
 
         View::share('errors', new ViewErrorBag);
         $response = $this->withoutMiddleware()->get(route('reportes.premios-pagados-productos', [
-            'fecha_inicio' => '2026-09-01', 'fecha_fin' => '2026-09-30',
-        ]))->assertOk()->assertSee('Terminal')->assertSee('RD$ 175.00');
+            'fecha_inicio' => '2026-09-01', 'fecha_fin' => '2026-09-30', 'vista' => 'terminal',
+        ]))->assertOk()->assertSee('Terminal')->assertSee('RD$ 250.00');
         $document = new \DOMDocument;
         @$document->loadHTML('<?xml encoding="UTF-8">'.$response->getContent());
         $xpath = new \DOMXPath($document);
-        $this->assertSame(3, $xpath->query('//details//details[contains(@class, "producto-detalle")]')->length);
-        $this->assertSame(2, $xpath->query('//details[contains(@class, "producto-detalle")][summary/strong="LOTO REAL"]//tbody/tr')->length);
+        $this->assertSame(2, $xpath->query('//table[@id="tablePremiosPagados"]//tbody/tr')->length);
+        $this->assertSame(1, $xpath->query('//table[@id="tablePremiosPagados"]//tbody/tr[td="101"]')->length);
     }
 
     public function test_empty_period_has_zero_summary(): void
@@ -161,9 +235,7 @@ class PremiosPagadosProductoTest extends TestCase
             'fecha_inicio' => '2026-09-01', 'fecha_fin' => '2026-09-30',
         ]))->assertOk()->assertSee('No se encontraron pagos')
             ->assertSee('2026-05-01 al 2026-06-11')
-            ->assertSee('No hay pagos guardados para las fechas consultadas.')
-            ->assertSee('No hay pagos guardados en esta fuente.')
-            ->assertDontSee('Hay pagos cuya información no permite identificar el producto.');
+            ->assertSee('sin datos guardados');
     }
 
     public function test_unmatched_terminals_are_distinguished_from_missing_period_data(): void
@@ -173,7 +245,7 @@ class PremiosPagadosProductoTest extends TestCase
         View::share('errors', new ViewErrorBag);
         $this->withoutMiddleware()->get(route('reportes.premios-pagados-productos', [
             'fecha_inicio' => '2026-09-01', 'fecha_fin' => '2026-09-30',
-        ]))->assertOk()->assertSee('sus terminales no coinciden con las registradas en agencias Real.');
+        ]))->assertOk()->assertSee('No se encontraron pagos para las terminales del grupo');
     }
 
     public function test_zero_amount_payments_are_not_reported_as_missing_data(): void
@@ -189,8 +261,9 @@ class PremiosPagadosProductoTest extends TestCase
         View::share('errors', new ViewErrorBag);
         $this->withoutMiddleware()->get(route('reportes.premios-pagados-productos', [
             'fecha_inicio' => '2026-09-01', 'fecha_fin' => '2026-09-30',
-        ]))->assertOk()->assertSee('Premios pagados por productos')->assertSee('No tradicionales')
-            ->assertSee('LOTO REAL')->assertSee('<details', false)->assertSee('Sin producto identificado')
+        ]))->assertOk()->assertSee('Premios pagados por productos')->assertSee('Pagado no tradicional')
+            ->assertSee('Nombre de grupo')->assertSee('Consolidado')->assertSee('Por terminal')
+            ->assertSee('id="tablePremiosPagados"', false)
             ->assertSee('id="formPremiosPagados"', false)
             ->assertSee("premiosForm.addEventListener('submit'", false)
             ->assertSee("title: 'Consultando...'", false)

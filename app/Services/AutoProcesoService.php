@@ -185,10 +185,10 @@ class AutoProcesoService
         $elapsedSeconds = (int) floor(microtime(true) - $startedAt);
 
         return [
-            'ok' => $errorCount === 0 && ! $timedOut,
+            'ok' => $errorCount === 0 && $noDataCount === 0 && ! $timedOut,
             'message' => $timedOut
                 ? 'Proceso cancelado por tiempo limite'
-                : ($errorCount === 0 ? 'Proceso completado' : 'Proceso completado con errores'),
+                : ($errorCount === 0 && $noDataCount === 0 ? 'Proceso completado' : 'Proceso completado con errores'),
             'ok_count' => $okCount,
             'error_count' => $errorCount,
             'no_data_count' => $noDataCount,
