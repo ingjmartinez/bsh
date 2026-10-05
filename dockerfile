@@ -22,4 +22,8 @@ RUN composer install --no-dev --optimize-autoloader
 
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
+COPY docker/start.sh /usr/local/bin/start-app
+RUN chmod +x /usr/local/bin/start-app
+
+ENTRYPOINT ["/usr/local/bin/start-app"]
 CMD ["php-fpm"]

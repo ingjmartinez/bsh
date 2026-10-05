@@ -3,6 +3,7 @@ services:
     build: .
     restart: unless-stopped
     environment:
+      SCHEDULER_ENABLED: "false"
       APP_ENV: production
       APP_DEBUG: "false"
       APP_URL: https://bshsupport.com
@@ -65,6 +66,7 @@ services:
     restart: unless-stopped
     command: php artisan queue:work --sleep=3 --tries=3
     environment:
+      SCHEDULER_ENABLED: "false"
       APP_ENV: production
       APP_DEBUG: "false"
       DB_CONNECTION: mysql
@@ -85,8 +87,9 @@ services:
   scheduler:
     build: .
     restart: unless-stopped
-    command: sh -c "while true; do php artisan schedule:run --no-interaction; sleep 60; done"
+    command: php artisan schedule:work --no-interaction
     environment:
+      SCHEDULER_ENABLED: "false"
       APP_ENV: production
       APP_DEBUG: "false"
       DB_CONNECTION: mysql
