@@ -232,6 +232,7 @@
                                                 @php
                                                     $tomadoPorMi = (int) ($solicitud->tomado_por_id ?? 0) === (int) auth()->id();
                                                     $tomadoPorOtro = !empty($solicitud->tomado_por_id) && !$tomadoPorMi;
+                                                    $puedeGestionar = !$tomadoPorOtro || auth()->user()->hasRole('superadmin');
                                                     $gestionCerrada = in_array($solicitud->estado, ['pagado', 'nulo', 'averia_cerrada', 'rechazado'], true);
                                                 @endphp
                                                 <tr>
@@ -259,7 +260,7 @@
                                                     </td>
                                                     <td>{{ optional($solicitud->created_at)->format('d/m/Y h:i A') }}</td>
                                                     <td style="min-width: 260px;">
-                                                        @if ($tomadoPorOtro)
+                                                        @if (!$puedeGestionar)
                                                             <span class="text-muted">
                                                                 En gestion por {{ $solicitud->tomadoPor?->name ?? 'otro usuario' }}
                                                             </span>
@@ -336,6 +337,13 @@
                                                             <span class="badge bg-warning-subtle text-warning">
                                                                 <i class="ri-lock-line me-1"></i>{{ $solicitud->tomadoPor?->name ?? 'Tomado' }}
                                                             </span>
+                                                            @if (auth()->user()->hasRole('superadmin'))
+                                                                <form method="POST" action="{{ route('tickets.liberar', $solicitud) }}" class="mt-1">
+                                                                    @csrf
+                                                                    @method('DELETE')
+                                                                    <button class="btn btn-sm btn-outline-secondary w-100" type="submit">Liberar</button>
+                                                                </form>
+                                                            @endif
                                                         @else
                                                             <form method="POST" action="{{ route('tickets.tomar', $solicitud) }}">
                                                                 @csrf

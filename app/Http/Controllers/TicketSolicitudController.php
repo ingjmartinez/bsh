@@ -818,7 +818,8 @@ class TicketSolicitudController extends Controller
     private function isTomadoPorOtroUsuario(TicketSolicitud $ticket): bool
     {
         return $ticket->tomado_por_id !== null
-            && (int) $ticket->tomado_por_id !== (int) auth()->id();
+            && (int) $ticket->tomado_por_id !== (int) auth()->id()
+            && ! auth()->user()?->hasRole('superadmin');
     }
 
     private function esAdmin(User $user): bool

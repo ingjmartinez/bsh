@@ -5,14 +5,33 @@ namespace Tests\Feature;
 use App\Http\Controllers\TicketSolicitudController;
 use App\Models\ChatbotSession;
 use App\Models\TicketSolicitud;
+use App\Models\User;
 use App\Services\ChatChannelService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use ReflectionMethod;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class TicketSolicitudNotificationAccountTest extends TestCase
 {
+    public function test_solo_superadmin_puede_gestionar_un_ticket_tomado_por_otro_usuario(): void
+    {
+        $controller = new TicketSolicitudController($this->createMock(ChatChannelService::class));
+        $ticket = new TicketSolicitud(['tomado_por_id' => 2]);
+        $method = new ReflectionMethod($controller, 'isTomadoPorOtroUsuario');
+        $user = User::factory()->make();
+        $user->id = 1;
+        $user->setRelation('roles', collect([new Role(['name' => 'superadmin'])]));
+        $this->be($user);
+
+        $this->assertFalse($method->invoke($controller, $ticket));
+
+        $user->setRelation('roles', collect([new Role(['name' => 'admin'])]));
+
+        $this->assertTrue($method->invoke($controller, $ticket));
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
