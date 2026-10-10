@@ -56,6 +56,9 @@
                                                     <td>{{ $role->name }}</td>
                                                     <td>{{ $role->permissions_count }}</td>
                                                     <td class="text-center">
+                                                        @if ($role->name === 'superadmin' && ! auth()->user()?->hasRole('superadmin'))
+                                                            <span class="text-muted small">Protegido</span>
+                                                        @else
                                                         <div class="d-flex gap-1 justify-content-center flex-nowrap">
                                                             @can('roles.edit')
                                                                 <a href="{{ route('roles.edit', $role->id) }}" class="btn btn-sm btn-success" title="Editar">
@@ -72,6 +75,7 @@
                                                                 </form>
                                                             @endcan
                                                         </div>
+                                                        @endif
                                                     </td>
                                                 </tr>
                                             @empty

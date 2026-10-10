@@ -20,6 +20,7 @@ class SuperAdminSesionController extends Controller
             ->pluck('last_activity', 'user_id');
 
         $usuarios = User::query()
+            ->visibleTo(auth()->user())
             ->orderBy('name')
             ->get()
             ->map(function (User $user) use ($sessionsByUser, $activeThreshold) {
@@ -44,4 +45,3 @@ class SuperAdminSesionController extends Controller
         return view('superadmin.sesiones.index', compact('usuarios'));
     }
 }
-

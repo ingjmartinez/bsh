@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Mail\NuevoUsuarioMail;
 use App\Mail\ResetClaveUsuarioMail;
+use App\Models\User;
+use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules\Password;
-use Throwable;
 use Spatie\Permission\Models\Role;
+use Throwable;
 
 class UserController extends Controller
 {
@@ -38,7 +39,7 @@ class UserController extends Controller
      */
     public function create()
     {
-        $roles = Role::orderBy('name')->get();
+        $roles = $this->assignableRoles();
 
         return view('usuarios.create', compact('roles'));
     }
@@ -52,7 +53,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email',
             'roles' => 'nullable|array',
-            'roles.*' => 'string|exists:roles,name',
+            'roles.*' => ['string', 'exists:roles,name', $this->forbiddenRolesRule()],
         ]);
 
         $plainPassword = self::DEFAULT_NEW_USER_PASSWORD;
@@ -69,7 +70,7 @@ class UserController extends Controller
         } catch (\Exception $e) {
             return redirect()->route('usuarios.index')
                 ->with('success', 'Usuario creado exitosamente.')
-                ->with('error', 'No se pudo enviar el correo: ' . $e->getMessage());
+                ->with('error', 'No se pudo enviar el correo: '.$e->getMessage());
         }
 
         return redirect()->route('usuarios.index')
@@ -81,7 +82,9 @@ class UserController extends Controller
      */
     public function edit(User $usuario)
     {
-        $roles = Role::orderBy('name')->get();
+        $this->abortIfSuperadminUserIsProtected($usuario);
+
+        $roles = $this->assignableRoles();
         $userRoles = $usuario->roles->pluck('name')->toArray();
 
         return view('usuarios.edit', compact('usuario', 'roles', 'userRoles'));
@@ -92,18 +95,20 @@ class UserController extends Controller
      */
     public function update(Request $request, User $usuario)
     {
+        $this->abortIfSuperadminUserIsProtected($usuario);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $usuario->id,
+            'email' => 'required|string|email|max:255|unique:users,email,'.$usuario->id,
             'password' => ['nullable', 'confirmed', Password::min(8)],
             'roles' => 'nullable|array',
-            'roles.*' => 'string|exists:roles,name',
+            'roles.*' => ['string', 'exists:roles,name', $this->forbiddenRolesRule()],
         ]);
 
         $usuario->name = $validated['name'];
         $usuario->email = $validated['email'];
 
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $usuario->password = Hash::make($validated['password']);
         }
 
@@ -117,6 +122,7 @@ class UserController extends Controller
 
     public function resetClave(User $usuario)
     {
+        $this->abortIfSuperadminUserIsProtected($usuario);
         $plainPassword = self::DEFAULT_NEW_USER_PASSWORD;
 
         $usuario->password = Hash::make($plainPassword);
@@ -128,7 +134,7 @@ class UserController extends Controller
         } catch (Throwable $error) {
             return redirect()
                 ->route('usuarios.index')
-                ->with('error', 'La clave fue reseteada, pero no se pudo enviar el correo: ' . $error->getMessage());
+                ->with('error', 'La clave fue reseteada, pero no se pudo enviar el correo: '.$error->getMessage());
         }
 
         return redirect()
@@ -141,6 +147,8 @@ class UserController extends Controller
      */
     public function destroy(User $usuario)
     {
+        $this->abortIfSuperadminUserIsProtected($usuario);
+
         // Evitar que el usuario elimine su propia cuenta
         if ($usuario->id === auth()->id()) {
             return redirect()->route('usuarios.index')
@@ -158,19 +166,19 @@ class UserController extends Controller
      */
     public function list(Request $request)
     {
-        $query = User::query()->with('roles');
+        $query = User::query()->with('roles')->visibleTo(auth()->user());
 
         // Búsqueda
         if ($request->has('search') && $request->search['value']) {
             $search = $request->search['value'];
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
         // Total de registros
-        $totalRecords = User::count();
+        $totalRecords = User::query()->visibleTo(auth()->user())->count();
         $filteredRecords = $query->count();
 
         // Ordenamiento
@@ -183,19 +191,19 @@ class UserController extends Controller
         $length = $request->input('length', 10);
 
         $users = $query->orderBy($orderColumn, $orderDir)
-                       ->skip($start)
-                       ->take($length)
-                       ->get()
-                       ->map(function ($user) {
-                           return [
-                               'id' => $user->id,
-                               'name' => $user->name,
-                               'email' => $user->email,
-                               'roles' => $user->roles->pluck('name')->implode(', '),
-                               'must_change_password' => (bool) $user->must_change_password,
-                               'created_at' => $user->created_at?->format('d/m/Y H:i'),
-                           ];
-                       });
+            ->skip($start)
+            ->take($length)
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'roles' => $user->roles->pluck('name')->implode(', '),
+                    'must_change_password' => (bool) $user->must_change_password,
+                    'created_at' => $user->created_at?->format('d/m/Y H:i'),
+                ];
+            });
 
         return response()->json([
             'draw' => intval($request->input('draw')),
@@ -203,5 +211,41 @@ class UserController extends Controller
             'recordsFiltered' => $filteredRecords,
             'data' => $users,
         ]);
+    }
+
+    /**
+     * El rol superadmin solo puede asignarse o gestionarse por un superadmin.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, Role>
+     */
+    private function assignableRoles()
+    {
+        return Role::query()
+            ->when(! $this->actorIsSuperadmin(), fn ($query) => $query->where('name', '!=', 'superadmin'))
+            ->orderBy('name')
+            ->get();
+    }
+
+    private function forbiddenRolesRule(): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail): void {
+            if ($value === 'superadmin' && ! $this->actorIsSuperadmin()) {
+                $fail('No tienes permiso para asignar el rol superadmin.');
+            }
+        };
+    }
+
+    private function abortIfSuperadminUserIsProtected(User $usuario): void
+    {
+        abort_if(
+            $usuario->hasRole('superadmin') && ! $this->actorIsSuperadmin(),
+            403,
+            'Un usuario superadmin no puede ser modificado.'
+        );
+    }
+
+    private function actorIsSuperadmin(): bool
+    {
+        return (bool) auth()->user()?->hasRole('superadmin');
     }
 }

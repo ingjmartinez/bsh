@@ -262,6 +262,7 @@
         let chartEmpleadosCiudad = null;
         let chartSalarioEmpresa = null;
         let tablaEmpleados = null;
+        let dashboardRequest = null;
 
         function formatoMonto(valor) {
             return Number(valor || 0).toLocaleString('en-US', {
@@ -464,7 +465,7 @@
             filas.forEach(function (fila) {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td><div class="fw-semibold">${fila.ciudad || 'Sin ciudad'}</div></td>
+                    <td><div class="fw-semibold">${textoSeguro(fila.ciudad || 'Sin ciudad')}</div></td>
                     <td class="text-center">${Number(fila.empleados || 0).toLocaleString('en-US')}</td>
                     <td class="text-center">${Number(fila.activos || 0).toLocaleString('en-US')}</td>
                     <td class="text-end fw-semibold">$${formatoMonto(fila.salario || 0)}</td>
@@ -479,6 +480,11 @@
 
         function cargarDashboard(forzarActualizacion = false) {
             const empresa = obtenerEmpresaActual();
+            if (dashboardRequest) {
+                dashboardRequest.abort();
+            }
+            const controller = new AbortController();
+            dashboardRequest = controller;
             actualizarBadgeEmpresa();
             const url = new URL('/empleados/dashboard', window.location.origin);
             url.searchParams.set('empresa', empresa);
@@ -488,22 +494,29 @@
             }
 
             return fetch(url.toString(), {
+                signal: controller.signal,
                 headers: {
                     'Accept': 'application/json',
                 },
             })
                 .then(response => parsearRespuestaJson(response, 'Error al cargar dashboard de empleados'))
                 .then(payload => {
+                    if (controller.signal.aborted) return;
                     renderResumen(payload);
                     renderTablaCiudades(payload);
 
                     return new Promise(resolve => {
                         window.requestAnimationFrame(resolve);
-                    }).then(() => renderCharts(payload));
+                    }).then(() => {
+                        if (!controller.signal.aborted) return renderCharts(payload);
+                    });
                 })
                 .catch(error => {
+                    if (error.name === 'AbortError') return;
                     console.error('Error dashboard empleados:', error);
                     Swal.fire('Error', 'No se pudo cargar el dashboard de Recursos Humanos.', 'error');
+                }).finally(() => {
+                    if (dashboardRequest === controller) dashboardRequest = null;
                 });
         }
 
@@ -591,6 +604,29 @@
                 return;
             }
 
+            const seleccionLimite = await Swal.fire({
+                title: 'Cantidad de registros',
+                text: '¿Cuántos empleados deseas solicitar al proveedor?',
+                input: 'number',
+                inputValue: 10000,
+                inputAttributes: { min: 1, max: 10000, step: 1 },
+                showCancelButton: true,
+                confirmButtonText: 'Sincronizar',
+                cancelButtonText: 'Cancelar',
+                inputValidator: (valor) => {
+                    const limite = Number(valor);
+                    if (!Number.isInteger(limite) || limite < 1 || limite > 10000) {
+                        return 'Escribe un número entero entre 1 y 10,000.';
+                    }
+                }
+            });
+
+            if (!seleccionLimite.isConfirmed) {
+                return;
+            }
+
+            const limite = Number(seleccionLimite.value);
+
             boton.disabled = true;
             boton.innerText = 'Sincronizando...';
 
@@ -613,7 +649,8 @@
             }, 1000);
 
             try {
-                const response = await fetch('/empleados/sincronizar?empresa=' + encodeURIComponent(empresa), {
+                const params = new URLSearchParams({ empresa, limite: String(limite) });
+                const response = await fetch('/empleados/sincronizar?' + params.toString(), {
                     headers: {
                         'Accept': 'application/json',
                     },

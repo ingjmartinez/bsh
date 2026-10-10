@@ -73,6 +73,21 @@ class EmpleadoListPerformanceTest extends TestCase
             ->assertJsonPath('data.0.nombres', 'Nombre Especial');
     }
 
+    public function test_unfiltered_list_only_counts_employees_once(): void
+    {
+        DB::enableQueryLog();
+
+        try {
+            $this->withoutMiddleware()->getJson('/empleados/list?draw=1&start=0&length=10&empresa=126')->assertOk();
+            $countQueries = array_filter(DB::getQueryLog(), fn (array $query): bool => str_contains(strtolower($query['query']), 'count(*)'));
+
+            $this->assertCount(1, $countQueries);
+        } finally {
+            DB::disableQueryLog();
+            DB::flushQueryLog();
+        }
+    }
+
     public function test_employee_view_loads_dashboard_and_table_without_sequential_waits(): void
     {
         $html = view('empleado.index')->render();
@@ -80,6 +95,8 @@ class EmpleadoListPerformanceTest extends TestCase
         $this->assertStringContainsString('serverSide: true', $html);
         $this->assertStringContainsString('deferRender: true', $html);
         $this->assertStringContainsString('Promise.all([cargarDashboard(), list()])', $html);
+        $this->assertStringContainsString('dashboardRequest.abort()', $html);
+        $this->assertStringContainsString('textoSeguro(fila.ciudad', $html);
         $this->assertStringNotContainsString('data.forEach(item =>', $html);
     }
 }

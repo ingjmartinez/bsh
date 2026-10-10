@@ -53,6 +53,8 @@ class RoleController extends Controller
 
     public function edit(Role $role)
     {
+        $this->abortIfSuperadminRoleIsProtected($role);
+
         $permissions = Permission::orderBy('name')->get();
         $rolePermissions = $role->permissions->pluck('name')->toArray();
 
@@ -61,14 +63,16 @@ class RoleController extends Controller
 
     public function update(Request $request, Role $role)
     {
+        $this->abortIfSuperadminRoleIsProtected($role);
+
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:roles,name,' . $role->id,
+            'name' => 'required|string|max:255|unique:roles,name,'.$role->id,
             'permissions' => 'nullable|array',
             'permissions.*' => 'string|exists:permissions,name',
         ]);
 
         $role->update([
-            'name' => $validated['name'],
+            'name' => $role->name === 'superadmin' ? 'superadmin' : $validated['name'],
         ]);
 
         $role->syncPermissions($validated['permissions'] ?? []);
@@ -79,6 +83,8 @@ class RoleController extends Controller
 
     public function destroy(Role $role)
     {
+        $this->abortIfSuperadminRoleIsProtected($role);
+
         if ($role->name === 'superadmin') {
             return redirect()->route('roles.index')
                 ->with('error', 'No se puede eliminar el rol superadmin.');
@@ -93,5 +99,17 @@ class RoleController extends Controller
 
         return redirect()->route('roles.index')
             ->with('success', 'Rol eliminado exitosamente.');
+    }
+
+    /**
+     * El rol superadmin solo puede ser gestionado por un superadmin.
+     */
+    private function abortIfSuperadminRoleIsProtected(Role $role): void
+    {
+        abort_if(
+            $role->name === 'superadmin' && ! auth()->user()?->hasRole('superadmin'),
+            403,
+            'El rol superadmin no puede ser modificado.'
+        );
     }
 }

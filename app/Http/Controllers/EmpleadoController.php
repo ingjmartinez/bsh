@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ListarEmpleadosRequest;
+use App\Http\Requests\SincronizarEmpleadosRequest;
 use App\Models\Empleado;
 use App\Models\VwUsuariosUnion;
 use Illuminate\Http\JsonResponse;
@@ -75,7 +76,7 @@ class EmpleadoController extends Controller
             });
         }
 
-        $recordsFiltered = (clone $query)->count();
+        $recordsFiltered = $search === '' ? $recordsTotal : (clone $query)->count();
         $orderColumns = [
             'companyid',
             'empleadoid',
@@ -226,12 +227,13 @@ class EmpleadoController extends Controller
         return response()->json($payload);
     }
 
-    public function sincronizar(Request $request)
+    public function sincronizar(SincronizarEmpleadosRequest $request)
     {
         @set_time_limit(300);
         ini_set('max_execution_time', '300');
         ini_set('memory_limit', '512M');
         $empresa = trim((string) $request->query('empresa', ''));
+        $limite = $request->integer('limite');
 
         if (! array_key_exists($empresa, self::EMPRESAS_RRHH)) {
             return response()->json(['error' => 'Empresa invalida. Debe ser 126 o 100.'], 422);
@@ -250,6 +252,7 @@ class EmpleadoController extends Controller
                     'strFiltros' => json_encode([
                         ['CompanyId', $empresa],
                     ]),
+                    'intLimite' => $limite,
                 ]);
         } catch (\Throwable $e) {
             Log::error('Error consultando API de empleados', [
@@ -284,6 +287,8 @@ class EmpleadoController extends Controller
 
         $lote = [];
         $columnasActualizables = [];
+        $incluirSalario = null;
+        $resumen = ['nuevos' => 0, 'actualizados' => 0, 'sin_cambios' => 0];
         $procesados = 0;
         $omitidos = 0;
         $tamanoLote = 500;
@@ -299,6 +304,13 @@ class EmpleadoController extends Controller
 
                 $empleado = array_intersect_key($this->mapearEmpleadoApi($e, $empresa), $columnasEmpleados);
 
+                // Si el API no envía el salario, no se debe pisar el existente con null.
+                $incluirSalario ??= array_key_exists('SALARIOMENSUAL', $e);
+
+                if (! $incluirSalario) {
+                    unset($empleado['salario']);
+                }
+
                 if (empty($columnasActualizables)) {
                     $columnasActualizables = array_values(array_diff(array_keys($empleado), [
                         'companyid',
@@ -311,13 +323,13 @@ class EmpleadoController extends Controller
                 $procesados++;
 
                 if (count($lote) >= $tamanoLote) {
-                    Empleado::upsert($lote, ['companyid', 'empleadoid'], $columnasActualizables);
+                    $this->guardarLoteConCambios($lote, $empresa, $columnasActualizables, $resumen);
                     $lote = [];
                 }
             }
 
             if (! empty($lote)) {
-                Empleado::upsert($lote, ['companyid', 'empleadoid'], $columnasActualizables);
+                $this->guardarLoteConCambios($lote, $empresa, $columnasActualizables, $resumen);
             }
         } catch (\Throwable $e) {
             Log::error('Error sincronizando empleados', [
@@ -337,17 +349,90 @@ class EmpleadoController extends Controller
             ]);
         }
 
-        Cache::forget('empleados_dashboard:'.$empresa);
-        Cache::forget('empleados_dashboard:all');
+        if ($resumen['nuevos'] + $resumen['actualizados'] > 0) {
+            Cache::forget('empleados_dashboard:'.$empresa);
+            Cache::forget('empleados_dashboard:all');
+        }
 
         return response()->json([
             'message' => 'Datos sincronizados correctamente',
             'total' => count($empleados),
             'procesados' => $procesados,
+            'nuevos' => $resumen['nuevos'],
+            'actualizados' => $resumen['actualizados'],
+            'sin_cambios' => $resumen['sin_cambios'],
             'omitidos' => $omitidos,
             'empresa' => $empresa,
             'empresa_nombre' => $this->empresaRrhhLabel($empresa),
+            'limite_solicitado' => $limite,
         ]);
+    }
+
+    /**
+     * Inserta los empleados nuevos y actualiza solo los que cambiaron; los demás no se tocan.
+     *
+     * @param  array<int, array<string, mixed>>  $lote
+     * @param  array<int, string>  $columnasActualizables
+     * @param  array{nuevos: int, actualizados: int, sin_cambios: int}  $resumen
+     */
+    private function guardarLoteConCambios(array $lote, string $empresa, array $columnasActualizables, array &$resumen): void
+    {
+        $existentes = DB::table('empleados')
+            ->where('companyid', $empresa)
+            ->whereIn('empleadoid', array_column($lote, 'empleadoid'))
+            ->get()
+            ->keyBy('empleadoid');
+
+        $columnasComparables = array_diff($columnasActualizables, ['updated_at', 'ultima_sync_at']);
+        $paraGuardar = [];
+
+        foreach ($lote as $empleado) {
+            $actual = $existentes->get($empleado['empleadoid']);
+
+            if ($actual === null) {
+                $resumen['nuevos']++;
+                $paraGuardar[] = $empleado;
+
+                continue;
+            }
+
+            $cambio = false;
+
+            foreach ($columnasComparables as $columna) {
+                if (! $this->valoresEmpleadoIguales($actual->{$columna} ?? null, $empleado[$columna] ?? null)) {
+                    $cambio = true;
+
+                    break;
+                }
+            }
+
+            if ($cambio) {
+                $resumen['actualizados']++;
+                $paraGuardar[] = $empleado;
+            } else {
+                $resumen['sin_cambios']++;
+            }
+        }
+
+        if ($paraGuardar !== []) {
+            Empleado::upsert($paraGuardar, ['companyid', 'empleadoid'], $columnasActualizables);
+        }
+    }
+
+    private function valoresEmpleadoIguales(mixed $actual, mixed $nuevo): bool
+    {
+        $actualVacio = $actual === null || $actual === '';
+        $nuevoVacio = $nuevo === null || $nuevo === '';
+
+        if ($actualVacio || $nuevoVacio) {
+            return $actualVacio && $nuevoVacio;
+        }
+
+        if (is_numeric($actual) && is_numeric($nuevo)) {
+            return (float) $actual === (float) $nuevo;
+        }
+
+        return (string) $actual === (string) $nuevo;
     }
 
     private function empresaRrhhLabel(string $empresa): string
