@@ -16,8 +16,8 @@ class AgenciaSinActividadReportTest extends TestCase
 
         Schema::create('agencias', function (Blueprint $table): void {
             $table->id();
-            $table->string('codigo')->nullable();
-            $table->string('nombre')->nullable();
+            $table->string('agencia')->nullable();
+            $table->string('nombre_agencia')->nullable();
             $table->string('terminal')->nullable();
             $table->string('grupo')->nullable();
             $table->string('central')->nullable();
@@ -104,10 +104,10 @@ class AgenciaSinActividadReportTest extends TestCase
     public function test_report_counts_only_active_agencies_and_detects_missing_or_zero_sales(): void
     {
         DB::table('agencias')->insert([
-            ['codigo' => 'A1', 'nombre' => 'Con ventas', 'terminal' => '00101', 'grupo' => 'G1', 'central' => 'Norte', 'gerente_de_servicio' => 'Ana', 'estatus' => 1],
-            ['codigo' => 'A2', 'nombre' => 'Venta cero', 'terminal' => '00102', 'grupo' => 'G1', 'central' => 'Norte', 'gerente_de_servicio' => 'Ana', 'estatus' => 1],
-            ['codigo' => 'A3', 'nombre' => 'Sin registro', 'terminal' => '00103', 'grupo' => 'G2', 'central' => 'Sur', 'gerente_de_servicio' => 'Luis', 'estatus' => 1],
-            ['codigo' => 'A4', 'nombre' => 'Inactiva', 'terminal' => '00104', 'grupo' => 'G2', 'central' => 'Sur', 'gerente_de_servicio' => 'Luis', 'estatus' => 0],
+            ['agencia' => 'A1', 'nombre_agencia' => 'Con ventas', 'terminal' => '00101', 'grupo' => 'G1', 'central' => 'Norte', 'gerente_de_servicio' => 'Ana', 'estatus' => 1],
+            ['agencia' => 'A2', 'nombre_agencia' => 'Venta cero', 'terminal' => '00102', 'grupo' => 'G1', 'central' => 'Norte', 'gerente_de_servicio' => 'Ana', 'estatus' => 1],
+            ['agencia' => 'A3', 'nombre_agencia' => 'Sin registro', 'terminal' => '00103', 'grupo' => 'G2', 'central' => 'Sur', 'gerente_de_servicio' => 'Luis', 'estatus' => 1],
+            ['agencia' => 'A4', 'nombre_agencia' => 'Inactiva', 'terminal' => '00104', 'grupo' => 'G2', 'central' => 'Sur', 'gerente_de_servicio' => 'Luis', 'estatus' => 0],
         ]);
         DB::table('ventas_usuarios_bet')->insert([
             ['agencia_id' => '101', 'monto' => 1500, 'fecha' => '2026-09-26'],
@@ -125,6 +125,8 @@ class AgenciaSinActividadReportTest extends TestCase
             ->assertJsonPath('resumen.con_ventas', 1)
             ->assertJsonPath('resumen.sin_ventas', 2)
             ->assertJsonPath('resumen.porcentaje_actividad', 33.33)
+            ->assertJsonPath('agencias.0.agencia', 'A2')
+            ->assertJsonPath('agencias.0.nombre', 'Venta cero')
             ->assertJsonPath('por_central.0.cumplimiento', 0)
             ->assertJsonCount(3, 'agencias');
     }

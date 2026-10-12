@@ -132,7 +132,7 @@ class AgenciaSinActividadReportService
                 'terminal', 'agencia', 'codigo', 'nombre_agencia', 'nombre', 'grupo', 'central', 'gerente_de_servicio',
             ]],
             default => [Agencia::query(), [
-                'terminal', 'codigo', 'nombre', 'grupo', 'central', 'gerente_de_servicio',
+                'terminal', 'agencia', 'nombre_agencia', 'grupo', 'central', 'gerente_de_servicio',
             ]],
         };
 
