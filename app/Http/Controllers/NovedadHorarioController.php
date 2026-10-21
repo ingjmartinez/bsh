@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -15,6 +16,31 @@ class NovedadHorarioController extends Controller
     public function index()
     {
         return view('recursos_humanos.novedades_de_horario.index');
+    }
+
+    /**
+     * La tabla agencias no tiene las mismas columnas de nombre y ruta en todos los entornos,
+     * por lo que la subconsulta solo usa las que existen.
+     */
+    private function agenciasBetSql(): string
+    {
+        $nombres = collect(['nombre_agencia', 'nombre', 'agencia'])
+            ->filter(fn (string $column): bool => Schema::hasColumn('agencias', $column))
+            ->map(fn (string $column): string => "NULLIF({$column}, '')")
+            ->implode(', ');
+        $nombreAgencia = $nombres === '' ? "''" : "MAX(COALESCE({$nombres}, ''))";
+        $ruta = Schema::hasColumn('agencias', 'ruta') ? "MAX(COALESCE(ruta, ''))" : "''";
+
+        return "
+            SELECT
+                TRIM(CAST(terminal AS CHAR)) AS terminal,
+                {$nombreAgencia} AS nombre_agencia,
+                {$ruta} AS ruta
+            FROM agencias
+            WHERE terminal IS NOT NULL
+              AND TRIM(CAST(terminal AS CHAR)) <> ''
+            GROUP BY TRIM(CAST(terminal AS CHAR))
+        ";
     }
 
     public function list(Request $request)
@@ -29,16 +55,7 @@ class NovedadHorarioController extends Controller
 
         $uniones = [];
         $bindings = [];
-        $agenciasBetSql = "
-            SELECT
-                TRIM(CAST(terminal AS CHAR)) AS terminal,
-                MAX(nombre) AS nombre_agencia,
-                '' AS ruta
-            FROM agencias
-            WHERE terminal IS NOT NULL
-              AND TRIM(CAST(terminal AS CHAR)) <> ''
-            GROUP BY TRIM(CAST(terminal AS CHAR))
-        ";
+        $agenciasBetSql = $this->agenciasBetSql();
         $agenciasLotedomSql = "
             SELECT
                 TRIM(CAST(terminal AS CHAR)) AS terminal,

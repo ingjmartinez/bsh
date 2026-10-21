@@ -2,7 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\NovedadHorarioController;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\Attributes\DataProvider;
+use ReflectionMethod;
 use Tests\TestCase;
 
 class NovedadHorarioTest extends TestCase
@@ -12,10 +17,51 @@ class NovedadHorarioTest extends TestCase
         $controller = file_get_contents(app_path('Http/Controllers/NovedadHorarioController.php'));
 
         $this->assertIsString($controller);
-        $this->assertStringContainsString('MAX(nombre) AS nombre_agencia', $controller);
+        $this->assertStringContainsString('Schema::hasColumn(\'agencias\', $column)', $controller);
         $this->assertStringContainsString('FROM agencias_lotedom', $controller);
         $this->assertStringContainsString("MAX(COALESCE(NULLIF(nombre_agencia, ''), nombre))", $controller);
         $this->assertSame(2, substr_count($controller, 'CHAR_LENGTH(REPLACE(REPLACE(TRIM(COALESCE('));
+    }
+
+    /**
+     * @return array<string, array{0: array<int, string>, 1: string, 2: string}>
+     */
+    public static function agencyCatalogs(): array
+    {
+        return [
+            'local con nombre y sin ruta' => [['nombre'], "MAX(COALESCE(NULLIF(nombre, ''), ''))", "'' AS ruta"],
+            'produccion con nombre_agencia, agencia y ruta' => [
+                ['nombre_agencia', 'agencia', 'ruta'],
+                "MAX(COALESCE(NULLIF(nombre_agencia, ''), NULLIF(agencia, ''), ''))",
+                "MAX(COALESCE(ruta, '')) AS ruta",
+            ],
+        ];
+    }
+
+    /**
+     * @param  array<int, string>  $columns
+     */
+    #[DataProvider('agencyCatalogs')]
+    public function test_lotobet_agency_subquery_only_uses_existing_columns(array $columns, string $nombre, string $ruta): void
+    {
+        Schema::dropIfExists('agencias');
+        Schema::create('agencias', function (Blueprint $table) use ($columns): void {
+            $table->id();
+            $table->string('terminal')->nullable();
+            foreach ($columns as $column) {
+                $table->string($column)->nullable();
+            }
+        });
+
+        try {
+            $method = new ReflectionMethod(NovedadHorarioController::class, 'agenciasBetSql');
+            $sql = $method->invoke(new NovedadHorarioController);
+        } finally {
+            Schema::dropIfExists('agencias');
+        }
+
+        $this->assertStringContainsString($nombre.' AS nombre_agencia', $sql);
+        $this->assertStringContainsString($ruta, $sql);
     }
 
     public function test_view_handles_ajax_errors_without_datatables_native_alert(): void
