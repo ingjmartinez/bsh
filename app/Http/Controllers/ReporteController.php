@@ -1066,7 +1066,7 @@ class ReporteController extends Controller
 
                 CASE
                     WHEN MAX(e.empleadoid) IS NULL
-                      OR MAX(e.fecha_egreso) IS NOT NULL
+                      OR SUM(CASE WHEN e.empleadoid IS NOT NULL AND e.fecha_egreso IS NULL THEN 1 ELSE 0 END) = 0
                     THEN CONCAT(
                         'Agencia(s): ',
                         GROUP_CONCAT(
@@ -1080,7 +1080,7 @@ class ReporteController extends Controller
 
                 CASE
                     WHEN MAX(e.empleadoid) IS NULL THEN 'No registrado'
-                    WHEN MAX(e.fecha_egreso) IS NULL
+                    WHEN SUM(CASE WHEN e.empleadoid IS NOT NULL AND e.fecha_egreso IS NULL THEN 1 ELSE 0 END) > 0
                         THEN 'Activo'
                     ELSE CONCAT('No Activo - ', MAX(e.fecha_egreso))
                 END AS Estatus,

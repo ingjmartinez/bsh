@@ -10,6 +10,8 @@ use App\Http\Controllers\AsistenciaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AutoProcesoConfigController;
 use App\Http\Controllers\BiLotobetController;
+use App\Http\Controllers\BiPlataformaController;
+use App\Http\Controllers\BiVentasGlobalController;
 use App\Http\Controllers\CatalogoJuegoController;
 use App\Http\Controllers\ComercialController;
 use App\Http\Controllers\ContabilidadCuentasCobrarFaltantesController;
@@ -50,6 +52,7 @@ use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RutaController;
 use App\Http\Controllers\ServicioGeneralMiRutaController;
+use App\Http\Controllers\ServicioGeneralMonitoreoVentasController;
 use App\Http\Controllers\ServicioGeneralRequerimientoController;
 use App\Http\Controllers\ServicioGeneralRutaInspeccionController;
 use App\Http\Controllers\SuperAdminSesionController;
@@ -101,6 +104,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/bi', [ModuleHubController::class, 'bi'])
         ->middleware('role_or_permission:superadmin|admin|module.bi.view')
         ->name('bi.index');
+    Route::get('/bi/ventas-global', [BiVentasGlobalController::class, 'index'])
+        ->middleware('role_or_permission:superadmin|admin|module.bi.item.ventas_global.view')
+        ->name('bi.ventas-global');
+    Route::get('/bi/ventas-global/data', [BiVentasGlobalController::class, 'data'])
+        ->middleware('role_or_permission:superadmin|admin|module.bi.item.ventas_global.view')
+        ->name('bi.ventas-global.data');
     Route::get('/bi/lotobet-real', [BiLotobetController::class, 'index'])
         ->middleware('role_or_permission:superadmin|admin|module.bi.item.lotobet_real.view')
         ->name('bi.lotobet-real');
@@ -126,12 +135,22 @@ Route::middleware('auth')->group(function () {
         ->middleware('role_or_permission:superadmin|admin|module.bi.item.lotobet_real.view')->name('bi.lotobet-real.productos');
     Route::get('/bi/lotobet-real/por-productos/data', [BiLotobetController::class, 'productosData'])
         ->middleware('role_or_permission:superadmin|admin|module.bi.item.lotobet_real.view')->name('bi.lotobet-real.productos-data');
-    Route::view('/bi/lotodom', 'bi.plataforma', ['plataforma' => 'Lotodom'])
+    Route::get('/bi/lotodom', [BiPlataformaController::class, 'index'])
+        ->defaults('plataforma', 'lotodom')
         ->middleware('role_or_permission:superadmin|admin|module.bi.item.lotodom.view')
         ->name('bi.lotodom');
-    Route::view('/bi/delta', 'bi.plataforma', ['plataforma' => 'Delta'])
+    Route::get('/bi/lotodom/data', [BiPlataformaController::class, 'data'])
+        ->defaults('plataforma', 'lotodom')
+        ->middleware('role_or_permission:superadmin|admin|module.bi.item.lotodom.view')
+        ->name('bi.lotodom.data');
+    Route::get('/bi/delta', [BiPlataformaController::class, 'index'])
+        ->defaults('plataforma', 'delta')
         ->middleware('role_or_permission:superadmin|admin|module.bi.item.delta.view')
         ->name('bi.delta');
+    Route::get('/bi/delta/data', [BiPlataformaController::class, 'data'])
+        ->defaults('plataforma', 'delta')
+        ->middleware('role_or_permission:superadmin|admin|module.bi.item.delta.view')
+        ->name('bi.delta.data');
 
     Route::get('/procesos', [ModuleHubController::class, 'procesos'])->name('procesos.index');
     Route::get('/procesos/{departamento}', [ProcesoController::class, 'departamento'])->name('procesos.departamento');
@@ -654,6 +673,9 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:servicios_generales.view')
         ->group(function () {
             Route::get('/', [ModuleHubController::class, 'serviciosGenerales'])->name('index');
+            Route::get('/monitoreo-ventas', [ServicioGeneralMonitoreoVentasController::class, 'index'])->name('monitoreo-ventas.index');
+            Route::post('/monitoreo-ventas/asignaciones', [ServicioGeneralMonitoreoVentasController::class, 'asignar'])->middleware('permission:servicios_generales.manage')->name('monitoreo-ventas.asignar');
+            Route::post('/monitoreo-ventas/{caso}/seguimientos', [ServicioGeneralMonitoreoVentasController::class, 'seguimiento'])->name('monitoreo-ventas.seguimiento');
             Route::get('/ruta-inspeccion', [ServicioGeneralRutaInspeccionController::class, 'index'])
                 ->name('ruta-inspeccion.index');
             Route::get('/mi-ruta', [ServicioGeneralMiRutaController::class, 'index'])->name('mi-ruta.index');

@@ -16,6 +16,8 @@ class ReporteCruceUsuariosTest extends TestCase
             ->once()
             ->withArgs(fn (string $query, array $bindings): bool => str_contains($query, 'e.fecha_egreso')
                 && ! str_contains($query, 'e.fechasalida')
+                && str_contains($query, 'WHEN SUM(CASE WHEN e.empleadoid IS NOT NULL AND e.fecha_egreso IS NULL THEN 1 ELSE 0 END) > 0')
+                && str_contains($query, 'OR SUM(CASE WHEN e.empleadoid IS NOT NULL AND e.fecha_egreso IS NULL THEN 1 ELSE 0 END) = 0')
                 && $bindings === ['2026-09-01', '2026-09-26'])
             ->andReturn([(object) [
                 'Identificacion' => '00112345678',

@@ -769,10 +769,11 @@
 
                         @if ($canModule('bi'))
                             @php
+                                $isBiGlobalActive = request()->routeIs('bi.ventas-global', 'bi.ventas-global.*');
                                 $isBiLotobetActive = request()->routeIs('bi.lotobet-real', 'bi.lotobet-real.*');
-                                $isBiLotodomActive = request()->routeIs('bi.lotodom');
-                                $isBiDeltaActive = request()->routeIs('bi.delta');
-                                $isBiActive = request()->routeIs('bi.index') || $isBiLotobetActive || $isBiLotodomActive || $isBiDeltaActive;
+                                $isBiLotodomActive = request()->routeIs('bi.lotodom', 'bi.lotodom.*');
+                                $isBiDeltaActive = request()->routeIs('bi.delta', 'bi.delta.*');
+                                $isBiActive = request()->routeIs('bi.index') || $isBiGlobalActive || $isBiLotobetActive || $isBiLotodomActive || $isBiDeltaActive;
                             @endphp
                             <li class="nav-item">
                                 <a class="nav-link menu-link {{ $isBiActive ? '' : 'collapsed' }}"
@@ -784,6 +785,12 @@
                                 </a>
                                 <div class="collapse menu-dropdown {{ $isBiActive ? 'show' : '' }}" id="sidebarBi">
                                     <ul class="nav nav-sm flex-column">
+                                        <li class="nav-item">
+                                            <a href="{{ route('bi.ventas-global') }}"
+                                                class="nav-link {{ $isBiGlobalActive ? 'active' : '' }}">
+                                                Ventas Global
+                                            </a>
+                                        </li>
                                         <li class="nav-item">
                                             <a href="{{ route('bi.lotobet-real') }}"
                                                 class="nav-link {{ $isBiLotobetActive ? 'active' : '' }}">

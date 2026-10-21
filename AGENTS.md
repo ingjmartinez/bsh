@@ -283,3 +283,11 @@ document.addEventListener('livewire:init', function () {
 - To run all tests in a file: `php artisan test --compact tests/Feature/ExampleTest.php`.
 - To filter on a particular test name: `php artisan test --compact --filter=testName` (recommended after making a change to a related file).
 </laravel-boost-guidelines>
+
+## Deploy / Docker
+
+- El scheduler y cualquier proceso extra del contenedor deben correr como `www-data` (`runuser -u www-data -- ...`), nunca como root. Todo comando artisan lanzado desde `docker/start.sh` va con `runuser`, excepto `mkdir` y `chown`.
+- Producción no tiene volúmenes salvo `/var/www/storage/app`. Nada que se cambie a mano dentro del contenedor sobrevive a un deploy.
+- Las variables de entorno vienen de Dokploy. `.env` no entra en la imagen (ver `.dockerignore`).
+- Las migraciones viven en `database/migrations/`. Al usar `--path`, apuntar ahí (hubo un error por usar `database/` a secas).
+- Checklist post-deploy: el scheduler corre como `www-data`; `find storage bootstrap/cache ! -user www-data` no imprime nada; el webhook `POST /api/telegram/webhook` no devuelve 500; sin errores en los logs del contenedor.

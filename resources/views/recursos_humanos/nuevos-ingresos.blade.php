@@ -27,7 +27,14 @@
                             <button type="button" id="btnActualizarNuevosIngresos" class="btn btn-primary"><i class="ri-refresh-line me-1"></i> Actualizar</button>
                         </div>
                     </div>
-                    <div class="card-body"><div class="table-responsive">
+                    <div class="card-body">
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-4"><label for="filtroGrupoNuevoIngreso" class="form-label">Grupo</label><select id="filtroGrupoNuevoIngreso" class="form-select filtro-nuevo-ingreso"><option value="">Todos los grupos</option>@foreach($grupos as $grupo)<option value="{{ $grupo }}">{{ $grupo }}</option>@endforeach</select></div>
+                            <div class="col-md-4"><label for="filtroCentralNuevoIngreso" class="form-label">Central</label><select id="filtroCentralNuevoIngreso" class="form-select filtro-nuevo-ingreso"><option value="">Todas las centrales</option>@foreach($centrales as $central)<option value="{{ $central }}">{{ $central }}</option>@endforeach</select></div>
+                            <div class="col-md-4"><label for="filtroGerenteNuevoIngreso" class="form-label">Gerente de servicio</label><select id="filtroGerenteNuevoIngreso" class="form-select filtro-nuevo-ingreso"><option value="">Todos los gerentes</option>@foreach($gerentes as $gerente)<option value="{{ $gerente }}">{{ $gerente }}</option>@endforeach</select></div>
+                        </div>
+                        <p class="text-muted small mb-3">Los filtros usan la agencia de la venta más reciente del empleado en los últimos 35 días. Sin ventas recientes, no es posible asignarlo a un grupo, central o gerente.</p>
+                        <div class="table-responsive">
                         <table id="tablaNuevosIngresos" class="table table-bordered table-striped align-middle nowrap" style="width:100%">
                             <thead><tr><th>Cédula</th><th>Nombre completo</th><th>Fecha de ingreso</th><th>Días hábiles</th></tr></thead><tbody></tbody>
                         </table>
@@ -66,7 +73,12 @@
             async function loadNewEmployees(showLoading = true) {
                 if (showLoading) Swal.fire({title: 'Consultando nuevos ingresos...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
                 try {
-                    const response = await fetch(urls.data, {headers: {'Accept': 'application/json'}});
+                    const filters = new URLSearchParams();
+                    [['grupo', 'filtroGrupoNuevoIngreso'], ['central', 'filtroCentralNuevoIngreso'], ['gerente', 'filtroGerenteNuevoIngreso']].forEach(([key, id]) => {
+                        const value = document.getElementById(id).value;
+                        if (value) filters.set(key, value);
+                    });
+                    const response = await fetch(`${urls.data}?${filters.toString()}`, {headers: {'Accept': 'application/json'}});
                     const data = await response.json();
                     if (!response.ok) throw new Error(data.message || 'No se pudo consultar el reporte.');
 
@@ -81,6 +93,7 @@
             }
 
             document.getElementById('btnActualizarNuevosIngresos').addEventListener('click', () => loadNewEmployees());
+            document.querySelectorAll('.filtro-nuevo-ingreso').forEach(filter => filter.addEventListener('change', () => loadNewEmployees()));
             document.getElementById('btnGuardarConfiguracionNuevosIngresos').addEventListener('click', async () => {
                 try {
                     const days = Number(document.getElementById('limiteDiasHabiles').value);

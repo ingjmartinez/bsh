@@ -1,0 +1,48 @@
+# --- Secretos ---
+.env
+.env.*
+!.env.example
+
+# --- Control de versiones y herramientas locales ---
+.git
+.gitignore
+.gitattributes
+.githooks
+.claude
+.vscode
+.idea
+*.ps1
+
+# --- Dumps y datos sensibles ---
+**/*.sql
+**/*.csv
+**/*.xlsx
+database/schema
+
+# --- Dependencias (se reinstalan en el build) ---
+vendor
+node_modules
+
+# --- Cache local de Laravel ---
+bootstrap/cache/*.php
+
+# --- Contenido runtime de storage (se conserva la estructura) ---
+storage/logs/*
+storage/app/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/framework/testing
+storage/psysh
+
+# --- Documentacion, tests y notas ---
+tests
+docs
+html
+tools
+*.md
+*.txt
+!robots.txt
+!public/**/*.txt
+phpunit.xml
+docker-compose.yml

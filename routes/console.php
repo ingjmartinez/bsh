@@ -11,3 +11,4 @@ Artisan::command('inspire', function () {
 Schedule::command('auto-proceso:run-due')->everyMinute()->withoutOverlapping();
 Schedule::command('chatbot:sessions:expire')->everyMinute()->withoutOverlapping();
 Schedule::command('supervision:generar-visitas')->dailyAt('05:00')->withoutOverlapping();
+Schedule::command('monitoreo-ventas:generar')->dailyAt('08:00')->withoutOverlapping();

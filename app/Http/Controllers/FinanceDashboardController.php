@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class FinanceDashboardController extends Controller
 {
@@ -21,8 +21,7 @@ class FinanceDashboardController extends Controller
     public function data(Request $request)
     {
         $plataforma = $request->get('plataforma', 'bet');
-        $tabla = $plataforma === 'net' ? 'vt_usuarios_net' : 'ventas_usuarios_bet';
-        // dd($tabla);
+        $tabla = $plataforma === 'net' ? 'ventas_usuarios_net' : 'ventas_usuarios_bet';
         $agencia_id = $request->get('agencia_id', null);
         $empresaFilter = $this->normalizeEmpresaFilter((string) $request->get('empresa', 'todas'));
 
@@ -30,10 +29,10 @@ class FinanceDashboardController extends Controller
         $fecha_fin = $request->get('fecha_fin', Carbon::today()->format('Y-m-d'));
 
         // Validar formato fecha
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha_inicio)) {
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha_inicio)) {
             $fecha_inicio = Carbon::today()->format('Y-m-d');
         }
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha_fin)) {
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha_fin)) {
             $fecha_fin = Carbon::today()->format('Y-m-d');
         }
 
@@ -42,44 +41,44 @@ class FinanceDashboardController extends Controller
         $fechaReferenciaCero = Carbon::createFromFormat('Y-m-d', $fecha_fin)->toDateString();
 
         // Query para obtener datos de agencias con ventas
-        $agenciasQuery = DB::table($tabla . ' as v')
-            ->leftJoin('agencias as a_emp', DB::raw("TRIM(CAST(a_emp.terminal AS CHAR))"), '=', DB::raw("TRIM(CAST(v.agencia_id AS CHAR))"))
-            ->selectRaw("v.agencia_id, COUNT(DISTINCT v.agencia_id) as agencia_count, SUM(v.monto) as total")
+        $agenciasQuery = DB::table($tabla.' as v')
+            ->leftJoin('agencias as a_emp', DB::raw('TRIM(CAST(a_emp.terminal AS CHAR))'), '=', DB::raw('TRIM(CAST(v.agencia_id AS CHAR))'))
+            ->selectRaw('v.agencia_id, COUNT(DISTINCT v.agencia_id) as agencia_count, SUM(v.monto) as total')
             ->whereBetween('v.fecha', [$inicio, $fin])
             ->when($empresaFilter !== 'todas', function ($query) use ($empresaFilter) {
                 $this->applyEmpresaFilter($query, $empresaFilter, 'a_emp.empresa');
             })
             ->groupBy('v.agencia_id')
-            ->orderByRaw("SUM(v.monto) DESC");
+            ->orderByRaw('SUM(v.monto) DESC');
 
         $agencias = $agenciasQuery->get();
         $totalAgencias = $agencias->count();
-        
+
         $agenciasCatalogoSub = DB::table('agencias')
-            ->selectRaw("TRIM(CAST(terminal AS CHAR)) AS agencia_id")
+            ->selectRaw('TRIM(CAST(terminal AS CHAR)) AS agencia_id')
             ->selectRaw("MAX(TRIM(COALESCE(nombre, ''))) AS nombre_agencia")
             ->whereNotNull('terminal')
             ->whereRaw("TRIM(CAST(terminal AS CHAR)) <> ''")
             ->when($empresaFilter !== 'todas', function ($query) use ($empresaFilter) {
                 $this->applyEmpresaFilter($query, $empresaFilter, 'empresa');
             })
-            ->groupByRaw("TRIM(CAST(terminal AS CHAR))");
+            ->groupByRaw('TRIM(CAST(terminal AS CHAR))');
 
-        $ventasPorAgenciaSub = DB::table($tabla . ' as v')
-            ->leftJoin('agencias as a_emp', DB::raw("TRIM(CAST(a_emp.terminal AS CHAR))"), '=', DB::raw("TRIM(CAST(v.agencia_id AS CHAR))"))
-            ->selectRaw("TRIM(CAST(v.agencia_id AS CHAR)) AS agencia_id")
-            ->selectRaw("SUM(COALESCE(v.monto, 0)) AS total")
+        $ventasPorAgenciaSub = DB::table($tabla.' as v')
+            ->leftJoin('agencias as a_emp', DB::raw('TRIM(CAST(a_emp.terminal AS CHAR))'), '=', DB::raw('TRIM(CAST(v.agencia_id AS CHAR))'))
+            ->selectRaw('TRIM(CAST(v.agencia_id AS CHAR)) AS agencia_id')
+            ->selectRaw('SUM(COALESCE(v.monto, 0)) AS total')
             ->whereNotNull('v.agencia_id')
             ->whereDate('v.fecha', $fechaReferenciaCero)
             ->when($empresaFilter !== 'todas', function ($query) use ($empresaFilter) {
                 $this->applyEmpresaFilter($query, $empresaFilter, 'a_emp.empresa');
             })
-            ->groupByRaw("TRIM(CAST(v.agencia_id AS CHAR))");
+            ->groupByRaw('TRIM(CAST(v.agencia_id AS CHAR))');
 
         $agenciasConTotales = DB::query()
             ->fromSub($agenciasCatalogoSub, 'a')
             ->leftJoinSub($ventasPorAgenciaSub, 'v', 'a.agencia_id', '=', 'v.agencia_id')
-            ->selectRaw("a.agencia_id, a.nombre_agencia, COALESCE(v.total, 0) AS total")
+            ->selectRaw('a.agencia_id, a.nombre_agencia, COALESCE(v.total, 0) AS total')
             ->when($agencia_id, function ($query) use ($agencia_id) {
                 $query->where('a.agencia_id', (string) $agencia_id);
             })
@@ -110,12 +109,12 @@ class FinanceDashboardController extends Controller
         END";
 
         // 1) Subquery: aquí sí se agrupa
-        $sub = DB::table($tabla . ' as v')
+        $sub = DB::table($tabla.' as v')
             ->leftJoin('catalogo_juegos as c', 'v.producto_id', '=', 'c.producto_id')
-            ->leftJoin('agencias as a_emp', DB::raw("TRIM(CAST(a_emp.terminal AS CHAR))"), '=', DB::raw("TRIM(CAST(v.agencia_id AS CHAR))"))
+            ->leftJoin('agencias as a_emp', DB::raw('TRIM(CAST(a_emp.terminal AS CHAR))'), '=', DB::raw('TRIM(CAST(v.agencia_id AS CHAR))'))
             ->selectRaw("$tipoExpr as tipo")
-            ->selectRaw("SUM(v.monto) as total")
-            ->selectRaw("COUNT(*) as transacciones")
+            ->selectRaw('SUM(v.monto) as total')
+            ->selectRaw('COUNT(*) as transacciones')
             ->whereBetween('v.fecha', [$inicio, $fin])
             ->when($empresaFilter !== 'todas', function ($q) use ($empresaFilter) {
                 $this->applyEmpresaFilter($q, $empresaFilter, 'a_emp.empresa');
@@ -140,9 +139,9 @@ class FinanceDashboardController extends Controller
             ->get();
 
         // Query para ventas por día separadas por tipo
-        $ventasDiariasPorTipoQuery = DB::table($tabla . ' as v')
+        $ventasDiariasPorTipoQuery = DB::table($tabla.' as v')
             ->leftJoin('catalogo_juegos as c', 'v.producto_id', '=', 'c.producto_id')
-            ->leftJoin('agencias as a_emp', DB::raw("TRIM(CAST(a_emp.terminal AS CHAR))"), '=', DB::raw("TRIM(CAST(v.agencia_id AS CHAR))"))
+            ->leftJoin('agencias as a_emp', DB::raw('TRIM(CAST(a_emp.terminal AS CHAR))'), '=', DB::raw('TRIM(CAST(v.agencia_id AS CHAR))'))
             ->selectRaw("DATE(v.fecha) as fecha, {$tipoExpr} as tipo, SUM(v.monto) as total")
             ->whereBetween('v.fecha', [$inicio, $fin])
             ->when($empresaFilter !== 'todas', function ($q) use ($empresaFilter) {
@@ -154,7 +153,7 @@ class FinanceDashboardController extends Controller
         }
 
         $ventasDiariasPorTipo = $ventasDiariasPorTipoQuery
-            ->groupByRaw("DATE(v.fecha), tipo")
+            ->groupByRaw('DATE(v.fecha), tipo')
             ->orderBy('fecha')
             ->get();
 
@@ -180,9 +179,9 @@ class FinanceDashboardController extends Controller
         $mesAnteriorInicio = $inicio->copy()->subMonth()->startOfMonth();
         $mesAnteriorFin = $inicio->copy()->subMonth()->endOfMonth();
 
-        $ventasMesAnteriorPorTipoQuery = DB::table($tabla . ' as v')
+        $ventasMesAnteriorPorTipoQuery = DB::table($tabla.' as v')
             ->leftJoin('catalogo_juegos as c', 'v.producto_id', '=', 'c.producto_id')
-            ->leftJoin('agencias as a_emp', DB::raw("TRIM(CAST(a_emp.terminal AS CHAR))"), '=', DB::raw("TRIM(CAST(v.agencia_id AS CHAR))"))
+            ->leftJoin('agencias as a_emp', DB::raw('TRIM(CAST(a_emp.terminal AS CHAR))'), '=', DB::raw('TRIM(CAST(v.agencia_id AS CHAR))'))
             ->selectRaw("DATE(v.fecha) as fecha, {$tipoExpr} as tipo, SUM(v.monto) as total")
             ->whereBetween('v.fecha', [$mesAnteriorInicio, $mesAnteriorFin])
             ->when($empresaFilter !== 'todas', function ($q) use ($empresaFilter) {
@@ -209,8 +208,8 @@ class FinanceDashboardController extends Controller
 
         // Calcular promedio diario total del mes anterior
         $ventasMesAnteriorTotalQuery = DB::table($tabla)
-            ->leftJoin('agencias as a_emp', DB::raw("TRIM(CAST(a_emp.terminal AS CHAR))"), '=', DB::raw("TRIM(CAST({$tabla}.agencia_id AS CHAR))"))
-            ->selectRaw("DATE(fecha) as fecha, SUM(monto) as total")
+            ->leftJoin('agencias as a_emp', DB::raw('TRIM(CAST(a_emp.terminal AS CHAR))'), '=', DB::raw("TRIM(CAST({$tabla}.agencia_id AS CHAR))"))
+            ->selectRaw('DATE(fecha) as fecha, SUM(monto) as total')
             ->whereBetween('fecha', [$mesAnteriorInicio, $mesAnteriorFin])
             ->when($empresaFilter !== 'todas', function ($q) use ($empresaFilter) {
                 $this->applyEmpresaFilter($q, $empresaFilter, 'a_emp.empresa');
@@ -221,7 +220,7 @@ class FinanceDashboardController extends Controller
         }
 
         $ventasMesAnteriorTotal = $ventasMesAnteriorTotalQuery
-            ->groupByRaw("DATE(fecha)")
+            ->groupByRaw('DATE(fecha)')
             ->get();
         $promedioDiarioMesAnterior = $ventasMesAnteriorTotal->count() > 0
             ? $ventasMesAnteriorTotal->sum('total') / $ventasMesAnteriorTotal->count()
@@ -275,8 +274,8 @@ class FinanceDashboardController extends Controller
 
         // Chart data para gráfico de línea (totales por día)
         $ventasDiariasQuery = DB::table($tabla)
-            ->leftJoin('agencias as a_emp', DB::raw("TRIM(CAST(a_emp.terminal AS CHAR))"), '=', DB::raw("TRIM(CAST({$tabla}.agencia_id AS CHAR))"))
-            ->selectRaw("DATE(fecha) as fecha, SUM(monto) as total")
+            ->leftJoin('agencias as a_emp', DB::raw('TRIM(CAST(a_emp.terminal AS CHAR))'), '=', DB::raw("TRIM(CAST({$tabla}.agencia_id AS CHAR))"))
+            ->selectRaw('DATE(fecha) as fecha, SUM(monto) as total')
             ->whereBetween('fecha', [$inicio, $fin])
             ->when($empresaFilter !== 'todas', function ($q) use ($empresaFilter) {
                 $this->applyEmpresaFilter($q, $empresaFilter, 'a_emp.empresa');
@@ -287,7 +286,7 @@ class FinanceDashboardController extends Controller
         }
 
         $ventasDiarias = $ventasDiariasQuery
-            ->groupByRaw("DATE(fecha)")
+            ->groupByRaw('DATE(fecha)')
             ->orderBy('fecha')
             ->get();
 
@@ -300,7 +299,7 @@ class FinanceDashboardController extends Controller
         // Agregar líneas de promedio del mes anterior por tipo al gráfico de barras diario
         foreach ($tipos as $index => $tipo) {
             $chartDiario['datasets'][] = [
-                'label' => 'Promedio ' . $tipo . ' Mes Anterior: ' . number_format($promediosPorTipoMesAnterior[$tipo], 2),
+                'label' => 'Promedio '.$tipo.' Mes Anterior: '.number_format($promediosPorTipoMesAnterior[$tipo], 2),
                 'data' => array_fill(0, count($fechas), $promediosPorTipoMesAnterior[$tipo]),
                 'type' => 'line',
                 'borderColor' => $coloresDisponibes[$index % count($coloresDisponibes)],
@@ -316,6 +315,7 @@ class FinanceDashboardController extends Controller
         // Tabla data
         $tablaData = $datos->map(function ($item) use ($totalGeneral) {
             $porcentaje = $totalGeneral > 0 ? ($item->total / $totalGeneral) * 100 : 0;
+
             return [
                 'tipo' => $item->tipo,
                 'total' => $item->total,
@@ -344,16 +344,16 @@ class FinanceDashboardController extends Controller
     public function exportAgenciasCeroPorDia(Request $request)
     {
         $plataforma = $request->get('plataforma', 'bet');
-        $tabla = $plataforma === 'net' ? 'vt_usuarios_net' : 'ventas_usuarios_bet';
+        $tabla = $plataforma === 'net' ? 'ventas_usuarios_net' : 'ventas_usuarios_bet';
         $empresaFilter = $this->normalizeEmpresaFilter((string) $request->get('empresa', 'todas'));
 
         $fechaInicio = (string) $request->get('fecha_inicio', Carbon::today()->format('Y-m-d'));
         $fechaFin = (string) $request->get('fecha_fin', Carbon::today()->format('Y-m-d'));
 
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaInicio)) {
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaInicio)) {
             $fechaInicio = Carbon::today()->format('Y-m-d');
         }
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaFin)) {
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaFin)) {
             $fechaFin = Carbon::today()->format('Y-m-d');
         }
 
@@ -365,14 +365,14 @@ class FinanceDashboardController extends Controller
         }
 
         $agenciasCatalogo = DB::table('agencias')
-            ->selectRaw("TRIM(CAST(terminal AS CHAR)) AS agencia_id")
+            ->selectRaw('TRIM(CAST(terminal AS CHAR)) AS agencia_id')
             ->whereNotNull('terminal')
             ->whereRaw("TRIM(CAST(terminal AS CHAR)) <> ''")
             ->when($empresaFilter !== 'todas', function ($query) use ($empresaFilter) {
                 $this->applyEmpresaFilter($query, $empresaFilter, 'empresa');
             })
-            ->groupByRaw("TRIM(CAST(terminal AS CHAR))")
-            ->orderByRaw("TRIM(CAST(terminal AS CHAR))")
+            ->groupByRaw('TRIM(CAST(terminal AS CHAR))')
+            ->orderByRaw('TRIM(CAST(terminal AS CHAR))')
             ->pluck('agencia_id')
             ->map(fn ($agenciaId) => (string) $agenciaId)
             ->values()
@@ -380,17 +380,17 @@ class FinanceDashboardController extends Controller
 
         $totalAgenciasCatalogo = count($agenciasCatalogo);
 
-        $ventasPorDiaAgencia = DB::table($tabla . ' as v')
-            ->leftJoin('agencias as a_emp', DB::raw("TRIM(CAST(a_emp.terminal AS CHAR))"), '=', DB::raw("TRIM(CAST(v.agencia_id AS CHAR))"))
-            ->selectRaw("DATE(v.fecha) AS fecha")
-            ->selectRaw("TRIM(CAST(v.agencia_id AS CHAR)) AS agencia_id")
-            ->selectRaw("SUM(COALESCE(v.monto, 0)) AS total")
+        $ventasPorDiaAgencia = DB::table($tabla.' as v')
+            ->leftJoin('agencias as a_emp', DB::raw('TRIM(CAST(a_emp.terminal AS CHAR))'), '=', DB::raw('TRIM(CAST(v.agencia_id AS CHAR))'))
+            ->selectRaw('DATE(v.fecha) AS fecha')
+            ->selectRaw('TRIM(CAST(v.agencia_id AS CHAR)) AS agencia_id')
+            ->selectRaw('SUM(COALESCE(v.monto, 0)) AS total')
             ->whereNotNull('v.agencia_id')
             ->whereBetween('v.fecha', [$inicio, $fin])
             ->when($empresaFilter !== 'todas', function ($query) use ($empresaFilter) {
                 $this->applyEmpresaFilter($query, $empresaFilter, 'a_emp.empresa');
             })
-            ->groupByRaw("DATE(v.fecha), TRIM(CAST(v.agencia_id AS CHAR))")
+            ->groupByRaw('DATE(v.fecha), TRIM(CAST(v.agencia_id AS CHAR))')
             ->get();
 
         $totalesMap = [];
@@ -429,7 +429,7 @@ class FinanceDashboardController extends Controller
             $cursor->addDay();
         }
 
-        $csv = implode("\r\n", $lineas) . "\r\n";
+        $csv = implode("\r\n", $lineas)."\r\n";
         $fileName = sprintf(
             'agencias_cero_por_dia_%s_%s_%s.csv',
             $plataforma,
@@ -439,7 +439,7 @@ class FinanceDashboardController extends Controller
 
         return response($csv, 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+            'Content-Disposition' => 'attachment; filename="'.$fileName.'"',
         ]);
     }
 
@@ -447,7 +447,7 @@ class FinanceDashboardController extends Controller
     {
         $normalized = strtolower(trim($empresa));
 
-        if (!in_array($normalized, ['todas', 'negosur', 'joselito'], true)) {
+        if (! in_array($normalized, ['todas', 'negosur', 'joselito'], true)) {
             return 'todas';
         }
 
@@ -465,6 +465,7 @@ class FinanceDashboardController extends Controller
                 "REPLACE(LOWER(COALESCE({$column}, '')), ' ', '') LIKE ?",
                 ['%negosur%']
             );
+
             return;
         }
 

@@ -77,6 +77,17 @@ return [
         'breadcrumb' => 'BI',
         'items' => [
             [
+                'nombre' => 'Ventas Global',
+                'descripcion' => 'Consolida las ventas de Lotobet Real, Lotodom y Delta en un solo tablero.',
+                'url' => '/bi/ventas-global',
+                'icono' => 'ri-global-line',
+                'categoria' => 'Consolidado',
+                'tags' => ['bi', 'ventas', 'global', 'consolidado', 'real', 'lotedom', 'delta', 'indicadores'],
+                'permission' => 'module.bi.item.ventas_global.view',
+                'role' => ['admin', 'superadmin'],
+                'activo' => true,
+            ],
+            [
                 'nombre' => 'Lotobet Real',
                 'descripcion' => 'Consulta el tablero de inteligencia de negocios de Lotobet Real.',
                 'url' => '/bi/lotobet-real',
@@ -443,6 +454,16 @@ return [
         'titulo' => 'Servicios Generales',
         'breadcrumb' => 'Servicios Generales',
         'items' => [
+            [
+                'nombre' => 'Monitoreo de ventas CMS',
+                'descripcion' => 'Alertas diarias de ventas, asignación a asesores y seguimiento de casos.',
+                'url' => '/servicios-generales/monitoreo-ventas',
+                'icono' => 'ri-line-chart-line',
+                'categoria' => 'Monitoreo',
+                'tags' => ['ventas', 'cms', 'alertas', 'asesores'],
+                'permission' => 'servicios_generales.view',
+                'activo' => true,
+            ],
             [
                 'nombre' => 'Requerimientos',
                 'descripcion' => 'Registra tickets para los tecnicos: internet, electricidad, sistema frizado o cambio de inversor.',

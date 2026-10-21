@@ -37,9 +37,9 @@ class BiModuleTest extends TestCase
     {
         $items = collect(config('module_hubs.bi.items'));
 
-        $this->assertSame(['Lotobet Real', 'Lotodom', 'Delta'], $items->pluck('nombre')->all());
+        $this->assertSame(['Ventas Global', 'Lotobet Real', 'Lotodom', 'Delta'], $items->pluck('nombre')->all());
         $this->assertSame(
-            ['/bi/lotobet-real', '/bi/lotodom', '/bi/delta'],
+            ['/bi/ventas-global', '/bi/lotobet-real', '/bi/lotodom', '/bi/delta'],
             $items->pluck('url')->all()
         );
     }
@@ -52,6 +52,7 @@ class BiModuleTest extends TestCase
         $this->assertNotNull($route);
         $this->assertContains('role_or_permission:superadmin|admin|module.bi.view', $route->gatherMiddleware());
         $this->assertStringContainsString('id="sidebarBi"', $sidebar);
+        $this->assertStringContainsString("route('bi.ventas-global')", $sidebar);
         $this->assertStringContainsString('Lotobet Real', $sidebar);
         $this->assertStringContainsString('Lotodom', $sidebar);
         $this->assertStringContainsString('Delta', $sidebar);
@@ -60,6 +61,8 @@ class BiModuleTest extends TestCase
     public function test_bi_platforms_have_independent_routes(): void
     {
         foreach ([
+            'bi.ventas-global' => 'module.bi.item.ventas_global.view',
+            'bi.ventas-global.data' => 'module.bi.item.ventas_global.view',
             'bi.lotobet-real' => 'module.bi.item.lotobet_real.view',
             'bi.lotodom' => 'module.bi.item.lotodom.view',
             'bi.delta' => 'module.bi.item.delta.view',
@@ -78,8 +81,14 @@ class BiModuleTest extends TestCase
             'BiLotobetController@dashboard',
             Route::getRoutes()->getByName('bi.lotobet-real.dashboard')?->getActionName() ?? ''
         );
-        $this->assertSame('bi.plataforma', Route::getRoutes()->getByName('bi.lotodom')?->defaults['view'] ?? null);
-        $this->assertSame('bi.plataforma', Route::getRoutes()->getByName('bi.delta')?->defaults['view'] ?? null);
+        $this->assertStringContainsString(
+            'BiPlataformaController@index',
+            Route::getRoutes()->getByName('bi.lotodom')?->getActionName() ?? ''
+        );
+        $this->assertStringContainsString(
+            'BiPlataformaController@index',
+            Route::getRoutes()->getByName('bi.delta')?->getActionName() ?? ''
+        );
     }
 
     public function test_bi_permissions_are_assigned_to_module_and_administrator_roles(): void
@@ -96,6 +105,23 @@ class BiModuleTest extends TestCase
                 $this->assertTrue(Role::findByName($roleName)->hasPermissionTo($permission));
             }
         }
+    }
+
+    public function test_ventas_global_permission_migration_grants_module_and_administrator_roles(): void
+    {
+        $migration = require database_path('migrations/2026_10_21_114210_add_bi_ventas_global_permission.php');
+        $migration->up();
+        $migration->up();
+
+        $permission = Permission::findByName('module.bi.item.ventas_global.view');
+
+        foreach (['module_bi', 'admin', 'superadmin'] as $roleName) {
+            $this->assertTrue(Role::findByName($roleName)->hasPermissionTo($permission));
+        }
+
+        $migration->down();
+
+        $this->assertNull(Permission::query()->where('name', 'module.bi.item.ventas_global.view')->first());
     }
 
     private function createAuthorizationTables(): void

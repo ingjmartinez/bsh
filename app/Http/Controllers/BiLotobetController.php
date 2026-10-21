@@ -312,11 +312,13 @@ class BiLotobetController extends Controller
             'venta_global' => [
                 'total' => $ventaGlobal,
                 'promedio_terminal' => $totalTerminales > 0 ? $ventaGlobal / $totalTerminales : 0,
+                'anterior' => $ventasPrevias,
                 'variacion' => $this->variacion($ventaGlobal, $ventasPrevias),
             ],
             'premios' => [
                 'total' => $premios,
                 'promedio_terminal' => $totalTerminales > 0 ? $premios / $totalTerminales : 0,
+                'anterior' => $premiosPrevios,
                 'variacion' => $this->variacion($premios, $premiosPrevios),
                 'con_datos' => $premios > 0,
             ],

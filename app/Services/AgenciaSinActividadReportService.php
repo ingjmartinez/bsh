@@ -131,9 +131,7 @@ class AgenciaSinActividadReportService
             'delta' => [AgenciaDelta::query(), [
                 'terminal', 'agencia', 'codigo', 'nombre_agencia', 'nombre', 'grupo', 'central', 'gerente_de_servicio',
             ]],
-            default => [Agencia::query(), [
-                'terminal', 'agencia', 'nombre_agencia', 'grupo', 'central', 'gerente_de_servicio',
-            ]],
+            default => [Agencia::query(), ['*']],
         };
 
         $query->where('estatus', 1)->whereNotNull('terminal')->where('terminal', '<>', '');

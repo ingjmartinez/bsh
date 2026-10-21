@@ -201,7 +201,7 @@
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
-                                    <table id="tabla-ventas" class="table table-striped">
+                                    <table id="tabla-ventas" class="table table-striped w-100">
                                         <thead>
                                             <tr>
                                                 <th>Tipo</th>
@@ -273,18 +273,18 @@
         const limpiarAgenciaBtn = document.getElementById('btn-limpiar-agencia');
 
         const tablaVentasColumns = [
-            { title: 'Tipo' },
-            { title: 'Total Ventas' },
-            { title: 'Transacciones' },
-            { title: 'Promedio' },
-            { title: '% del Total' }
+            { title: 'Tipo', data: 'tipo' },
+            { title: 'Total Ventas', data: 'total', className: 'text-end', render: (value, type) => type === 'display' ? formatCurrency(value) : Number(value) },
+            { title: 'Transacciones', data: 'transacciones', className: 'text-end', render: (value, type) => type === 'display' ? Number(value).toLocaleString('en-US') : Number(value) },
+            { title: 'Promedio', data: 'promedio', className: 'text-end', render: (value, type) => type === 'display' ? formatCurrency(value) : Number(value) },
+            { title: '% del Total', data: 'porcentaje', className: 'text-end', render: (value, type) => type === 'display' ? Number(value).toFixed(2) + '%' : Number(value) }
         ];
 
         const tablaAgenciasColumns = [
-            { title: 'ID Agencia' },
-            { title: 'Banca' },
-            { title: 'Total Ventas' },
-            { title: 'Acción', orderable: false, searchable: false }
+            { title: 'ID Agencia', data: 'agencia_id' },
+            { title: 'Banca', data: 'banca', defaultContent: '' },
+            { title: 'Total Ventas', data: 'total', className: 'text-end', render: (value, type) => type === 'display' ? formatCurrency(value) : Number(value) },
+            { title: 'Acción', data: 'accion', orderable: false, searchable: false }
         ];
 
         tableInstance = $('#tabla-ventas').DataTable({
@@ -293,8 +293,9 @@
             paging: true,
             searching: true,
             ordering: true,
+            order: [[1, 'desc']],
             responsive: true,
-            scrollX: true,
+            autoWidth: false,
             columnDefs: [
                 { targets: [2, 3], visible: $(window).width() > 768 }
             ],
@@ -307,8 +308,9 @@
             paging: true,
             searching: true,
             ordering: true,
+            order: [[2, 'desc']],
             responsive: true,
-            scrollX: true,
+            autoWidth: false,
             columnDefs: [
                 { targets: [1, 2], visible: $(window).width() > 768 }
             ],
@@ -497,13 +499,7 @@
                         }
                     });
 
-                    tableInstance.clear().rows.add(data.tabla.map(row => [
-                        row.tipo,
-                        formatCurrency(row.total),
-                        row.transacciones,
-                        formatCurrency(row.promedio),
-                        `${row.porcentaje.toFixed(2)}%`
-                    ])).draw();
+                    tableInstance.clear().rows.add(data.tabla).draw();
                 })
                 .catch(error => {
                     Swal.close();
@@ -543,12 +539,12 @@
                 return;
             }
 
-            agenciasTableInstance.clear().rows.add(agenciasData.map(agencia => [
-                agencia.agencia_id,
-                agencia.banca || '',
-                formatCurrency(agencia.total),
-                `<button class="btn btn-sm btn-primary btn-filtrar-agencia" data-agencia-id="${agencia.agencia_id}">Ver detalle</button>`
-            ])).draw();
+            agenciasTableInstance.clear().rows.add(agenciasData.map(agencia => ({
+                agencia_id: agencia.agencia_id,
+                banca: agencia.banca || '',
+                total: agencia.total,
+                accion: `<button class="btn btn-sm btn-primary btn-filtrar-agencia" data-agencia-id="${agencia.agencia_id}">Ver detalle</button>`
+            }))).draw();
 
             const modal = new bootstrap.Modal(document.getElementById('modalAgencias'));
             modal.show();

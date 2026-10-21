@@ -30,10 +30,28 @@ class NuevoIngresoTest extends TestCase
             $table->unsignedBigInteger('actualizado_por')->nullable();
             $table->timestamps();
         });
+        Schema::create('agencias', function (Blueprint $table): void {
+            $table->id();
+            $table->string('terminal');
+            $table->string('grupo')->nullable();
+            $table->string('central')->nullable();
+            $table->string('gerente_de_servicio')->nullable();
+            $table->boolean('estatus')->default(true);
+        });
+        Schema::create('ventas_usuarios_bet', function (Blueprint $table): void {
+            $table->id();
+            $table->string('cedula');
+            $table->string('agencia_id');
+            $table->decimal('monto', 18, 2)->default(0);
+            $table->date('fecha');
+            $table->timestamps();
+        });
     }
 
     protected function tearDown(): void
     {
+        Schema::dropIfExists('ventas_usuarios_bet');
+        Schema::dropIfExists('agencias');
         Schema::dropIfExists('nuevo_ingreso_configuraciones');
         Schema::dropIfExists('empleados');
         Carbon::setTestNow();
@@ -56,6 +74,9 @@ class NuevoIngresoTest extends TestCase
         $this->assertStringContainsString('id="criterioDiasHabiles"', $view);
         $this->assertStringContainsString('id="btnConfigurarNuevosIngresos"', $view);
         $this->assertStringContainsString('id="limiteDiasHabiles"', $view);
+        $this->assertStringContainsString('id="filtroGrupoNuevoIngreso"', $view);
+        $this->assertStringContainsString('id="filtroCentralNuevoIngreso"', $view);
+        $this->assertStringContainsString('id="filtroGerenteNuevoIngreso"', $view);
         $controller = file_get_contents(app_path('Http/Controllers/NuevoIngresoController.php'));
         $this->assertIsString($controller);
         $this->assertStringContainsString('CANDIDATE_CALENDAR_DAYS = 35', $controller);
@@ -110,5 +131,38 @@ class NuevoIngresoTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['dias_habiles'])
             ->assertJsonPath('errors.dias_habiles.0', 'El límite máximo permitido es 20 días hábiles.');
+    }
+
+    public function test_group_central_and_manager_filter_uses_most_recent_sales_agency(): void
+    {
+        DB::table('empleados')->insert([
+            ['cedula' => '001', 'nombres' => 'Ana', 'apellidos' => 'Uno', 'fecha_ingreso' => today()->subWeekdays(5)->toDateString(), 'estatus' => 1],
+            ['cedula' => '002', 'nombres' => 'Beto', 'apellidos' => 'Dos', 'fecha_ingreso' => today()->subWeekdays(5)->toDateString(), 'estatus' => 1],
+            ['cedula' => '003', 'nombres' => 'Cira', 'apellidos' => 'Tres', 'fecha_ingreso' => today()->subWeekdays(5)->toDateString(), 'estatus' => 1],
+        ]);
+        DB::table('agencias')->insert([
+            ['terminal' => '0010', 'grupo' => 'Grupo A', 'central' => 'Central A', 'gerente_de_servicio' => 'Gerente A', 'estatus' => 1],
+            ['terminal' => '20', 'grupo' => 'Grupo B', 'central' => 'Central B', 'gerente_de_servicio' => 'Gerente B', 'estatus' => 1],
+        ]);
+        DB::table('ventas_usuarios_bet')->insert([
+            ['cedula' => '001', 'agencia_id' => '10', 'fecha' => today()->subDays(2)->toDateString()],
+            ['cedula' => '001', 'agencia_id' => '20', 'fecha' => today()->subDay()->toDateString()],
+            ['cedula' => '002', 'agencia_id' => '10', 'fecha' => today()->subDay()->toDateString()],
+        ]);
+
+        $this->withoutMiddleware()->getJson(route('recursos-humanos.nuevos-ingresos.data', [
+            'grupo' => 'Grupo A', 'central' => 'Central A', 'gerente' => 'Gerente A',
+        ]))->assertOk()->assertJsonPath('total', 1)->assertJsonPath('empleados.0.cedula', '002');
+
+        $this->withoutMiddleware()->getJson(route('recursos-humanos.nuevos-ingresos.data', [
+            'grupo' => 'Grupo B',
+        ]))->assertOk()->assertJsonPath('total', 1)->assertJsonPath('empleados.0.cedula', '001');
+    }
+
+    public function test_invalid_filter_is_rejected(): void
+    {
+        $this->withoutMiddleware()->getJson(route('recursos-humanos.nuevos-ingresos.data', [
+            'grupo' => str_repeat('x', 192),
+        ]))->assertUnprocessable()->assertJsonValidationErrors('grupo');
     }
 }

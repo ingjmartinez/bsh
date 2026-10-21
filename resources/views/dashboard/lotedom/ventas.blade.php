@@ -211,7 +211,7 @@
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
-                                    <table id="tabla-ventas" class="table table-striped">
+                                    <table id="tabla-ventas" class="table table-striped w-100">
                                         <thead>
                                             <tr>
                                                 <th>Tipo</th>
@@ -310,11 +310,11 @@
         const badgeAgenciaText = document.getElementById('agencia-id-badge');
         const limpiarAgenciaBtn = document.getElementById('btn-limpiar-agencia');
         const tablaVentasColumns = [
-            { title: 'Tipo' },
-            { title: 'Total Ventas' },
-            { title: 'Transacciones' },
-            { title: 'Promedio' },
-            { title: '% del Total' }
+            { title: 'Tipo', data: 'tipo' },
+            { title: 'Total Ventas', data: 'total', className: 'text-end', render: (value, type) => type === 'display' ? formatCurrency(value) : Number(value) },
+            { title: 'Transacciones', data: 'transacciones', className: 'text-end', render: (value, type) => type === 'display' ? Number(value).toLocaleString('en-US') : Number(value) },
+            { title: 'Promedio', data: 'promedio', className: 'text-end', render: (value, type) => type === 'display' ? formatCurrency(value) : Number(value) },
+            { title: '% del Total', data: 'porcentaje', className: 'text-end', render: (value, type) => type === 'display' ? Number(value).toFixed(2) + '%' : Number(value) }
         ];
         const tablaAgenciasColumns = [
             { title: 'ID Agencia' },
@@ -334,8 +334,9 @@
             paging: true,
             searching: true,
             ordering: true,
+            order: [[1, 'desc']],
             responsive: true,
-            scrollX: true,
+            autoWidth: false,
             columnDefs: [
                 { targets: [2, 3, 4], visible: $(window).width() > 768 }
             ]
@@ -563,13 +564,7 @@
                     });
 
                     // Tabla
-                    tableInstance.clear().rows.add(data.tabla.map(row => [
-                        row.tipo,
-                        formatCurrency(row.total),
-                        row.transacciones,
-                        formatCurrency(row.promedio),
-                        row.porcentaje.toFixed(2) + '%'
-                    ])).draw();
+                    tableInstance.clear().rows.add(data.tabla).draw();
                 })
                 .catch(error => {
                     Swal.close();
