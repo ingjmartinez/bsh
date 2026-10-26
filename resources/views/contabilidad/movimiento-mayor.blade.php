@@ -54,6 +54,12 @@
                                         </select>
                                     </div>
                                     <div class="col-12 col-md-2">
+                                        <label for="entradaDiarioDivision" class="form-label">Id división</label>
+                                        <select id="entradaDiarioDivision" class="form-select form-select-sm">
+                                            <option value="">Todas las divisiones</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-2">
                                         <label class="form-label">Fecha inicio</label>
                                         <input type="date" class="form-control form-control-sm" id="entradaDiarioFechaInicio" value="<?php echo date('Y-m-d'); ?>">
                                     </div>
@@ -171,6 +177,8 @@
         document.getElementById('btnBuscarEntradasDiario').addEventListener('click', buscarEntradasDiarioLocal);
         document.getElementById('btnSincronizarEntradasDiario').addEventListener('click', sincronizarEntradasDiario);
         document.getElementById('btnLimpiarEntradasDiario').addEventListener('click', limpiarTablaEntradasDiario);
+        document.getElementById('entradaDiarioEmpresa').addEventListener('change', cargarDivisionesCentroCosto);
+        cargarDivisionesCentroCosto();
         document.querySelectorAll('.check-entrada-tipo').forEach(check => {
             check.addEventListener('change', sincronizarChecksTipos);
         });
@@ -205,8 +213,32 @@
                 .filter(Boolean);
         }
 
+        async function cargarDivisionesCentroCosto() {
+            const empresa = document.getElementById('entradaDiarioEmpresa').value;
+            const selector = document.getElementById('entradaDiarioDivision');
+            selector.replaceChildren(new Option('Todas las divisiones', ''));
+            selector.disabled = true;
+
+            try {
+                const response = await fetch('/api-centros-costo/divisiones?empresa=' + encodeURIComponent(empresa), {
+                    headers: { 'Accept': 'application/json' },
+                });
+                const divisiones = await parseJsonResponse(response, 'No se pudieron cargar las divisiones.');
+                if (empresa !== document.getElementById('entradaDiarioEmpresa').value) return;
+
+                divisiones.forEach(idDivision => {
+                    selector.add(new Option(idDivision, idDivision));
+                });
+            } catch (error) {
+                console.error('Error al cargar divisiones de centros de costo:', error);
+            } finally {
+                if (empresa === document.getElementById('entradaDiarioEmpresa').value) selector.disabled = false;
+            }
+        }
+
         function getEntradasDiarioFiltros() {
             const empresa = document.getElementById('entradaDiarioEmpresa').value;
+            const idDivision = document.getElementById('entradaDiarioDivision').value;
             const fechaInicio = document.getElementById('entradaDiarioFechaInicio').value;
             const fechaFin = document.getElementById('entradaDiarioFechaFin').value;
             const cuenta = document.getElementById('entradaDiarioCuenta').value.trim();
@@ -226,12 +258,13 @@
             const params = new URLSearchParams({ empresa, fecha_inicio: fechaInicio, fecha_fin: fechaFin });
 
             if (cuenta !== '') params.set('cuenta', cuenta);
+            if (idDivision !== '') params.set('id_division', idDivision);
             if (centroCosto !== '') params.set('centro_costo', centroCosto);
             if (noAsiento !== '') params.set('no_asiento', noAsiento);
             if (idViejo !== '') params.set('id_viejo', idViejo);
             tipos.forEach(tipo => params.append('tipos[]', tipo));
 
-            return { empresa, fechaInicio, fechaFin, cuenta, centroCosto, noAsiento, idViejo, tipos, params };
+            return { empresa, idDivision, fechaInicio, fechaFin, cuenta, centroCosto, noAsiento, idViejo, tipos, params };
         }
 
         async function parseJsonResponse(response, fallbackMessage) {
@@ -455,6 +488,7 @@
 
             const detalleTipos = filtros.tipos.length > 0 ? filtros.tipos.join(', ') : 'Todos';
             const detalleCuenta = filtros.cuenta !== '' ? filtros.cuenta : 'Todas';
+            const detalleDivision = filtros.idDivision !== '' ? filtros.idDivision : 'Todas';
             const detalleCentroCosto = filtros.centroCosto !== '' ? filtros.centroCosto : 'Todos';
             const detalleNoAsiento = filtros.noAsiento !== '' ? filtros.noAsiento : 'Todos';
             const detalleIdViejo = filtros.idViejo !== '' ? filtros.idViejo : 'Todos';
@@ -465,6 +499,7 @@
                 html:
                     `Se consultara la data local del movimiento del mayor.<br>` +
                     `<strong>Empresa:</strong> ${filtros.empresa}<br>` +
+                    `<strong>Id división:</strong> ${detalleDivision}<br>` +
                     `<strong>Periodo:</strong> ${filtros.fechaInicio} a ${filtros.fechaFin}<br>` +
                     `<strong>Cuenta:</strong> ${detalleCuenta}<br>` +
                     `<strong>Centro costo:</strong> ${detalleCentroCosto}<br>` +

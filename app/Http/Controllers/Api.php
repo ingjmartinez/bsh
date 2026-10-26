@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ListarDivisionesCentroCostoRequest;
 use App\Models\CentroDeCosto;
 use App\Models\CuentaContable;
 use App\Models\DetalleCuenta;
 use App\Models\EntradaDiario;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -173,6 +175,27 @@ class Api extends Controller
             });
 
         return response()->json($centros);
+    }
+
+    public function getDivisionesCentroCosto(ListarDivisionesCentroCostoRequest $request): JsonResponse
+    {
+        $empresa = (string) $request->validated('empresa');
+        $divisiones = $this->centrosCostoDeEmpresa($empresa)
+            ->whereNotNull('id_division')
+            ->where('id_division', '!=', '')
+            ->distinct()
+            ->orderBy('id_division')
+            ->pluck('id_division');
+
+        return response()->json($divisiones);
+    }
+
+    private function centrosCostoDeEmpresa(string $empresa): Builder
+    {
+        return CentroDeCosto::query()->where(function (Builder $query) use ($empresa): void {
+            $query->where('company_id', $empresa)
+                ->orWhere('company_id', 'like', $empresa.'-%');
+        });
     }
 
     public function updateCentrosCostoVisibilidad(Request $request)
@@ -388,6 +411,12 @@ class Api extends Controller
 
         if ($validated['centro_costo'] !== '') {
             $query->where('id_centro_costo', $validated['centro_costo']);
+        }
+
+        if ($validated['id_division'] !== '') {
+            $query->whereIn('id_centro_costo', $this->centrosCostoDeEmpresa($validated['empresa'])
+                ->where('id_division', $validated['id_division'])
+                ->select('id_centro_costo'));
         }
 
         if ($validated['no_asiento'] !== '') {
@@ -649,6 +678,14 @@ class Api extends Controller
 
         $tipos = $this->normalizeEntradaDiarioTipos($request->input('tipos', $request->query('tipos', [])));
         $cuenta = trim((string) $request->input('cuenta', $request->query('cuenta', '')));
+        $idDivision = $request->input('id_division', $request->query('id_division', ''));
+
+        if (! is_string($idDivision) || mb_strlen($idDivision) > 150) {
+            return [
+                'response' => response()->json(['message' => 'El id de división no es válido.'], 422),
+            ];
+        }
+
         $cuentasTipo = $this->resolveEntradaDiarioCuentasPorTipo($tipos, $empresa);
 
         return [
@@ -657,6 +694,7 @@ class Api extends Controller
             'fin' => $fin,
             'cuenta' => $cuenta,
             'centro_costo' => trim((string) $request->input('centro_costo', $request->query('centro_costo', ''))),
+            'id_division' => trim($idDivision),
             'no_asiento' => trim((string) $request->input('no_asiento', $request->query('no_asiento', ''))),
             'id_viejo' => trim((string) $request->input('id_viejo', $request->query('id_viejo', ''))),
             'tipos' => $tipos,
@@ -835,7 +873,7 @@ class Api extends Controller
 
     private function nullableString($value): ?string
     {
-        if ($value === null) {
+        if ($value === null || is_array($value) || is_object($value)) {
             return null;
         }
 
@@ -1394,7 +1432,7 @@ class Api extends Controller
     private function buildEntradaDiarioUpsertRow(string $empresa, string $fechaConsulta, array $rawItem): ?array
     {
         $item = $this->normalizeKeys($rawItem);
-        $fechaRaw = (string) ($item['FECHA'] ?? $fechaConsulta);
+        $fechaRaw = $this->nullableString($item['FECHA'] ?? null) ?? $fechaConsulta;
         $fecha = $this->parseDate($fechaRaw) ?? $fechaConsulta;
         $noAsiento = $this->nullableString($item['NOASIENTO'] ?? null);
         $cuenta = $this->nullableString($item['CUENTA'] ?? null);
@@ -1408,11 +1446,11 @@ class Api extends Controller
             $noAsiento,
             $fecha,
             $cuenta,
-            (string) ($item['REF'] ?? ''),
-            (string) ($item['NOREF'] ?? ''),
-            (string) ($item['IDCENTROCOSTO'] ?? ''),
-            (string) ($item['IDVIEJO'] ?? ''),
-            (string) ($item['MODULO'] ?? ''),
+            $this->nullableString($item['REF'] ?? null) ?? '',
+            $this->nullableString($item['NOREF'] ?? null) ?? '',
+            $this->nullableString($item['IDCENTROCOSTO'] ?? null) ?? '',
+            $this->nullableString($item['IDVIEJO'] ?? null) ?? '',
+            $this->nullableString($item['MODULO'] ?? null) ?? '',
         ]));
 
         $payload = [
@@ -1647,9 +1685,9 @@ class Api extends Controller
 
     private function extractContabilidadCompanyId(mixed $value): ?string
     {
-        $raw = trim((string) $value);
+        $raw = $this->nullableString($value);
 
-        if ($raw === '') {
+        if ($raw === null) {
             return null;
         }
 
@@ -1677,7 +1715,7 @@ class Api extends Controller
 
     private function parseDecimal($value): ?float
     {
-        if ($value === null) {
+        if ($value === null || is_array($value) || is_object($value)) {
             return null;
         }
 

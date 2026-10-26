@@ -206,6 +206,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/api-entradas-diario/sync', [Api::class, 'syncEntradasDiario']);
     Route::delete('/api-entradas-diario', [Api::class, 'deleteEntradasDiario']);
     Route::get('/api-centros-costo', [Api::class, 'getCentrosCosto']);
+    Route::get('/api-centros-costo/divisiones', [Api::class, 'getDivisionesCentroCosto']);
     Route::post('/api-centros-costo/visibilidad', [Api::class, 'updateCentrosCostoVisibilidad']);
     Route::post('/api-centros-costo/sync', [Api::class, 'syncCentrosCosto']);
 
