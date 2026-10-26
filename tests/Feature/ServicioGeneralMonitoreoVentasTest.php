@@ -56,7 +56,6 @@ class ServicioGeneralMonitoreoVentasTest extends TestCase
             $table->id();
             $table->string('terminal');
             $table->string('nombre_agencia')->nullable();
-            $table->string('nombre')->nullable();
             $table->string('central');
             $table->string('grupo');
             $table->string('ruta');

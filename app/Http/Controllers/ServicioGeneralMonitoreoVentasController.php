@@ -23,7 +23,7 @@ class ServicioGeneralMonitoreoVentasController extends Controller
     public function index(MonitoreoVentasIndexRequest $request): View
     {
         $puedeAdministrar = $request->user()->can('servicios_generales.manage');
-        $casos = MonitoreoVentaCaso::query()->with(['agencia:id,terminal,nombre_agencia,nombre', 'asesor:id,name', 'seguimientos.usuario:id,name'])
+        $casos = MonitoreoVentaCaso::query()->with(['agencia:id,terminal,nombre_agencia', 'asesor:id,name', 'seguimientos.usuario:id,name'])
             ->when(! $puedeAdministrar, fn ($query) => $query->where('asesor_id', $request->user()->id))
             ->when($request->filled('fecha'), fn ($query) => $query->whereDate('fecha', $request->input('fecha')))
             ->when($request->filled('estado'), fn ($query) => $query->where('estado', $request->input('estado')))

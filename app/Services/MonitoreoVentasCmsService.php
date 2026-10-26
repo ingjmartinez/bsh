@@ -116,7 +116,7 @@ class MonitoreoVentasCmsService
         }
 
         $agencias = Agencia::query()->where('estatus', 1)->whereNotNull('terminal')
-            ->get(['id', 'terminal', 'nombre_agencia', 'nombre', 'central', 'grupo']);
+            ->get(['id', 'terminal', 'nombre_agencia', 'central', 'grupo']);
         $ventas = VtUsuarioBet::query()
             ->leftJoin('catalogo_juegos as c', 'ventas_usuarios_bet.producto_id', '=', 'c.producto_id')
             ->selectRaw("ventas_usuarios_bet.agencia_id AS terminal, CASE
