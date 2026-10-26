@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Agencia;
 use App\Models\MonitoreoVentaAsignacion;
 use App\Models\MonitoreoVentaCaso;
+use App\Models\MonitoreoVentaUmbral;
 use App\Models\User;
 use App\Models\VtUsuarioBet;
 use App\Services\MonitoreoVentasCmsService;
@@ -54,6 +55,8 @@ class ServicioGeneralMonitoreoVentasTest extends TestCase
         Schema::create('agencias', function (Blueprint $table): void {
             $table->id();
             $table->string('terminal');
+            $table->string('nombre_agencia')->nullable();
+            $table->string('nombre')->nullable();
             $table->string('central');
             $table->string('grupo');
             $table->string('ruta');
@@ -77,6 +80,7 @@ class ServicioGeneralMonitoreoVentasTest extends TestCase
         foreach (glob(database_path('migrations/2026_10_20_*_create_monitoreo_venta_*_table.php')) as $migration) {
             (require $migration)->up();
         }
+        (require database_path('migrations/2026_10_21_165338_create_monitoreo_venta_umbrals_table.php'))->up();
     }
 
     public function test_generates_only_below_threshold_and_does_not_duplicate_or_close_cases(): void
@@ -114,6 +118,58 @@ class ServicioGeneralMonitoreoVentasTest extends TestCase
 
         $this->assertSame(0, app(MonitoreoVentasCmsService::class)->generar(Carbon::parse('2026-10-19')));
         $this->assertSame(0, MonitoreoVentaCaso::query()->count());
+    }
+
+    public function test_comparativa_lists_assigned_terminals_that_meet_or_miss_each_product(): void
+    {
+        Gate::before(fn (): bool => true);
+        $asesor = User::query()->create(['name' => 'Asesor CMS', 'email' => 'comparativa@example.test', 'password' => 'secret']);
+        foreach (['010', '011', '012'] as $terminal) {
+            Agencia::query()->create(['terminal' => $terminal, 'central' => 'Central A', 'grupo' => 'Grupo A', 'ruta' => 'Ruta 1', 'estatus' => 1]);
+        }
+        Agencia::query()->create(['terminal' => '013', 'central' => 'Central B', 'grupo' => 'Grupo B', 'ruta' => 'Ruta 2', 'estatus' => 1]);
+        MonitoreoVentaAsignacion::query()->create(['central' => 'Central A', 'grupo' => 'Grupo A', 'asesor_id' => $asesor->id]);
+        foreach ([['010', 5000], ['011', 3000], ['013', 6000]] as [$terminal, $monto]) {
+            VtUsuarioBet::query()->create(['agencia_id' => $terminal, 'producto_id' => 10, 'tipo' => 'Tradicional', 'monto' => $monto, 'fecha' => '2026-10-19']);
+        }
+
+        $filas = app(MonitoreoVentasCmsService::class)->comparativaTerminales(
+            Carbon::parse('2026-10-19'), MonitoreoVentaAsignacion::query()->with('asesor')->get(), collect()
+        );
+        $tradicional = $filas->firstWhere('categoria', 'tradicional');
+        $this->assertSame(3, $tradicional['total']);
+        $this->assertSame(['010'], $tradicional['cumplen']->pluck('terminal')->all());
+        $this->assertSame(['011', '012'], $tradicional['pendientes']->pluck('terminal')->all());
+        $this->actingAs($asesor)->get(route('servicios-generales.monitoreo-ventas.index'))
+            ->assertOk()->assertSee('Comparativa de terminales por producto')->assertSee('011')->assertSee('012');
+        $this->actingAs($asesor)->get(route('servicios-generales.monitoreo-ventas.index', ['fecha' => '2026-10-18']))
+            ->assertOk()->assertSee('010')->assertSee('011')->assertSee('012')->assertSee('RD$ 0.00');
+    }
+
+    public function test_advisor_thresholds_control_alerts_and_are_saved_from_configuration(): void
+    {
+        Gate::before(fn (): bool => true);
+        $asesor = User::query()->create(['name' => 'Asesor CMS', 'email' => 'asesor2@example.test', 'password' => 'secret']);
+        Agencia::query()->create(['terminal' => '009', 'central' => 'Central A', 'grupo' => 'Grupo A', 'ruta' => 'Ruta 1', 'estatus' => 1]);
+        MonitoreoVentaAsignacion::query()->create(['central' => 'Central A', 'grupo' => 'Grupo A', 'asesor_id' => $asesor->id]);
+        foreach ([['Tradicional', 10, 4500], ['No Tradicional', 11, 3000], ['Recarga', -1, 1000]] as [$tipo, $producto, $monto]) {
+            VtUsuarioBet::query()->create(['agencia_id' => '009', 'producto_id' => $producto, 'tipo' => $tipo, 'monto' => $monto, 'fecha' => '2026-10-19']);
+        }
+
+        $this->actingAs($asesor)->post(route('servicios-generales.monitoreo-ventas.umbrales'), [
+            'asesor_id' => $asesor->id,
+            'umbrales' => ['tradicional' => 4000, 'no_tradicional' => 3000, 'recargas' => 1000],
+        ])->assertRedirect();
+        $this->assertSame(4000.0, (float) MonitoreoVentaUmbral::query()->where('asesor_id', $asesor->id)->where('categoria', 'tradicional')->sole()->monto);
+        $this->actingAs($asesor)->get(route('servicios-generales.monitoreo-ventas.index'))
+            ->assertOk()->assertSee('Umbrales configurados (1)')->assertSee('Asesores agregados')->assertSee('Asesor CMS');
+        $this->assertSame(0, app(MonitoreoVentasCmsService::class)->generar(Carbon::parse('2026-10-19')));
+
+        $this->actingAs($asesor)->post(route('servicios-generales.monitoreo-ventas.umbrales'), [
+            'asesor_id' => $asesor->id,
+            'umbrales' => ['tradicional' => 5000, 'no_tradicional' => 3000, 'recargas' => 1000],
+        ])->assertRedirect();
+        $this->assertSame(1, app(MonitoreoVentasCmsService::class)->generar(Carbon::parse('2026-10-19')));
     }
 
     public function test_only_assigned_advisor_can_close_and_closure_requires_documentation(): void

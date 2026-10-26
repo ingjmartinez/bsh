@@ -9,9 +9,31 @@ use Tests\TestCase;
 
 class EmpleadoListPerformanceTest extends TestCase
 {
+    public function test_dashboard_places_workforce_charts_before_salary_charts(): void
+    {
+        $view = file_get_contents(resource_path('views/empleado/index.blade.php'));
+
+        $this->assertNotFalse($view);
+        $this->assertLessThan(strpos($view, 'chartSalarioCiudad" class="rrhh-chart"'), strpos($view, 'chartEmpleadosCiudad" class="rrhh-chart"'));
+        $this->assertStringContainsString("colors: ['#79b9a7', '#e3a59c']", $view);
+        $this->assertMatchesRegularExpression('/Resumen por ciudad.*?<div class="rrhh-section-label mb-2">Detalle de empleados<\/div>\s*<div class="row g-3">\s*<div class="col-12">\s*<div class="card rrhh-card">/s', $view);
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
+
+        Schema::create('centros_de_costo', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedInteger('id_centro_costo')->unique();
+            $table->string('descripcion');
+            $table->string('id_division')->nullable();
+        });
+
+        DB::table('centros_de_costo')->insert([
+            ['id_centro_costo' => 10, 'descripcion' => 'Operaciones', 'id_division' => 'DIV-A'],
+            ['id_centro_costo' => 20, 'descripcion' => 'Administración', 'id_division' => 'DIV-B'],
+        ]);
 
         Schema::create('empleados', function (Blueprint $table): void {
             $table->id();
@@ -45,6 +67,7 @@ class EmpleadoListPerformanceTest extends TestCase
     protected function tearDown(): void
     {
         Schema::dropIfExists('empleados');
+        Schema::dropIfExists('centros_de_costo');
 
         parent::tearDown();
     }
@@ -59,6 +82,23 @@ class EmpleadoListPerformanceTest extends TestCase
             ->assertJsonPath('recordsTotal', 20)
             ->assertJsonPath('recordsFiltered', 20)
             ->assertJsonCount(10, 'data');
+    }
+
+    public function test_division_table_filters_employees_by_their_cost_center(): void
+    {
+        DB::table('empleados')->where('empleadoid', '0025')->update(['idcentrocosto' => 20]);
+
+        $this->withoutMiddleware()->getJson('/empleados/divisiones')
+            ->assertOk()
+            ->assertExactJson(['DIV-A', 'DIV-B']);
+
+        $this->withoutMiddleware()->getJson('/empleados/list-division?draw=2&start=0&length=10&division=DIV-B')
+            ->assertOk()
+            ->assertJsonPath('recordsTotal', 1)
+            ->assertJsonPath('recordsFiltered', 1)
+            ->assertJsonPath('data.0.empleadoid', 25)
+            ->assertJsonPath('data.0.centro_costo', 'Administración')
+            ->assertJsonPath('data.0.division', 'DIV-B');
     }
 
     public function test_list_searches_before_paginating(): void
@@ -94,7 +134,7 @@ class EmpleadoListPerformanceTest extends TestCase
 
         $this->assertStringContainsString('serverSide: true', $html);
         $this->assertStringContainsString('deferRender: true', $html);
-        $this->assertStringContainsString('Promise.all([cargarDashboard(), list()])', $html);
+        $this->assertStringContainsString('Promise.all([cargarDashboard(), list(), listPorDivision()])', $html);
         $this->assertStringContainsString('dashboardRequest.abort()', $html);
         $this->assertStringContainsString('textoSeguro(fila.ciudad', $html);
         $this->assertStringNotContainsString('data.forEach(item =>', $html);

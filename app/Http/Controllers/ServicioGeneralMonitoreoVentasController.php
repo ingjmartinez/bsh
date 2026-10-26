@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Requests\MonitoreoVentasAsignacionRequest;
 use App\Http\Requests\MonitoreoVentasIndexRequest;
 use App\Http\Requests\MonitoreoVentasSeguimientoRequest;
+use App\Http\Requests\MonitoreoVentasUmbralRequest;
 use App\Models\Agencia;
 use App\Models\MonitoreoVentaAsignacion;
 use App\Models\MonitoreoVentaCaso;
+use App\Models\MonitoreoVentaUmbral;
 use App\Models\User;
+use App\Models\VtUsuarioBet;
 use App\Services\MonitoreoVentasCmsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
@@ -31,19 +34,48 @@ class ServicioGeneralMonitoreoVentasController extends Controller
         $rutasCriticas = $puedeAdministrar && $fechaRutas
             ? app(MonitoreoVentasCmsService::class)->rutasCriticas(Carbon::parse($fechaRutas))
             : collect();
+        $servicio = app(MonitoreoVentasCmsService::class);
+        $configuraciones = MonitoreoVentaUmbral::query()->with('asesor:id,name')->get()->groupBy('asesor_id');
+        $asignaciones = $puedeAdministrar ? MonitoreoVentaAsignacion::query()->with('asesor:id,name')->orderBy('central')->orderBy('grupo')->get() : collect();
+        $asesoresAsignados = $asignaciones->pluck('asesor_id')->merge($configuraciones->keys())->unique()->count();
+        $fechaComparativa = $request->input('fecha') ?: (VtUsuarioBet::query()->max('fecha') ?: now()->toDateString());
+        $comparativaTerminales = $puedeAdministrar
+            ? $servicio->comparativaTerminales(Carbon::parse($fechaComparativa), $asignaciones, $configuraciones)
+            : collect();
+        $totalComparaciones = $comparativaTerminales->sum('total');
 
         return view('servicios-generales.monitoreo-ventas', [
             'casos' => $casos,
             'puedeAdministrar' => $puedeAdministrar,
             'umbrales' => MonitoreoVentasCmsService::UMBRALES,
+            'configuraciones' => $configuraciones,
+            'asesoresAsignados' => $asesoresAsignados,
+            'nivelCumplimiento' => $totalComparaciones > 0 ? round($comparativaTerminales->sum(fn (array $fila): int => $fila['cumplen']->count()) / $totalComparaciones * 100, 1) : null,
+            'fechaComparativa' => $fechaComparativa,
+            'comparativaTerminales' => $comparativaTerminales,
             'reincidencias' => $reincidencias,
             'rutasCriticas' => $rutasCriticas,
             'fechaRutas' => $fechaRutas,
-            'asignaciones' => $puedeAdministrar ? MonitoreoVentaAsignacion::query()->with('asesor:id,name')->orderBy('central')->orderBy('grupo')->get() : collect(),
+            'asignaciones' => $asignaciones,
             'asesores' => $puedeAdministrar ? User::query()->orderBy('name')->get(['id', 'name']) : collect(),
             'centrales' => $puedeAdministrar ? Agencia::query()->where('estatus', 1)->whereNotNull('central')->distinct()->orderBy('central')->pluck('central') : collect(),
             'grupos' => $puedeAdministrar ? Agencia::query()->where('estatus', 1)->whereNotNull('grupo')->distinct()->orderBy('grupo')->pluck('grupo') : collect(),
         ]);
+    }
+
+    public function guardarUmbrales(MonitoreoVentasUmbralRequest $request): RedirectResponse
+    {
+        $datos = $request->validated();
+        DB::transaction(function () use ($datos): void {
+            foreach ($datos['umbrales'] as $categoria => $monto) {
+                MonitoreoVentaUmbral::query()->updateOrCreate(
+                    ['asesor_id' => $datos['asesor_id'], 'categoria' => $categoria],
+                    ['monto' => $monto]
+                );
+            }
+        });
+
+        return back()->with('success', 'Umbrales del asesor guardados.');
     }
 
     public function asignar(MonitoreoVentasAsignacionRequest $request): RedirectResponse

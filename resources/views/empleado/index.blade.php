@@ -1,7 +1,24 @@
 @extends('app')
 
 @section('content')
-    <div class="main-content">
+    <style>
+        .rrhh-dashboard { --rrhh-ink: #334155; --rrhh-muted: #64748b; }
+        .rrhh-dashboard .rrhh-hero { background: linear-gradient(120deg, #e9e6fa, #e3f3f1 55%, #fff0e4); border: 1px solid #e6eaf1; }
+        .rrhh-dashboard .rrhh-hero h2, .rrhh-dashboard .rrhh-hero p, .rrhh-dashboard .rrhh-hero label { color: var(--rrhh-ink) !important; }
+        .rrhh-dashboard .rrhh-hero p { color: var(--rrhh-muted) !important; }
+        .rrhh-dashboard .rrhh-card { border: 1px solid #e9edf3 !important; border-radius: 18px; box-shadow: 0 8px 28px rgba(51, 65, 85, .05) !important; }
+        .rrhh-dashboard .rrhh-card .card-header { padding: 1.25rem 1.25rem 0; }
+        .rrhh-dashboard .rrhh-card .card-title { color: var(--rrhh-ink); font-weight: 650; }
+        .rrhh-dashboard .rrhh-kpi { border-top: 4px solid var(--rrhh-accent) !important; }
+        .rrhh-dashboard .rrhh-kpi .avatar-title { background: var(--rrhh-tint) !important; color: var(--rrhh-accent) !important; }
+        .rrhh-dashboard .rrhh-kpi .display-6, .rrhh-dashboard .rrhh-kpi .fs-2 { color: var(--rrhh-ink) !important; }
+        .rrhh-dashboard .rrhh-section-label { color: var(--rrhh-muted); font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+        .rrhh-dashboard .rrhh-hero .badge { background: #fff !important; color: #625b93 !important; }
+        .rrhh-dashboard .rrhh-hero .btn-primary { background: #7772ad; border-color: #7772ad; }
+        .rrhh-dashboard .rrhh-hero .btn-outline-primary { color: #625b93; border-color: #aaa5cf; }
+        .rrhh-dashboard .rrhh-chart { min-height: 320px; }
+    </style>
+    <div class="main-content rrhh-dashboard">
         <div class="page-content">
             <div class="container-fluid">
                 <div class="row">
@@ -21,20 +38,20 @@
 
                 <div class="row g-3 mb-3">
                     <div class="col-12">
-                        <div class="card overflow-hidden border-0 shadow-sm" style="background: linear-gradient(135deg, #0f766e 0%, #1d4ed8 55%, #312e81 100%);">
-                            <div class="card-body p-4 p-lg-5 text-white position-relative">
+                        <div class="card rrhh-card rrhh-hero overflow-hidden">
+                            <div class="card-body p-4 p-lg-5 position-relative">
                                 <div class="row align-items-center g-4">
                                     <div class="col-lg-7">
-                                        <span class="badge rounded-pill bg-white bg-opacity-10 text-white mb-3">Mini Dashboard RRHH</span>
-                                        <h2 class="fw-semibold text-white mb-2">Vista de Empleados, estatus y masa salariales</h2>
-                                        <p class="mb-0 text-white text-opacity-75">
-                                            Filtra por empresa y analiza usuarios activos, inactivos y salario mensual de usuarios activos agrupado por ciudad.
+                                        <span class="badge rounded-pill mb-3">Panel de Recursos Humanos</span>
+                                        <h2 class="fw-semibold mb-2">Panorama de empleados</h2>
+                                        <p class="mb-0">
+                                            Consulta la plantilla, su estado y la masa salarial mensual por ciudad y empresa.
                                         </p>
                                     </div>
                                     <div class="col-lg-5">
                                         <div class="row g-3">
                                             <div class="col-sm-6">
-                                                <label class="form-label text-white text-opacity-75">Empresa</label>
+                                                <label for="empresa" class="form-label">Empresa</label>
                                                 <select id="empresa" class="form-select border-0 shadow-sm">
                                                     <option value="">Todas</option>
                                                     <option value="126">126 = Business Support Hub</option>
@@ -43,10 +60,10 @@
                                             </div>
                                             <div class="col-sm-6 d-flex align-items-end">
                                                 <div class="d-grid gap-2 w-100">
-                                                    <button type="button" class="btn btn-light text-primary fw-semibold" id="btnRefrescarDashboard">
-                                                        Actualizar dashboard
+                                                    <button type="button" class="btn btn-primary fw-semibold" id="btnRefrescarDashboard">
+                                                        Actualizar panel
                                                     </button>
-                                                    <button type="button" class="btn btn-outline-light fw-semibold" id="btnSincronizar">
+                                                    <button type="button" class="btn btn-outline-primary fw-semibold" id="btnSincronizar">
                                                         Sincronizar empleados
                                                     </button>
                                                 </div>
@@ -61,7 +78,7 @@
 
                 <div class="row g-3 mb-3">
                     <div class="col-md-6 col-xl-3">
-                        <div class="card border-0 shadow-sm h-100">
+                        <div class="card rrhh-card rrhh-kpi h-100" style="--rrhh-accent:#8b83be;--rrhh-tint:#eeeafa">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-start mb-3">
                                     <div>
@@ -79,7 +96,7 @@
                         </div>
                     </div>
                     <div class="col-md-6 col-xl-3">
-                        <div class="card border-0 shadow-sm h-100">
+                        <div class="card rrhh-card rrhh-kpi h-100" style="--rrhh-accent:#69afa0;--rrhh-tint:#e4f4ef">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-start mb-3">
                                     <div>
@@ -97,7 +114,7 @@
                         </div>
                     </div>
                     <div class="col-md-6 col-xl-3">
-                        <div class="card border-0 shadow-sm h-100">
+                        <div class="card rrhh-card rrhh-kpi h-100" style="--rrhh-accent:#d99691;--rrhh-tint:#fbece9">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-start mb-3">
                                     <div>
@@ -115,7 +132,7 @@
                         </div>
                     </div>
                     <div class="col-md-6 col-xl-3">
-                        <div class="card border-0 shadow-sm h-100">
+                        <div class="card rrhh-card rrhh-kpi h-100" style="--rrhh-accent:#83a9d5;--rrhh-tint:#eaf2fc">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-start mb-3">
                                     <div>
@@ -134,57 +151,59 @@
                     </div>
                 </div>
 
+                <div class="rrhh-section-label mb-2">Composición de la plantilla</div>
                 <div class="row g-3 mb-3">
                     <div class="col-xl-4">
-                        <div class="card border-0 shadow-sm h-100">
+                        <div class="card rrhh-card h-100">
                             <div class="card-header bg-transparent border-0">
                                 <h5 class="card-title mb-0">Estado de empleados</h5>
                             </div>
                             <div class="card-body">
-                                <div id="chartEstadoEmpleados" style="min-height: 320px;"></div>
+                                <div id="chartEstadoEmpleados" class="rrhh-chart"></div>
                             </div>
                         </div>
                     </div>
                     <div class="col-xl-8">
-                        <div class="card border-0 shadow-sm h-100">
+                        <div class="card rrhh-card h-100">
                             <div class="card-header bg-transparent border-0">
-                                <h5 class="card-title mb-0">Salario mensual por ciudad de usuarios activos</h5>
+                                <h5 class="card-title mb-0">Empleados por ciudad</h5>
                             </div>
                             <div class="card-body">
-                                <div id="chartSalarioCiudad" style="min-height: 320px;"></div>
+                                <div id="chartEmpleadosCiudad" class="rrhh-chart"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rrhh-section-label mb-2">Distribución salarial</div>
+                <div class="row g-3 mb-3">
+                    <div class="col-xl-8">
+                        <div class="card rrhh-card h-100">
+                            <div class="card-header bg-transparent border-0">
+                                <h5 class="card-title mb-0">Salario mensual de empleados activos por ciudad</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="chartSalarioCiudad" class="rrhh-chart"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-4">
+                        <div class="card rrhh-card h-100">
+                            <div class="card-header bg-transparent border-0">
+                                <h5 class="card-title mb-0">Participación salarial por empresa</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="chartSalarioEmpresa" class="rrhh-chart"></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="row g-3 mb-3">
-                    <div class="col-xl-6">
-                        <div class="card border-0 shadow-sm h-100">
+                    <div class="col-12">
+                        <div class="card rrhh-card h-100">
                             <div class="card-header bg-transparent border-0">
-                                <h5 class="card-title mb-0">Cantidad de empleados por ciudad</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="chartEmpleadosCiudad" style="min-height: 320px;"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-6">
-                        <div class="card border-0 shadow-sm h-100">
-                            <div class="card-header bg-transparent border-0">
-                                <h5 class="card-title mb-0">Participacion salarial por empresa</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="chartSalarioEmpresa" style="min-height: 320px;"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row g-3">
-                    <div class="col-xl-5">
-                        <div class="card border-0 shadow-sm h-100">
-                            <div class="card-header bg-transparent border-0">
-                                <h5 class="card-title mb-0">Top ciudades</h5>
+                                <h5 class="card-title mb-0">Resumen por ciudad</h5>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
@@ -204,8 +223,12 @@
                         </div>
                     </div>
 
-                    <div class="col-xl-7">
-                        <div class="card border-0 shadow-sm">
+                </div>
+
+                <div class="rrhh-section-label mb-2">Detalle de empleados</div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="card rrhh-card">
                             <div class="card-header d-flex align-items-center justify-content-between">
                                 <h5 class="card-title mb-0">Empleados</h5>
                                 <span class="badge bg-primary-subtle text-primary" id="badgeEmpresaActual">Todas las empresas</span>
@@ -224,6 +247,45 @@
                                             <th>Salario Mensual</th>
                                             <th>Fecha Ingreso</th>
                                             <th>Fecha Salida</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rrhh-section-label mt-4 mb-2">Empleados por división</div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="card rrhh-card">
+                            <div class="card-header bg-transparent border-0 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                                <div>
+                                    <h5 class="card-title mb-1">Plantilla por división</h5>
+                                    <p class="text-muted mb-0 small">División asociada al centro de costo de cada empleado.</p>
+                                </div>
+                                <div>
+                                    <label for="filtroDivision" class="form-label mb-1">División</label>
+                                    <select id="filtroDivision" class="form-select" style="min-width: 220px">
+                                        <option value="">Todas las divisiones</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <table id="tableEmpleadosDivision" class="table table-bordered dt-responsive nowrap table-striped align-middle" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th>Empresa</th>
+                                            <th>Id Empleado</th>
+                                            <th>Nombres</th>
+                                            <th>Apellidos</th>
+                                            <th>Id Centro de costo</th>
+                                            <th>Centro de costo</th>
+                                            <th>División</th>
+                                            <th>Ciudad</th>
+                                            <th>Salario mensual</th>
+                                            <th>Estado</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -262,6 +324,7 @@
         let chartEmpleadosCiudad = null;
         let chartSalarioEmpresa = null;
         let tablaEmpleados = null;
+        let tablaEmpleadosDivision = null;
         let dashboardRequest = null;
 
         function formatoMonto(valor) {
@@ -331,7 +394,7 @@
                 chart: { type: 'donut', height: 320, toolbar: { show: false } },
                 series: estado.series || [],
                 labels: estado.labels || [],
-                colors: ['#22c55e', '#ef4444'],
+                colors: ['#79b9a7', '#e3a59c'],
                 legend: { position: 'bottom' },
                 dataLabels: { enabled: true },
                 plotOptions: { pie: { donut: { size: '68%' } } }
@@ -340,16 +403,12 @@
             chartSalarioCiudad = new ApexCharts(document.querySelector('#chartSalarioCiudad'), {
                 chart: { type: 'bar', height: 320, toolbar: { show: false } },
                 series: [{ name: 'Salario mensual de usuarios activos', data: salarioCiudad.series || [] }],
-                xaxis: { categories: salarioCiudad.labels || [] },
-                colors: ['#3b82f6'],
-                plotOptions: { bar: { borderRadius: 6, horizontal: false, columnWidth: '45%' } },
+                colors: ['#9d9ad1'],
+                plotOptions: { bar: { borderRadius: 6, horizontal: true, barHeight: '55%' } },
                 dataLabels: { enabled: false },
-                yaxis: {
-                    labels: {
-                        formatter: function (value) {
-                            return formatoMonto(value);
-                        }
-                    }
+                xaxis: {
+                    categories: salarioCiudad.labels || [],
+                    labels: { formatter: function (value) { return formatoMonto(value); } }
                 },
                 tooltip: {
                     y: {
@@ -364,7 +423,7 @@
                 chart: { type: 'bar', height: 320, toolbar: { show: false } },
                 series: [{ name: 'Empleados', data: empleadosCiudad.series || [] }],
                 xaxis: { categories: empleadosCiudad.labels || [] },
-                colors: ['#14b8a6'],
+                colors: ['#8fbec8'],
                 plotOptions: { bar: { borderRadius: 6, horizontal: true, barHeight: '55%' } },
                 dataLabels: { enabled: false }
             });
@@ -385,7 +444,7 @@
                 chart: { type: 'donut', height: 320, toolbar: { show: false } },
                 series: salarioEmpresaPorcentaje,
                 labels: salarioEmpresa.labels || [],
-                colors: ['#6366f1', '#f59e0b'],
+                colors: ['#a59bd4', '#efbd96'],
                 legend: {
                     show: true,
                     position: 'bottom',
@@ -589,6 +648,80 @@
             return Promise.resolve();
         }
 
+        function cargarDivisiones() {
+            return fetch('/empleados/divisiones', { headers: { 'Accept': 'application/json' } })
+                .then(response => parsearRespuestaJson(response, 'Error al cargar divisiones'))
+                .then(divisiones => {
+                    const filtro = document.getElementById('filtroDivision');
+                    const divisionActual = filtro.value;
+                    filtro.replaceChildren(new Option('Todas las divisiones', ''));
+                    divisiones.forEach(division => {
+                        const opcion = document.createElement('option');
+                        opcion.value = division;
+                        opcion.textContent = division;
+                        filtro.appendChild(opcion);
+                    });
+                    filtro.value = divisionActual;
+                })
+                .catch(error => console.error('Error al cargar divisiones:', error));
+        }
+
+        function listPorDivision() {
+            if (tablaEmpleadosDivision) {
+                tablaEmpleadosDivision.ajax.reload();
+                return;
+            }
+
+            tablaEmpleadosDivision = $('#tableEmpleadosDivision').DataTable({
+                processing: true,
+                serverSide: true,
+                deferRender: true,
+                searchDelay: 350,
+                responsive: true,
+                scrollX: true,
+                pageLength: 10,
+                ajax: {
+                    url: '/empleados/list-division',
+                    data: function (params) {
+                        params.empresa = obtenerEmpresaActual();
+                        params.division = document.getElementById('filtroDivision').value;
+                    },
+                    error: function (_xhr, _error, detalle) {
+                        console.error('Error fetching empleados por división:', detalle);
+                        Swal.fire('Error', 'No se pudieron cargar los empleados por división.', 'error');
+                    }
+                },
+                columns: [
+                    { data: 'company', render: textoSeguro },
+                    { data: 'empleadoid', render: textoSeguro },
+                    { data: 'nombres', render: textoSeguro },
+                    { data: 'apellidos', render: textoSeguro },
+                    { data: 'idcentrocosto', defaultContent: '', render: textoSeguro },
+                    { data: 'centro_costo', defaultContent: '', render: textoSeguro },
+                    { data: 'division', defaultContent: '', render: textoSeguro },
+                    { data: 'ciudad', defaultContent: '', render: textoSeguro },
+                    {
+                        data: 'salariomensual',
+                        className: 'text-end',
+                        render: function (valor, tipo) {
+                            return tipo === 'display' ? '$' + formatoMonto(valor || 0) : Number(valor || 0);
+                        }
+                    },
+                    {
+                        data: 'fechasalida',
+                        render: function (valor, tipo) {
+                            if (tipo !== 'display') return valor || '';
+                            return valor
+                                ? '<span class="badge bg-danger-subtle text-danger">Inactivo</span>'
+                                : '<span class="badge bg-success-subtle text-success">Activo</span>';
+                        }
+                    }
+                ],
+                dom: 'Bfrtip',
+                buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+            });
+        }
+
         document.querySelector("#btnSincronizar").addEventListener("click", async function () {
             const empresa = document.getElementById('empresa').value;
             const boton = this;
@@ -659,7 +792,7 @@
 
                 textSwal.innerHTML = "Sincronizando: 100%";
                 clearInterval(interval);
-                await Promise.all([cargarDashboard(), list()]);
+                await Promise.all([cargarDashboard(), list(), listPorDivision(), cargarDivisiones()]);
 
                 Swal.fire({
                     title: "Listo",
@@ -681,16 +814,20 @@
         });
 
         document.getElementById('empresa').addEventListener('change', function () {
-            Promise.all([cargarDashboard(), list()]);
+            Promise.all([cargarDashboard(), list(), listPorDivision()]);
         });
 
+        document.getElementById('filtroDivision').addEventListener('change', listPorDivision);
+
         document.getElementById('btnRefrescarDashboard').addEventListener('click', function () {
-            Promise.all([cargarDashboard(true), list()]);
+            Promise.all([cargarDashboard(true), list(), listPorDivision()]);
         });
 
         document.addEventListener('DOMContentLoaded', function () {
             cargarDashboard();
             list();
+            cargarDivisiones();
+            listPorDivision();
         });
     </script>
 @endsection

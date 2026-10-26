@@ -370,6 +370,8 @@ Route::middleware('auth')->group(function () {
         });
         Route::get('/empleados', [EmpleadoController::class, 'index']);
         Route::get('/empleados/list', [EmpleadoController::class, 'list']);
+        Route::get('/empleados/divisiones', [EmpleadoController::class, 'divisiones']);
+        Route::get('/empleados/list-division', [EmpleadoController::class, 'listPorDivision']);
         Route::get('/empleados/dashboard', [EmpleadoController::class, 'dashboard']);
         Route::get('/empleados/show/{id}', [EmpleadoController::class, 'show']);
         Route::post('/empleados/store', [EmpleadoController::class, 'store']);
@@ -675,6 +677,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [ModuleHubController::class, 'serviciosGenerales'])->name('index');
             Route::get('/monitoreo-ventas', [ServicioGeneralMonitoreoVentasController::class, 'index'])->name('monitoreo-ventas.index');
             Route::post('/monitoreo-ventas/asignaciones', [ServicioGeneralMonitoreoVentasController::class, 'asignar'])->middleware('permission:servicios_generales.manage')->name('monitoreo-ventas.asignar');
+            Route::post('/monitoreo-ventas/umbrales', [ServicioGeneralMonitoreoVentasController::class, 'guardarUmbrales'])->middleware('permission:servicios_generales.manage')->name('monitoreo-ventas.umbrales');
             Route::post('/monitoreo-ventas/{caso}/seguimientos', [ServicioGeneralMonitoreoVentasController::class, 'seguimiento'])->name('monitoreo-ventas.seguimiento');
             Route::get('/ruta-inspeccion', [ServicioGeneralRutaInspeccionController::class, 'index'])
                 ->name('ruta-inspeccion.index');

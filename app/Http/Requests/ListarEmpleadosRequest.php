@@ -25,6 +25,7 @@ class ListarEmpleadosRequest extends FormRequest
     {
         return [
             'empresa' => ['nullable', Rule::in(['100', '126'])],
+            'division' => ['nullable', 'string', 'max:150'],
             'draw' => ['nullable', 'integer', 'min:0'],
             'start' => ['nullable', 'integer', 'min:0'],
             'length' => ['nullable', 'integer', 'min:1', 'max:100'],

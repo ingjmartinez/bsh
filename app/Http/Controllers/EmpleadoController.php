@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ListarEmpleadosRequest;
 use App\Http\Requests\SincronizarEmpleadosRequest;
+use App\Models\CentroDeCosto;
 use App\Models\Empleado;
 use App\Models\VwUsuariosUnion;
 use Illuminate\Http\JsonResponse;
@@ -99,6 +100,85 @@ class EmpleadoController extends Controller
             ->orderBy('empleadoid')
             ->skip($start)
             ->take($length)
+            ->get();
+
+        return response()->json([
+            'draw' => (int) $request->input('draw', 0),
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $this->agregarNombreEmpresa($empleados),
+        ]);
+    }
+
+    public function divisiones(): JsonResponse
+    {
+        $divisiones = CentroDeCosto::query()
+            ->whereNotNull('id_division')
+            ->where('id_division', '!=', '')
+            ->distinct()
+            ->orderBy('id_division')
+            ->pluck('id_division');
+
+        return response()->json($divisiones);
+    }
+
+    public function listPorDivision(ListarEmpleadosRequest $request): JsonResponse
+    {
+        $empresa = trim((string) $request->query('empresa', ''));
+        $division = trim((string) $request->query('division', ''));
+        $fechaIngresoColumn = $this->empleadosColumnName('fecha_ingreso', 'fechaingreso');
+        $fechaEgresoColumn = $this->empleadosColumnName('fecha_egreso', 'fechasalida');
+        $salarioColumn = $this->empleadosColumnName('salario', 'salariomensual');
+        $ciudadColumn = $this->empleadosColumnName('ciudad');
+
+        $query = Empleado::query()
+            ->from('empleados as e')
+            ->leftJoin('centros_de_costo as cc', 'cc.id_centro_costo', '=', 'e.idcentrocosto')
+            ->select([
+                'e.companyid', 'e.empleadoid', 'e.nombres', 'e.apellidos', 'e.cedula',
+                'e.idcentrocosto', 'cc.descripcion as centro_costo', 'cc.id_division as division',
+                DB::raw("e.{$ciudadColumn} AS ciudad"),
+                DB::raw("e.{$salarioColumn} AS salariomensual"),
+                DB::raw("e.{$fechaIngresoColumn} AS fechaingreso"),
+                DB::raw("e.{$fechaEgresoColumn} AS fechasalida"),
+            ]);
+
+        if (array_key_exists($empresa, self::EMPRESAS_RRHH)) {
+            $query->where('e.companyid', $empresa);
+        }
+
+        if ($division !== '') {
+            $query->where('cc.id_division', $division);
+        }
+
+        $recordsTotal = (clone $query)->count();
+        $search = trim((string) $request->input('search.value', ''));
+
+        if ($search !== '') {
+            $searchValue = '%'.$search.'%';
+            $query->where(function ($searchQuery) use ($searchValue): void {
+                $searchQuery->where('e.empleadoid', 'like', $searchValue)
+                    ->orWhere('e.nombres', 'like', $searchValue)
+                    ->orWhere('e.apellidos', 'like', $searchValue)
+                    ->orWhere('e.cedula', 'like', $searchValue)
+                    ->orWhere('cc.descripcion', 'like', $searchValue)
+                    ->orWhere('cc.id_division', 'like', $searchValue);
+            });
+        }
+
+        $recordsFiltered = $search === '' ? $recordsTotal : (clone $query)->count();
+        $orderColumns = [
+            'e.companyid', 'e.empleadoid', 'e.nombres', 'e.apellidos', 'e.idcentrocosto',
+            'cc.descripcion', 'cc.id_division', "e.{$ciudadColumn}", "e.{$salarioColumn}", "e.{$fechaEgresoColumn}",
+        ];
+        $orderColumn = $orderColumns[(int) $request->input('order.0.column', 0)] ?? 'e.companyid';
+        $orderDirection = $request->input('order.0.dir', 'asc') === 'desc' ? 'desc' : 'asc';
+
+        $empleados = $query
+            ->orderBy($orderColumn, $orderDirection)
+            ->orderBy('e.empleadoid')
+            ->skip((int) $request->input('start', 0))
+            ->take((int) $request->input('length', 10))
             ->get();
 
         return response()->json([
